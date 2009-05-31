@@ -4,9 +4,9 @@
 import codecs
 import os
 import re
-import string
 
 from pinyin import *
+import utils
 
 """
 Encapsulates one or more Chinese dictionaries, and provides the ability to transform
@@ -39,17 +39,11 @@ class PinyinDictionary(object):
         # Build the actual dictionary, giving precedence to dictionaries later on in the input list
         self.__readings = {}
         self.__meanings = {}
-        for dictpath in [os.path.join(self.executiondir(), dictname) for dictname in dictnames]:
-            self.loadsingledict(dictpath, needmeanings)
+        for dictpath in [os.path.join(utils.executiondir(), dictname) for dictname in dictnames]:
+            # Avoid loading dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
+            if os.path.exists(dictpath):
+                self.loadsingledict(dictpath, needmeanings)
     
-    def executiondir(self):
-        try:
-            return os.path.dirname(os.path.realpath( __file__ ))
-        except NameError:
-            # That doesn't work in the interactive shell, so let's do this instead:
-            import sys
-            return os.path.dirname(sys._getframe(1).f_code.co_filename)
-
     def loadsingledict(self, dictpath, needmeanings):
         file = codecs.open(dictpath, "r", encoding='utf-8')
         try:
@@ -69,7 +63,7 @@ class PinyinDictionary(object):
                 
                 # Parse readings
                 for characters in unique_characters:
-                    self.__readings[characters] = self.parsepinyin(characters, raw_pinyin)
+                    self.__readings[characters] = self.parsepinyin(raw_pinyin)
                 
                 # Parse meanings
                 if needmeanings:
@@ -80,23 +74,23 @@ class PinyinDictionary(object):
         finally:
             file.close()
 
-    def parsepinyin(self, characters, raw_pinyin):
+    def parsepinyin(self, raw_pinyin):
         # Read the pinyin into the array: sometimes this field contains
         # english (e.g. in the pinyin for 'T shirt') so we better handle that
-        pinyin = Reading()
-        for the_character, the_raw_pinyin in zip(characters, raw_pinyin.split()):
+        tokens = TokenList()
+        for the_raw_pinyin in raw_pinyin.split():
             try:
-                pinyin.append(Pinyin(the_raw_pinyin, the_character))
+                tokens.append(Pinyin(the_raw_pinyin))
             except ValueError:
-                pinyin.append(the_raw_pinyin)
+                tokens.append(the_raw_pinyin)
         
         # Special treatment for the erhua suffix: never show the tone in the string representation.
         # NB: currently hideneutraltone defaults to True, so this is sort of pointless.
-        last_pinyin = pinyin[-1]
-        if self.iserhuatoken(last_pinyin):
-            last_pinyin.hideneutraltone = True
+        last_token = tokens[-1]
+        if utils.iserhuapinyintoken(last_token):
+            last_token.hideneutraltone = True
         
-        return pinyin
+        return tokens
 
     def parsedefinition(self, raw_definition):
         cleaned_definitions = raw_definition.replace("  ", " ").replace(" /", "/").replace("/ ", "/").lstrip("/").rstrip("/").rstrip(" ")
@@ -105,48 +99,67 @@ class PinyinDictionary(object):
         else:
             return None
 
-    def iserhuatoken(self, token):
-        return type(token) == Pinyin and token.word == 'r'
-
     """
     Given a string of Hanzi, return the result rendered into a list of Pinyin and unrecognised tokens (as strings).
     """
     def reading(self, sentence):
-        # Represents the resulting pinyin
-        reading = Reading()
+        def addword(tokens, thing):
+            # If we already have some text building up, add a preceding space.
+            # However, if the word we got looks like punctuation, don't do it.
+            # This ensures consistency in the treatment of Western and Chinese
+            # punctuation.  Furthermore, avoid adding double-spaces.  This is
+            # also important for punctuation consistency, because Western
+            # punctuation is typically followed by a space whereas the Chinese
+            # equivalents are not.
+            have_some_text = len(tokens) > 0
+            is_punctuation = utils.ispunctuation(thing)
+            already_have_space = have_some_text and tokens[-1].endswith(u' ')
+            if have_some_text and not(is_punctuation) and not(already_have_space):
+                tokens.append(u' ')
+            
+            # Add the tokens to the tokens, with spaces between the components
+            reading_tokens = self.__readings[thing]
+            reading_tokens_count = len(reading_tokens)
+            for n, reading_token in enumerate(reading_tokens):
+                # Don't add spaces if this is the first token or if we are at the
+                # last token and have an erhua
+                if n != 0 and (n != reading_tokens_count - 1 or not(utils.iserhuapinyintoken(reading_token))):
+                    tokens.append(u' ')
+                
+                tokens.append(reading_token)
+        
+        return self.mapparsedtokens(sentence, addword)
+
+    """
+    Given a string of Hanzi, return the result rendered into a list of characters with tone information and unrecognised tokens (as string).
+    """
+    def tonedchars(self, sentence):
+        def addword(tokens, thing):
+            # Add characters to the tokens /without/ spaces between them, but with tone info
+            for character, reading_token in zip(thing, self.__readings[thing]):
+                if hasattr(reading_token, "tone"):
+                    tokens.append(TonedCharacter(character, reading_token.tone))
+                else:
+                    # Sometimes the tokens do not have tones (e.g. in the translation for T-shirt)
+                    tokens.append(character)
+        
+        return self.mapparsedtokens(sentence, addword)
+
+    def mapparsedtokens(self, sentence, addword):
+        # Represents the resulting token stream
+        tokens = TokenList()
         
         for recognised, thing in self.parse(sentence):
             if not recognised:
-                # A single unrecognised character: it's probably just whitespace or punctuation
-                reading.append(thing)
+                # A single unrecognised character: it's probably just whitespace or punctuation.
+                # Append it directly to the token list.
+                tokens.append(thing)
             else:
-                # Got a recognised token sequence! Hooray!
-                tokens = self.__readings[thing]
-                
-                # If we already have some text building up, add a preceding space.
-                # However, if the word we got looks like punctuation, don't do it.
-                # This ensures consistency in the treatment of Western and Chinese
-                # punctuation.  Furthermore, avoid adding double-spaces.  This is
-                # also important for punctuation consistency, because Western
-                # punctuation is typically followed by a space whereas the Chinese
-                # equivalents are not.
-                have_some_text = len(reading) > 0
-                is_punctuation = len(tokens) == 1 and ispunctuation(tokens.flatten())
-                already_have_space = have_some_text and reading[-1].endswith(u' ')
-                if have_some_text and not(is_punctuation) and not(already_have_space):
-                    reading.append(u' ')
-
-                # Add the tokens to the reading, with spaces between the components
-                token_count = len(tokens)
-                for n, token in enumerate(tokens):
-                    # Don't add spaces if this is the first token or if we are at the
-                    # last token and have an erhua
-                    if n != 0 and (n != token_count - 1 or not(self.iserhuatoken(token))):
-                        reading.append(u' ')
-                    
-                    reading.append(token)
+                # Got a recognised token sequence! Hooray! Use the user-supplied function to add this
+                # thing to the output
+                addword(tokens, thing)
         
-        return reading
+        return tokens
 
     """
     Given a string of Hanzi, return a definition for the very first recognisable thing in the string.
@@ -211,23 +224,33 @@ class PinyinDictionary(object):
                 i += len(largest_word)
 
 
-"""
-Utility function that reports whether a string consists of a single punctuation
-character
-"""
-def ispunctuation(what):
-    return len(what) == 1 and string.punctuation.find(what[0]) > -1;
-
 # Testsuite
 if __name__=='__main__':
     import unittest
     
+    pinyindictionary = PinyinDictionary.load('pinyin', True)
+    
     class TestPinyinDictionary(unittest.TestCase):
+        def testTonedTokens(self):
+            toned = pinyindictionary.tonedchars(u"一个")
+            self.assertEquals(toned.flatten(), u"一个")
+            self.assertEquals(toned[0].tone, 1)
+            self.assertEquals(toned[1].tone, 4)
+
+        def testTonedTokensWithoutTone(self):
+            toned = pinyindictionary.tonedchars(u"T恤")
+            self.assertEquals(toned.flatten(), u"T恤")
+            self.assertEquals(toned[1].tone, 4)
+
+        def testMissingDictionary(self):
+            dict = PinyinDictionary(['idontexist.txt'], True)
+            self.assertEquals(dict.reading(u"个").flatten(), u"个")
+            self.assertEquals(dict.meanings(u"个"), None)
+        
         def testPinyinDictionary(self):
-            dict = PinyinDictionary(['dict-pinyin.txt'], True)
-            self.assertEquals(dict.reading(u"一个").flatten(), "yi1 ge4")
-            self.assertEquals(dict.reading(u"一個").flatten(), "yi1 ge4")
-            self.assertEquals(dict.meanings(u"一个"), None)
+            self.assertEquals(pinyindictionary.reading(u"一个").flatten(), "yi1 ge4")
+            self.assertEquals(pinyindictionary.reading(u"一個").flatten(), "yi1 ge4")
+            self.assertEquals(pinyindictionary.meanings(u"一个"), None)
         
         def testGermanDictionary(self):
             dict = PinyinDictionary.load('de', True)
@@ -240,16 +263,14 @@ if __name__=='__main__':
             self.assertEquals(dict.reading(u"鼓聲").flatten(), "gu3 sheng1")
             self.assertEquals(dict.reading(u"鼓声").flatten(), "gu3 sheng1")
             self.assertEquals(dict.meanings(u"鼓聲"), ["sound of a drum", "drumbeat"])
-
+    
         def testFrenchDictionary(self):
             dict = PinyinDictionary.load('fr', True)
-            self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian5")
-            self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian5")
-            self.assertEquals(dict.meanings(u"白天"), ["journée (n.v.) (n)"])
+            self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
+            self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
+            self.assertEquals(dict.meanings(u"白天"), [u"journée (n.v.) (n)"])
     
     class TestPinyinConverter(unittest.TestCase):
-        dictionary = PinyinDictionary.load('pinyin', True)
-    
         # Test data:
         nihao_simp = u'你好，我喜欢学习汉语。我的汉语水平很低。'
         nihao_trad = u'你好，我喜歡學習漢語。我的漢語水平很低。'
@@ -276,6 +297,6 @@ if __name__=='__main__':
     
         # Test helpers
         def reading(self, what):
-            return self.dictionary.reading(what).flatten()
+            return pinyindictionary.reading(what).flatten()
     
     unittest.main()

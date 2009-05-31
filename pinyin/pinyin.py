@@ -16,10 +16,10 @@ class Pinyin(object):
     >>> Pinyin("hen3")
     hen3
     
-    >>> Pinyin("hen3", "很")
+    >>> Pinyin("hen3", u"很")
     hen3
     """
-    def __init__(self, text, character=None):
+    def __init__(self, text):
         # Length check
         if len(text) < 2 or len(text) > 6:
             raise ValueError("The text '%s' was not the right length to be Pinyin - should be in the range 2 to 6 characters" % text)
@@ -33,9 +33,6 @@ class Pinyin(object):
         # Find the word. NB: might think about doing lower() here, as some dictionary words have upper case
         # (e.g. proper names) and this screws with e.g. the tonification logic.
         self.word = text[:-1]
-        
-        # Save the underlying character
-        self.character = character
     
     def __str__(self):
         return self.__unicode__()
@@ -50,11 +47,23 @@ class Pinyin(object):
             return self.word + str(self.tone)
     
     def tonifiedformat(self):
-        return PinyinTonifier().tonify(self.numericFormat(hideneutraltone=False))
+        return PinyinTonifier().tonify(self.numericformat(hideneutraltone=False))
 
     # String compatability methods:
     def endswith(self, what):
         return self.__str__().endswith(what)
+
+"""
+Represents a Chinese character with tone information in the system.
+"""
+class TonedCharacter(unicode):
+    """
+    Constructs an object representing a character with some hidden tone information.
+    """
+    def __new__(cls, character, tone):
+        self = unicode.__new__(cls, character)
+        self.tone = tone
+        return self
 
 """
 Parser class to add diacritical marks to numbered pinyin.
@@ -143,7 +152,7 @@ class PinyinTonifier(object):
 """
 Represents some pinyin and unknown text tokens as a list of strings and Pinyin objects.
 """
-class Reading(list):
+class TokenList(list):
     """
     Utility function that takes a reading such as that output by the PinyinDictionary
     and flattens it into a normal Unicode string.
@@ -161,6 +170,34 @@ class Reading(list):
 if __name__ == "__main__":
     import unittest
     
+    class PinyinTest(unittest.TestCase):
+        def testUnicode(self):
+            self.assertEquals(unicode(Pinyin(u"hen3", u"很")), u"hen3")
+        
+        def testStr(self):
+            self.assertEquals(str(Pinyin(u"hen3", u"很")), u"hen3")
+        
+        def testStrNeutralTone(self):
+            py = Pinyin(u"ma5", u"吗")
+            self.assertEquals(str(py), u"ma")
+            
+            # Since the default is to hide neutral tones, this doesn't do anything yet
+            py.hideneutraltone = True
+            self.assertEquals(str(py), u"ma")
+        
+        def testNumericFormat(self):
+            self.assertEquals(Pinyin(u"hen3", u"很").numericformat(), u"hen3")
+            
+        def testNumericFormatNeutralTone(self):
+            self.assertEquals(Pinyin(u"ma5", u"吗").numericformat(), u"ma5")
+            self.assertEquals(Pinyin(u"ma5", u"吗").numericformat(hideneutraltone=True), u"ma")
+        
+        def testTonifiedFormat(self):
+            self.assertEquals(Pinyin(u"hen3", u"很").tonifiedformat(), u"hěn")
+        
+        def testTonifiedFormatNeutralTone(self):
+            self.assertEquals(Pinyin(u"ma5", u"吗").tonifiedformat(), u"ma")
+    
     class PinyinTonifierTest(unittest.TestCase):
         def testEasy(self):
             self.assertEquals(PinyinTonifier().tonify(u"Han4zi4 bu4 mie4, Zhong1guo2 bi4 wang2!"),
@@ -172,5 +209,12 @@ if __name__ == "__main__":
         
         def testObscure(self):
             self.assertEquals(PinyinTonifier().tonify(u"huai4"), u"huài")
+    
+    class TokenListTest(unittest.TestCase):
+        def testFlatten(self):
+            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3", u"很"), u' b', Pinyin(u"ma5", u"吗")]).flatten(), u"a hen3 bma")
+            
+        def testFlattenTonified(self):
+            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3", u"很"), u' b', Pinyin(u"ma5", u"吗")]).flatten(tonify=True), u"a hěn bma")
     
     unittest.main()

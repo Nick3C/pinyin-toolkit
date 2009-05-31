@@ -1,0 +1,9 @@
+# OS Junk
+.DS_Store
+Thumbs.db
+
+# Media directory
+pinyin/media
+
+# Python droppings
+*.pyc
