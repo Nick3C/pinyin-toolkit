@@ -1,4 +1,4 @@
-﻿########################################################################
+########################################################################
 ###                   Mandarin-Chinese Pinyin Toolkit                ###
 ###                          Documentation                           ### 
 ########################################################################
@@ -29,10 +29,11 @@ Features 1 to 4 will work automatically out of the box. Features 5 and 6 are opt
   - The best way to do this is test on plain characters, but show colored characters in answers or where you are not testing reading or tones. 
 5) To active sound tag generation:
   - ensure your model has a field called "Audio"
-  - obtain audio files in the format "ni3.ogg", "hao3.ogg"
+  - obtain audio files in the format "ni3.ogg", "hao3.ogg" (you can use .ogg, .wav and .mp3 files by default)
   - you can download such files here http://www.chinese-lessons.com/download.htm
   - note that commercial software (such as Wenlin) includes higher quality versions you can use
   - place the files in your deck's media directory (keep a copy, as Anki wipes them in media checks)
+  - finally, add a substitution like %(Audio)s to the HTML generated from your model
 
 If you plan not to use features such as character colorisation or audio generation,
 you should turn them off in the settings section below.
@@ -41,14 +42,26 @@ you should turn them off in the settings section below.
 
 == Changelog ==
 
-Version 0.05 (_____/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
+# Version 0.05 (_____/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
+#                            Max Bolingbroke <batterseapower@hotmail.com>
 * Automatic translate of non-dictionary phrase [can be customised]
   - see ____ for reference codes
 * Add support for new CFDICT (French), note that it is still very limited and will use a hybrid with English
 * Shortcut key to regenerate all entries [control-g]
 * MW added automatically if in dictionary
+* Don't generate audio tags if sounds are missing
+* Use a fifth tone audio sample if one is provided
+* Try several file extensions when we need a bit of audio, using the order: .mp3, .ogg, .wav
+* Meanings dictionary - add "(1)" "(2)" "(3)" instead of simple line spaces
+* Internal refactoring of code to remove the incidence of unreliable string manipulations, leading to bugfixes:
+  - Remove space at the end of colored pinyin
+  - Remove spaces between punctuation in pinyin
+  - Remove the space between erhua "r" suffix and main word in pinyin
+  - Prevent loss of punctuation when colorizing characters
+* Squash bug that means character colorisation to fail if audio generation off
+* Added code testsuite
 
-Version 0.04 (19/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
+# Version 0.04 (19/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
 * Two versions are now being distributed: English (using CC-CEDICT) and German (using HanDeDict)
    - Thanks to Rainer Menes for suggesting use of HanDeDict
 * New character colorization feature
@@ -101,25 +114,20 @@ Bugs & Tweaks
 - work out why some characters in dictionary can't be found:
     - 操你妈 in english
     - 生日 in German
-- track down the bug that means character colorisation fails if audio generation off 
-- remove space at the end of colored pinyin [requires complex string manipulation]
-- remove space between punctuation in pinyin (functional result of way colored characters are produced)
-- remove the space between erhua "r" and main word in colored pinyin
-- prevent loss of punctuation when colorizing characters [a lot trickier than it sounds]
 - track down why HanDeDict doesn't always retrieve entries that are known to be there
 
 Future Feature List
-- bundle audio files with plugin
-- (check if audio file exists before putting in tag)
-- investigate Anki source to see if possible: import audio files from another directory (would solve check media wiping and make bundling audio simpler)
-- look at the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
-- English dictionary - add "(1)" "(2)" "(3)" instead of simple line spaces
+
+- bundle audio files with plugin. Two main issues here:
+  * Licensing
+  * Technically how to do this.  My notes so far:
+    deck.addMedia(directory_path)
+    # Obtain candidate paths - note that originalPath is a FULL path so need to call os.path.basename on it
+    dict(deck.s.all("select originalPath, filename from media where description = 'hao3'"))
+- investigate Anki source to see if possible: import audio files from another directory (would solve check media wiping and make bundling audio simpler)- look at the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
 - where dictionary has measure words, automatically add them to a MW field and add "noun" to "Type" field
 - where dictionary contains "to " automatically ass "verb" to a field called "Type"
-- rewrite code to use a less complicated class and sub structure
-- rewrite code to perform a single dictionary search and assign to an array in the form: "word", "pinyin", "tones", "translation"
 - add a true pinyin mode and option switch (no breaks between sylabels in same words) [this will require a full index, as above]
-- change text parser to look for text in "/ /" and "[ ]" instead of using splits, there is a neat re.compile around somewhere for this
 
 
 
