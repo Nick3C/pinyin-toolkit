@@ -165,23 +165,22 @@ class PinyinDictionary(object):
     Given a string of Hanzi, return a definition for the very first recognisable thing in the string.
     """
     def meanings(self, sentence):
-        firstword = u""
-        foundcount=0
+        found = None
         for recognised, word in self.parse(sentence):
             if recognised:
-                # A recognised thing! Look it up in the dictionary and return the meaning
-                # This is done only for the first word found
-                # After that we run the loop to count the total items
-                foundcount+=1
-                if firstword == "":
-                      firstword = self.__meanings.get(word)
-        foundcount=len(foundwords)
-        # If the dictionary was build with needmeanings=False, no meanings are found (foundcount=0), or this is a phrase (foundcount>1)
-        # then we return None and google translate will pick it up
-        if foundcount==1:
-            return foundwords[0]
-        else:
-            return None
+                # A recognised thing! Did we recognise something else already?
+                if found != None:
+                    # This is a phrase with more than one word - let someone else translate it
+                    return None
+                
+                # Find the meaning in the dictionary and record it
+                found = self.__meanings.get(word)
+                if found == None:
+                    # NB: we return None if there is no meaning in the codomain. This case can
+                    # occur if the dictionary was built with needmeanings=False
+                    return None
+
+        return found
 
     def parse(self, sentence):
         assert type(sentence)==unicode
@@ -235,19 +234,30 @@ class PinyinDictionary(object):
 if __name__=='__main__':
     import unittest
     
-    pinyindictionary = PinyinDictionary.load('pinyin', True)
-    
+    # Preload commonly-used dictionaries to prevent reading them several times
+    pinyindict = PinyinDictionary.load('pinyin', True)
+    englishdict = PinyinDictionary.load('en', True)
+            
     class TestPinyinDictionary(unittest.TestCase):
         def testTonedTokens(self):
-            toned = pinyindictionary.tonedchars(u"一个")
+            toned = pinyindict.tonedchars(u"一个")
             self.assertEquals(toned.flatten(), u"一个")
             self.assertEquals(toned[0].tone, 1)
             self.assertEquals(toned[1].tone, 4)
 
         def testTonedTokensWithoutTone(self):
-            toned = pinyindictionary.tonedchars(u"T恤")
+            toned = pinyindict.tonedchars(u"T恤")
             self.assertEquals(toned.flatten(), u"T恤")
             self.assertEquals(toned[1].tone, 4)
+
+        def testPhraseMeanings(self):
+            self.assertEquals(englishdict.meanings(u"一杯啤酒"), None)
+
+        def testMeaningsWithTrailingJunk(self):
+            self.assertEquals(englishdict.meanings(u"鼓聲 (junk!!)"), ["sound of a drum", "drumbeat"])
+        
+        def testMeaningless(self):
+            self.assertEquals(englishdict.meanings(u"English"), None)
 
         def testMissingDictionary(self):
             dict = PinyinDictionary(['idontexist.txt'], True)
@@ -255,9 +265,9 @@ if __name__=='__main__':
             self.assertEquals(dict.meanings(u"个"), None)
         
         def testPinyinDictionary(self):
-            self.assertEquals(pinyindictionary.reading(u"一个").flatten(), "yi1 ge4")
-            self.assertEquals(pinyindictionary.reading(u"一個").flatten(), "yi1 ge4")
-            self.assertEquals(pinyindictionary.meanings(u"一个"), None)
+            self.assertEquals(pinyindict.reading(u"一个").flatten(), "yi1 ge4")
+            self.assertEquals(pinyindict.reading(u"一個").flatten(), "yi1 ge4")
+            self.assertEquals(pinyindict.meanings(u"一个"), None)
         
         def testGermanDictionary(self):
             dict = PinyinDictionary.load('de', True)
@@ -266,10 +276,9 @@ if __name__=='__main__':
             self.assertEquals(dict.meanings(u"請"), ["Bitte ! (u.E.) (Int)", "bitten, einladen (u.E.) (V)"])
     
         def testEnglishDictionary(self):
-            dict = PinyinDictionary.load('en', True)
-            self.assertEquals(dict.reading(u"鼓聲").flatten(), "gu3 sheng1")
-            self.assertEquals(dict.reading(u"鼓声").flatten(), "gu3 sheng1")
-            self.assertEquals(dict.meanings(u"鼓聲"), ["sound of a drum", "drumbeat"])
+            self.assertEquals(englishdict.reading(u"鼓聲").flatten(), "gu3 sheng1")
+            self.assertEquals(englishdict.reading(u"鼓声").flatten(), "gu3 sheng1")
+            self.assertEquals(englishdict.meanings(u"鼓聲"), ["sound of a drum", "drumbeat"])
     
         def testFrenchDictionary(self):
             dict = PinyinDictionary.load('fr', True)
@@ -304,6 +313,6 @@ if __name__=='__main__':
     
         # Test helpers
         def reading(self, what):
-            return pinyindictionary.reading(what).flatten()
+            return pinyindict.reading(what).flatten()
     
     unittest.main()
