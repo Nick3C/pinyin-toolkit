@@ -6,7 +6,7 @@ from pinyin import *
 """
 Colorize readings according to the reading in the Pinyin.
 * 2009 rewrites by Max Bolingbroke <batterseapower@hotmail.com>
-* 2009 modifications by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
+* 2009 original version by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
 """
 class Colorizer(object):
     tonecolors = {
@@ -46,8 +46,8 @@ class PinyinAudioReadings(object):
             if name in self.available_media:
                 return self.available_media[name]
         
-        # No suitable media existed!
-        return None
+        # No suitable media existed! Return a prompt for the user to download the files [can turn audiogen off if they don't want to]
+        return "[Media Error - Click on 'Tools' -> 'Download Mandarin Text-to-Speech Audio Fils']"
     
     def audioreading(self, tokens):
         output = u""

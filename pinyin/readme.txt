@@ -1,8 +1,9 @@
 ########################################################################
-###                   Mandarin-Chinese Pinyin Toolkit                ###
-###                          Documentation                           ### 
+###                   Mandarin-Chinese Pinyin Toolkit                ### 
 ########################################################################
-A Plugin for the Anki Spaced Repition software <http://ichi2.net/anki/>
+A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
+Copyright (C) 2009 Nicholas Cook & Max Bolingbroke
+Free software Licensed under GNU GPL
 
 == About This Plugin ==
 The Pinyin Toolkit adds several useful features for Mandarin users:
@@ -49,35 +50,41 @@ Note that you can omit the meaning and surrounding / if you don't want to includ
       as Anki wipes them in media checks.  Commercial software (such as Wenlin) includes high quality versions you can use.
   - finally, add a substitution like %(Audio)s to the HTML generated from your model
 
+
+
+
+  - ensure your model has a field called "Audio"
+  - obtain audio files in the format "ni3.ogg", "hao3.ogg" a sample set can be obtained 
+  - note that commercial software (such as Wenlin) includes higher quality versions you can use
+  - place the files in your deck's media directory (keep a copy, as Anki wipes them in media checks)
+  - finally, add a substitution like %(Audio)s to the HTML generated from your model
+
 If you plan not to use features such as character colorisation or audio generation,
-you can turn them off in the plugin settings section.
+you should turn them off in the settings section.
 
 
 
 == Changelog ==
 
-# Version 0.05 (_____/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
-#                            Max Bolingbroke <batterseapower@hotmail.com>
-* Menu option to fill in any missing information the Toolkit can provide in the current deck
-  - Shortcut key to regenerate all entries [control-g] as well?
-* Heuristic detection of model fields with the appropriate meaning
-* Can automatically download Mandarin sound samples via a menu option
-* Automatic translate of non-dictionary phrase [can be customised]
-  - see ____ for reference codes
-* Add support for new CFDICT (French), note that it is still very limited and will use a hybrid with English
-* MW added automatically if in dictionary
+# Version 0.05 (__/06/2009)  Max Bolingbroke <batterseapower@hotmail.com>
+#                            Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
+* Large-scale re-write and optimisation of the code by Max Bolingbroke (many thanks!)
+* Automatic translation of non-dictionary words & phrase [can be used for almost any language]
+* Add [limited] support for new CFDICT (French)
+* MW added automatically if in dictionary [only applies to English]
 * Don't generate audio tags if sounds are missing
-* Use a fifth tone audio sample in the form de5.mp3 if one is provided, but still fall back on de4.mp3 otherwise
-  - Will also accept e.g. de.mp3 as a fifth tone audio sample if present
+* Use a fifth tone audio sample if one is provided, otherwise switch to 4th tone
 * Try several file extensions when we need a bit of audio, using the order: .mp3, .ogg, .wav
-* Meanings dictionary - add "(1)" "(2)" "(3)" instead of simple line spaces
+* Optional entry-number indictaors in translations such as "(1)" "(2)" "(3)"
 * Internal refactoring of code to remove the incidence of unreliable string manipulations, leading to bugfixes:
   - Remove space at the end of colored pinyin
   - Remove spaces between punctuation in pinyin
   - Remove the space between erhua "r" suffix and main word in pinyin
   - Prevent loss of punctuation when colorizing characters
-* Squash bug that causes character colorisation to fail if audio generation off
+* Squash bug that means character colorisation to fail if audio generation off
 * Added code testsuite
+* Many smaller modifications to improve usability
+* Improved documentation
 
 # Version 0.04 (19/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
 * Two versions are now being distributed: English (using CC-CEDICT) and German (using HanDeDict)
@@ -128,21 +135,57 @@ you can turn them off in the plugin settings section.
 
 == Bug-Hunting To-Do-List & Future Development Plans ==
 
-Bugs & Tweaks
-- work out why some characters in dictionary can't be found:
-    - 操你妈 in english
+Vital fix-issues
+- sound generation broken in my version [even after your changes earlier today] It may be a windows related bug. I note there is now a media directory in the pinyin dir. I presume this is unintentional?
+- I have tried to do something to improve MW generation. I am still not very happy with the consequences of multiple measure words and wasn't able to test the code after breaking it :$
+- doesn't cut mw from dict entry after copying to the MW field [you don't want it in the entry and in the measure word field, only one of them] should do only if successfuly put in mw field
+- [earlier today, unchekd in latest] previously mentioned bug on 生日 etc in German version now returns pinyin of "生 rì" and no German translation
+    - 操你妈 in english [now works]
     - 生日 in German
 - track down why HanDeDict doesn't always retrieve entries that are known to be there
 
-Future Feature List
-- where dictionary has measure words, automatically add them to a MW field and add "noun" to "Type" field
-- where dictionary contains "to " automatically ass "verb" to a field called "Type"
-- add a true pinyin mode and option switch (no breaks between sylabels in same words) [this will require a full index, as above]
+- the pinyin object's def init could be improved using a regex check rather than the final number. I had worked on this previously but it was complex so I dropped it.
+- erhua issue (see below)
 
+Comments
+* I think I have fixed google translate, it works in the python shell but I managed to break something else before I could confirm in Anki
+* I think you may have misunderstood my comment on the neutral tone and erhua. The idea is that the space should be removed where there is an erhua, eg nǐ men2r [which is best passed to the lookup engine as menr2]. This creates a complication when coloring characters. For even more fun the er character isn't always an erhua, for example "er zi" where it is a separate sylabul and must not be merged. I didn't mean anything about the neutral tone [that was just a convenient way to have the character colorisation not break]. Also erhua are not necessarily  the end because we may be dealing with a phrase.
+* Is there an check on whether a file exists before loading the dictionaries? I think there should be, I added dict-userdict.txt to the .ignore file and plan not to distribute it in future (so that it is not overwritten when installing)
+* i don't see why separating traditional and simplified saves space. I used to have code doing that but I realised it was pointless. If they differ then a new entryis needed, if they are the same then the latter will just overwrite the former. The code will do nothing but slow-down the dictionary init
+* There was a good reason for me not using the folder structure you have chosen on git: my format allowed a hard-link for the plugin in the anki directory, then the GIT repositories could be stored and maintained from there. Is this such a bad idea?
+* In any event, I think that the readme is better placed in the plugin dir, it keeps the files tidy and prevents it being overwritten by other plugin readmes.
+* I am not too sure what to do about the traditional / simplified inconsistancy. I can't think of *any* situation where it matter. Even if we do a "swap simplified and traditional" then it should still be fine to do this. Although I guess if they have mixed form sentences that might cause problems.
+* I do thing that lowercase pinyin is a very sensible choice. unless we implement true pinyin (no space between the pinyin of multi-character words) it looks horrible. Even then it may look strange with color. Audio also must have lowercase (linux systems being caps-sensative)
+* we still have a problem with the audio in those Mandarin sounds not matching standard pinyin. Perhaps we could rename the non-matching ones after downloading them? I think "me.mp3" was one (should be "me4.mp3") there are a few more as I recall
+
+Future [big, non-trivial, and/or unimportant changes]
+* add shortcut key to force regenerate all fields
+* dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp
+* tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 [too complex, varies on meaning])
+* selective blanking feature. Save the PREVIOUS values of each field somewhere when filling the fields [possibly in hidden html in each filled field]. When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
+* store the settings in a separate file config.ini (to have a ver number and be renamed to config.bak on each upgrade if new settings added)
+* add a config tab to the Anki preferences window
+* look at borrowing code from the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
+* where dictionary contains "to " automatically as "verb" to a field called "Type"
+* add a true pinyin mode and option switch (no breaks between sylabels in same words) [this will require a full index, as above]
 
 
 == Licensing ==
+-Pinyin Toolkit-
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+-Dictionaries-
 Chinese-English CC-CEDICT, available at: <http://www.mdbg.net/chindict/chindict.php?page=cc-cedict>
 Licensing of CC-CEDICT is Creative Commons Attribution-Share Alike 3.0 <http://creativecommons.org/licenses/by-sa/3.0/>
 
@@ -152,5 +195,6 @@ Licensing of HanDeDict is  Creative Commons Attribution-Share Alike 2.0 Germany 
 Chinese-French dictionary CFDICT, available at <http://www.chinaboard.de/cfdict.php?mode=dl>
 Licensing of CFDICT is Creative Commons Attribution-Share Alike 2.5 French <http://creativecommons.org/licenses/by-sa/2.5/fr/>
 
+-Audio Files-
 Mandarin Sounds, available at: <http://www.chinese-lessons.com/download.htm
 Licensing of Mandarin Sounds is Creative Commons Attribution-Noncommercial-No Derivative Works 3.0 United States <http://creativecommons.org/licenses/by-nc-nd/3.0/us/>

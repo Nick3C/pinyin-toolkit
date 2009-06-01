@@ -67,6 +67,7 @@ class TonedCharacter(unicode):
 
 """
 Parser class to add diacritical marks to numbered pinyin.
+* 2009 minor to deal with missing "v"/"u:" issue mod by Nick Cook (http://www.n-line.co.uk)
 * 2008 modifications by Brian Vaughan (http://brianvaughan.net)
 * 2007 originaly version by Robert Yu (http://www.robertyu.com)
 

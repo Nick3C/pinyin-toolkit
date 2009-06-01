@@ -165,16 +165,23 @@ class PinyinDictionary(object):
     Given a string of Hanzi, return a definition for the very first recognisable thing in the string.
     """
     def meanings(self, sentence):
+        firstword = u""
+        foundcount=0
         for recognised, word in self.parse(sentence):
-            if not recognised:
-                # A single unrecognised character starts the block: give up
-                return None
-            else:
-                # A recognised thing! Look it up in the dictionary and return the meaning:
-                # NB: we only return the definition for the very first thing in the input.
-                # NB: we return None if there is no meaning in the codomain. This case can
-                # occur if the dictionary was build with needmeanings=False
-                return self.__meanings.get(word)
+            if recognised:
+                # A recognised thing! Look it up in the dictionary and return the meaning
+                # This is done only for the first word found
+                # After that we run the loop to count the total items
+                foundcount+=1
+                if firstword == "":
+                      firstword = self.__meanings.get(word)
+        foundcount=len(foundwords)
+        # If the dictionary was build with needmeanings=False, no meanings are found (foundcount=0), or this is a phrase (foundcount>1)
+        # then we return None and google translate will pick it up
+        if foundcount==1:
+            return foundwords[0]
+        else:
+            return None
 
     def parse(self, sentence):
         assert type(sentence)==unicode
