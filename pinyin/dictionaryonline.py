@@ -11,7 +11,9 @@ import urllib, urllib2
 # The gTrans function is based on code the Chinese Example Sentence Plugin by aaron@lamelion.com
 def gTrans(src=None,destlanguage='en'):
     if src == None: # if no query then return nothing
-        return    
+        return
+    elif not (fallbackongoogletranslate): # if called when not meant to be active then just quit (so don't get an error message returned)
+        return
     # Set up URL query
     url="http://translate.google.com/translate_a/t?client=t&text=%s&sl=%s&tl=%s"%(urllib.quote(src.encode('utf-8')),'zh-CN',destlanguage)
     con=urllib2.Request(url, headers={'User-Agent':'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'}, origin_req_host='http://translate.google.com')
@@ -25,12 +27,12 @@ def gTrans(src=None,destlanguage='en'):
         return [oops]
     except urllib2.URLError, detail:
         return [oops]
-    ret=U''
+    ret=u''
     for line in req:
         line=line.decode('utf-8').strip()
         ret+=line
-    if ret !="":        # if a result is found then:
-        ret += succeed  # append a notice that this is auto-translated text (so user knows it may contain mistakes)
+    if ret !=u'':        # if a result is found then:
+        ret = ret.replace('"','') + succeed  # cut quotation marks and append a notice that this is auto-translated text (so user knows it may contain mistakes)
     return [ret]
 
 # This function will parse a sample query through google translate and return true or false depending on success

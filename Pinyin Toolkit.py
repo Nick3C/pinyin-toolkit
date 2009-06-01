@@ -166,9 +166,9 @@ def onFocusLost(fact, field):
     expressionField = chooseField(candidateFieldNamesByKey['expression'], fact)
     if field.name != expressionField or not(anki.utils.findTag(modelTag, fact.model.tags)):
         return
-    
-    # Update the card, ignoring any errors
-    utils.suppressexceptions(lambda: updatefact(fact, field.value))
+    if field.value != "": # don't do if blank, causes lots of problems
+            # Update the card, ignoring any errors
+            utils.suppressexceptions(lambda: updatefact(fact, field.value))
 
 removeHook('fact.focusLost', oldHook)
 addHook('fact.focusLost', onFocusLost)
