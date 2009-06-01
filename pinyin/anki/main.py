@@ -6,6 +6,7 @@ import pinyin.dictionary
 import hooks
 import updater
 import utils
+import notifier
 
 
 class PinyinToolkit(object):
@@ -20,17 +21,18 @@ class PinyinToolkit(object):
         self.mw = mw
         self.config = config
         
+        # Build notifier
+        self.notifier = notifier.AnkiNotifier()
+        
         # Build the updater
         dictionary = pinyin.dictionary.PinyinDictionary.load(config.dictlanguage, needmeanings=utils.needmeanings(config))
         availablemedia = self.discovermedia()
-        self.updater = updater.FieldUpdater(self.config, dictionary, availablemedia)
+        self.updater = updater.FieldUpdater(self.config, dictionary, availablemedia, self.notifier)
     
     def installhooks(self):
         # Install all hooks
-        for hook in [hooks.FocusHook(self.config, self.updater),
-                     hooks.SampleSoundsHook(self.mw, self.config),
-                     hooks.MissingInformationHook(self.mw, self.config, self.updater)]:
-            hook.install()
+        for hookbuilder in [hooks.FocusHook, hooks.SampleSoundsHook, hooks.MissingInformationHook]:
+            hookbuilder(self.mw, self.notifier, self.config, self.updater).install()
     
         # Tell Anki about the plugin
         self.mw.registerPlugin("Mandarin Chinese Pinyin Toolkit", 4)

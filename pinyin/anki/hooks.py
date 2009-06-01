@@ -10,11 +10,14 @@ import updater
 import utils
 
 
-class FocusHook(object):
-    def __init__(self, config, updater):
+class Hook(object):
+    def __init__(self, mw, notifier, config, updater):
+        self.mw = mw
+        self.notifier = notifier
         self.config = config
         self.updater = updater
-    
+
+class FocusHook(Hook):
     def onFocusLost(self, fact, field):
         # Have we just moved off the expression field in a Mandarin model?
         expressionField = utils.chooseField(self.config.candidateFieldNamesByKey['expression'], fact)
@@ -22,7 +25,7 @@ class FocusHook(object):
             return
 
         # Update the card, ignoring any errors
-        pinyin.utils.suppressexceptions(lambda: self.updater.updatefact(fact, field.value))
+        pinyin.utils.suppressexceptions(lambda: self.updater.updatefact(self.notifier, fact, field.value))
     
     def install(self):
         from anki.hooks import addHook, removeHook
@@ -34,23 +37,21 @@ class FocusHook(object):
         addHook('fact.focusLost', self.onFocusLost)
 
 
-class SampleSoundsHook(object):
-    def __init__(self, mw, config):
-        self.mw = mw
-        self.config = config
-    
+# DEBUG - I think these should really be moved to advanced. They aren't going to be run very often and will get in the way. (let's not make Damien complain :)
+
+class SampleSoundsHook(Hook):
     def downloadAndInstallSounds(self):
         # Download ZIP, using cache if necessary
         the_media = pinyin.media.MediaDownloader().download(mandarinsoundsurl,
-                                                            lambda: ankiqt.ui.utils.showInfo("Downloading the sounds - this might take a while!"))
+                                                            lambda: self.notifier.info("Downloading the sounds - this might take a while!"))
     
         # Install each file from the ZIP into Anki
         the_media.extractand(self.mw.deck.addMedia)
     
         # Tell the user we are done
         exampleAudioField = self.config.candidateFieldNamesByKey['audio'][0]
-        ankiqt.ui.utils.showInfo("Finished installing Mandarin sounds! These sound files will be used automatically as long as you have "
-                                 + " the: <b>" + exampleAudioField + "</b> field in your deck, and the text: <b>%(" + exampleAudioField + ")s</b> in your card template")
+        self.notifier.info("Finished installing Mandarin sounds! These sound files will be used automatically as long as you have "
+                           + " the: <b>" + exampleAudioField + "</b> field in your deck, and the text: <b>%(" + exampleAudioField + ")s</b> in your card template")
 
     def install(self):
         # Install menu item that will allow downloading of the sounds
@@ -62,13 +63,7 @@ class SampleSoundsHook(object):
         self.mw.mainWin.menuTools.addAction(action)
 
 
-# DEBUG - I think these should really be moved to advanced. They aren't going to be run very often and will get in the way. (let's not make Damien complain :)
-class MissingInformationHook(object):
-    def __init__(self, mw, config, updater):
-        self.mw = mw
-        self.config = config
-        self.updater = updater
-    
+class MissingInformationHook(Hook):
     def suitableCards(self, deck):
         for model in deck.models:
             if anki.utils.findTag(modelTag, model.tags):
@@ -79,10 +74,10 @@ class MissingInformationHook(object):
     def fillMissingInformation(self):
         for card in self.suitableCards(self.mw.deck):
             expressionField = utils.chooseField(self.config.candidateFieldNamesByKey['expression'], card.fact)
-            self.updater.updatefact(card.fact, card.fact[expressionField])
+            self.updater.updatefact(self.notifier, card.fact, card.fact[expressionField])
     
         # DEBUG consider future feature to add missing measure words cards after doing so (not now)
-        ankiqt.ui.utils.showInfo("All missing information has been successfully added to your deck.")
+        self.notifier.info("All missing information has been successfully added to your deck.")
 
     def install(self):
         # Install menu item that will allow filling of missing information
