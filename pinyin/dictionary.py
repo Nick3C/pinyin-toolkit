@@ -6,6 +6,7 @@ import os
 import re
 
 from pinyin import *
+import meanings
 import utils
 
 """
@@ -41,7 +42,7 @@ class PinyinDictionary(object):
         
         # Build the actual dictionary, giving precedence to dictionaries later on in the input list
         self.__readings = {}
-        self.__meanings = {}
+        self.__definition = {}
         for dictpath in [os.path.join(utils.executiondir(), dictname) for dictname in dictnames]:
             # Avoid loading dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
             if os.path.exists(dictpath):
@@ -70,10 +71,11 @@ class PinyinDictionary(object):
                 
                 # Parse meanings
                 if needmeanings:
-                    meanings = self.parsedefinition(m.group(5))
+                    meanings = m.group(5)
                     if meanings:
                         for characters in unique_characters:
-                            self.__meanings[characters] = meanings
+                            # We just save the raw meaning into the dictionary, so we don't clean up meanings we never look at
+                            self.__definition[characters] = meanings
         finally:
             file.close()
 
@@ -94,13 +96,6 @@ class PinyinDictionary(object):
             last_token.hideneutraltone = True
         
         return tokens
-
-    def parsedefinition(self, raw_definition):
-        cleaned_definitions = raw_definition.replace("  ", " ").replace(" /", "/").replace("/ ", "/").lstrip("/").rstrip("/").rstrip(" ")
-        if cleaned_definitions:
-            return cleaned_definitions.split("/")
-        else:
-            return None
 
     """
     Given a string of Hanzi, return the result rendered into a list of Pinyin and unrecognised tokens (as strings).
@@ -165,25 +160,40 @@ class PinyinDictionary(object):
         return tokens
 
     """
-    Given a string of Hanzi, return a definition for the very first recognisable thing in the string.
+    Given a string of Hanzi, return definitions and measure words for the first recognisable thing in the string.
+    If there is more than one recognisable thing then assume it is a phrase and don't return a meaning.
     """
-    def meanings(self, sentence):
-        found = None
+    def meanings(self, sentence, prefersimptrad):
+        foundmeanings, foundmeasurewords = None, None
         for recognised, word in self.parse(sentence):
             if recognised:
                 # A recognised thing! Did we recognise something else already?
-                if found != None:
+                if foundmeanings != None or foundmeasurewords != None:
                     # This is a phrase with more than one word - let someone else translate it
-                    return None
+                    return None, None
                 
-                # Find the meaning in the dictionary and record it
-                found = self.__meanings.get(word)
-                if found == None:
+                # Find the definition in the dictionary
+                definition = self.__definition.get(word)
+                if definition == None:
                     # NB: we return None if there is no meaning in the codomain. This case can
                     # occur if the dictionary was built with needmeanings=False
-                    return None
+                    return None, None
+                else:
+                    # We got a raw definition, but we need to clean up it before using it
+                    foundmeanings, foundmeasurewords = meanings.MeaningFormatter(self.simplifiedcharindex, prefersimptrad).parsedefinition(definition)
 
-        return found
+        return foundmeanings, foundmeasurewords
+
+    """
+    Return meanings and measure words for the sentence, if available.
+    """
+    def flatmeanings(self, sentence, prefersimptrad):
+        dictmeanings, dictmeasurewords = self.meanings(sentence, prefersimptrad)
+        
+        if dictmeanings != None or dictmeasurewords != None:
+            return (dictmeanings or []) + [TokenList(["MW: "] + dictmeasureword) for dictmeasureword in (dictmeasurewords or [])]
+        else:
+            return None
 
     def parse(self, sentence):
         assert type(sentence)==unicode
@@ -316,45 +326,67 @@ if __name__=='__main__':
             self.assertEquals(toned[1].tone, 4)
 
         def testPhraseMeanings(self):
-            self.assertEquals(englishdict.meanings(u"一杯啤酒"), None)
+            self.assertEquals(self.flatmeanings(englishdict, u"一杯啤酒"), None)
 
         def testMeaningsWithTrailingJunk(self):
-            self.assertEquals(englishdict.meanings(u"鼓聲 (junk!!)"), ["sound of a drum", "drumbeat"])
+            self.assertEquals(self.flatmeanings(englishdict, u"鼓聲 (junk!!)"), ["sound of a drum", "drumbeat"])
         
         def testMeaningless(self):
-            self.assertEquals(englishdict.meanings(u"English"), None)
+            self.assertEquals(self.flatmeanings(englishdict, u"English"), None)
 
         def testMissingDictionary(self):
             dict = PinyinDictionary(['idontexist.txt'], 1, True)
             self.assertEquals(dict.reading(u"个").flatten(), u"个")
-            self.assertEquals(dict.meanings(u"个"), None)
+            self.assertEquals(self.flatmeanings(dict, u"个"), None)
         
         def testMissingLanguage(self):
             dict = PinyinDictionary.load('foobar', True)
             self.assertEquals(dict.reading(u"个").flatten(), "ge4")
-            self.assertEquals(dict.meanings(u"个"), None)
+            self.assertEquals(self.flatmeanings(dict, u"个"), None)
         
         def testPinyinDictionary(self):
             self.assertEquals(pinyindict.reading(u"一个").flatten(), "yi1 ge4")
             self.assertEquals(pinyindict.reading(u"一個").flatten(), "yi1 ge4")
-            self.assertEquals(pinyindict.meanings(u"一个"), None)
+            self.assertEquals(self.flatmeanings(pinyindict, u"一个"), None)
         
         def testGermanDictionary(self):
             dict = PinyinDictionary.load('de', True)
             self.assertEquals(dict.reading(u"请").flatten(), "qing3")
             self.assertEquals(dict.reading(u"請").flatten(), "qing3")
-            self.assertEquals(dict.meanings(u"請"), ["Bitte ! (u.E.) (Int)", "bitten, einladen (u.E.) (V)"])
+            self.assertEquals(self.flatmeanings(dict, u"請"), ["Bitte ! (u.E.) (Int)", "bitten, einladen (u.E.) (V)"])
     
         def testEnglishDictionary(self):
             self.assertEquals(englishdict.reading(u"鼓聲").flatten(), "gu3 sheng1")
             self.assertEquals(englishdict.reading(u"鼓声").flatten(), "gu3 sheng1")
-            self.assertEquals(englishdict.meanings(u"鼓聲"), ["sound of a drum", "drumbeat"])
+            self.assertEquals(self.flatmeanings(englishdict, u"鼓聲"), ["sound of a drum", "drumbeat"])
     
         def testFrenchDictionary(self):
             dict = PinyinDictionary.load('fr', True)
             self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
             self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
-            self.assertEquals(dict.meanings(u"白天"), [u"journée (n.v.) (n)"])
+            self.assertEquals(self.flatmeanings(dict, u"白天"), [u"journée (n.v.) (n)"])
+    
+        def testSimpMeanings(self):
+            self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="simp"), [u"book", u"letter", u"same as 书经 Book of History", u"MW: 本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])
+        
+        def testTradMeanings(self):
+            self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="trad"), [u"book", u"letter", u"same as 書經 Book of History", u"MW: 本 - ben3, 冊 - ce4, 部 - bu4, 叢 - cong2"])
+        
+        def testNonFlatMeanings(self):
+            dictmeanings, dictmeasurewords = englishdict.meanings(u"书", prefersimptrad="simp")
+            self.assertEquals(self.flattenall(dictmeanings), [u"book", u"letter", u"same as 书经 Book of History"])
+            self.assertEquals(self.flattenall(dictmeasurewords), [u"本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])
+        
+        # Test helper 
+        def flatmeanings(self, dictionary, what, prefersimptrad="simp"):
+            dictmeanings = dictionary.flatmeanings(what, prefersimptrad)
+            if dictmeanings:
+                return self.flattenall(dictmeanings)
+            else:
+                return None
+        
+        def flattenall(self, things):
+            return [thing.flatten() for thing in things]
     
     class TestPinyinConverter(unittest.TestCase):
         # Test data:

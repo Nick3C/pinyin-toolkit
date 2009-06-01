@@ -91,3 +91,57 @@ Reports whethere this token is the pinyin for 'r5' which often occurs at the end
 """
 def iserhuapinyintoken(token):
     return type(token) == pinyin.Pinyin and token.word == 'r' and token.tone == 5
+
+"""
+Use the regex to parse the text, alternately yielding match objects and strings
+"""
+def regexparse(regex, text):
+    i = 0
+    while i < len(text):
+        match = regex.search(text, i)
+        
+        if match:
+            # Yield the text up until this point
+            if i != match.start():
+                yield (False, text[i:match.start()])
+            
+            # Got a matched fragment of text
+            yield (True, match)
+            
+            # Continue from the end of the match
+            if match.end() == i:
+                yield (False, text[i])
+                i = match.end() + 1
+            else:
+                i = match.end()
+        else:
+            # Yield the text up until the end
+            if i != len(text) - 1:
+                yield (False, text[i:])
+            return
+
+if __name__=='__main__':
+    import unittest
+    import re
+    
+    class RegexParseTest(unittest.TestCase):
+        def testParseSimple(self):
+            self.assertEquals(self.parse(re.compile("foo"), "foo bar foo bar"),
+                              [(True, "foo"), (False, " bar "), (True, "foo"), (False, " bar")])
+        
+        def testParseEmpty(self):
+            self.assertEquals(self.parse(re.compile(""), "abc"),
+                              [(True, ""), (False, "a"), (True, ""), (False, "b"), (True, ""), (False, "c")])
+        
+        # Test helpers
+        def parse(self, re, text):
+            result = []
+            for ismatch, thing in regexparse(re, text):
+                if ismatch:
+                    result.append((ismatch, thing.group(0)))
+                else:
+                    result.append((ismatch, thing))
+            
+            return result
+
+    unittest.main()
