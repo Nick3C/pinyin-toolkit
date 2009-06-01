@@ -42,7 +42,7 @@ class PinyinAudioReadings(object):
     def mediafor(self, basename):
         # Check all possible extensions in order of priority
         for extension in self.audioextensions:
-            name = basename + extension
+            name = basename.lower() + extension
             if name in self.available_media:
                 return self.available_media[name]
         
@@ -83,7 +83,7 @@ if __name__=='__main__':
     
     dictionary = dictionary.PinyinDictionary.load("English")
     
-    class TestColorizer(unittest.TestCase):
+    class PinyinColorizerTest(unittest.TestCase):
         def testRSuffix(self):
             self.assertEqual(self.colorize(u"哪兒"), '<span style="color:#00aa00">na3</span><span style="color:#545454">r</span>')
         
@@ -105,11 +105,11 @@ if __name__=='__main__':
         def colorize(self, what):
             return Colorizer().colorize(dictionary.reading(what)).flatten()
     
-    class TestColorizer(unittest.TestCase):
+    class CharacterColorizerTest(unittest.TestCase):
         def testColorize(self):
             self.assertEqual(self.colorize(u"妈麻马骂吗"),
-                u'<span style="color:#ff0000">妈</span> <span style="color:#ffaa00">麻</span> ' +
-                u'<span style="color:#00aa00">马</span> <span style="color:#0000ff">骂</span> ' +
+                u'<span style="color:#ff0000">妈</span><span style="color:#ffaa00">麻</span>' +
+                u'<span style="color:#00aa00">马</span><span style="color:#0000ff">骂</span>' +
                 u'<span style="color:#545454">吗</span>')
     
         def testMixedEnglishChinese(self):
@@ -118,13 +118,13 @@ if __name__=='__main__':
         
         def testPunctuation(self):
             self.assertEqual(self.colorize(u'小小!'),
-                u'<span style="color:#00aa00">小</span> <span style="color:#00aa00">小</span>!')
+                u'<span style="color:#00aa00">小</span><span style="color:#00aa00">小</span>!')
     
         # Test helpers
         def colorize(self, what):
-            return Colorizer().colorize(dictionary.reading(what)).flatten()
+            return Colorizer().colorize(dictionary.tonedchars(what)).flatten()
     
-    class TestPinyinAudioReadings(unittest.TestCase):
+    class PinyinAudioReadingsTest(unittest.TestCase):
         default_raw_available_media = ["na3.mp3", "ma4.mp3", "xiao3.mp3", "ma3.mp3", "ci2.mp3", "dian3.mp3",
                                        "a4.mp3", "nin2.mp3", "ni3.ogg", "hao3.ogg", "gen1.ogg", "gen1.mp3"]
         

@@ -73,8 +73,8 @@ import getpass
 
 from PyQt4 import QtGui, QtCore
 
-from ankiqt import mw
-from ankiqt.ui import utils
+from ankiqt import mw, ui
+import ui.utils
 
 import anki
 from anki.hooks import addHook, removeHook
@@ -136,15 +136,15 @@ addHook('fact.focusLost', onFocusLost)
 def downloadAndInstallSounds():
     # Download ZIP, using cache if necessary
     the_media = media.MediaDownloader().download(mandarinsoundsurl,
-                                                 lambda: utils.showInfo("Downloading the sounds - this might take a while!"))
+                                                 lambda: ui.utils.showInfo("Downloading the sounds - this might take a while!"))
     
     # Install each file from the ZIP into Anki
     the_media.extractand(mw.deck.addMedia)
     
     # Tell the user we are done
     exampleAudioField = candidateFieldNamesByKey['audio'][0]
-    utils.showInfo("Finished installing Mandarin sounds! To use them, make sure you have "
-                   + "an " + exampleAudioField + " field and a substitution %(" + exampleAudioField + ")s in your model")
+    ui.utils.showInfo("Finished installing Mandarin sounds! To use them, make sure you have "
+                      + "an " + exampleAudioField + " field and a substitution %(" + exampleAudioField + ")s in your model")
 
 action = QtGui.QAction('Download Mandarin sound samples', mw)
 action.setStatusTip('Download and install the Mandarin sound samples into this deck')
@@ -167,7 +167,7 @@ def fillMissingInformation():
         expressionField = chooseField(candidateFieldNamesByKey['expression'], card.fact)
         updatefact(card.fact, card.fact[expressionField])
     
-    utils.showInfo("Finished filling in missing information")
+    ui.utils.showInfo("Finished filling in missing information")
 
 action = QtGui.QAction('Fill all missing Mandarin information', mw)
 action.setStatusTip('Update all the cards in the deck with any missing information the Pinyin Toolkit can provide')
@@ -206,6 +206,9 @@ def updatefact(fact, expression):
         # If the dictionary can't answer our question, ask Google Translate
         if meanings == None and fallbackongoogletranslate:
             meanings = googletranslate(expression, dictlanguage)
+        # Otherwise, default meanings to an empty list
+        if meanings == None:
+            meanings = []
     
     # Generate the pinyin - we're always going to need it
     if colorizedpinyingeneration:
@@ -234,7 +237,7 @@ def updatefact(fact, expression):
     # Do the updates on the fields the user has requested:
     updaters = {
             'reading' : (True,                         lambda: pinyin),
-            'meaning' : (meaninggeneration,            lambda: formatmeanings([meaning for meaning in meanings if detectmeasurewords or measurewordmeaning(meaning) == None])),
+            'meaning' : (meaninggeneration,            lambda: formatmeanings([meaning for meaning in meanings if not(detectmeasurewords) or measurewordmeaning(meaning) == None])),
             'mw'      : (detectmeasurewords,           lambda: formatmeasureword([measurewordmeaning(meaning) for meaning in meanings if measurewordmeaning(meaning)])),
             'audio'   : (audiogeneration,              lambda: transformations.PinyinAudioReadings(available_media, audioextensions).audioreading(reading)),
             'color'   : (colorizedcharactergeneration, lambda: transformations.Colorizer().colorize(dictionary.tonedchars(expression)).flatten())
