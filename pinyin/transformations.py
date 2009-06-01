@@ -53,7 +53,10 @@ class PinyinAudioReadings(object):
         output = u""
         mediamissing = False
         for token in tokens:
-            # Remove the 儿 （r) from pinyin [too complicated to handle automatically].
+            # Remove any erhuas from audio before being generated.
+            # For example we want 儿子 to be "er2 zi5" but "门儿" (men2r) must become "men2"
+            # It seems unlikely we will ever get erhua audio (i.e "men2r.ogg") so this is likely to be permanent
+            """ DEBUG - add code fulfilling the above"""
             # Also skip anything that doesn't look like pinyin, such as English words
             if type(token) != Pinyin or token.numericformat(hideneutraltone=False) == "r5":
                 continue
@@ -65,11 +68,11 @@ class PinyinAudioReadings(object):
                 possiblebases.extend([token.word, token.word + '4'])
             
             # Find path to first suitable media in the possibilty list
+
             for possiblebase in possiblebases:
                 media = self.mediafor(possiblebase)
                 if media:
                     break
-            
             if media:
                 # If we've managed to find some media, we can put it into the output:
                 output += '[sound:' + media +']'
