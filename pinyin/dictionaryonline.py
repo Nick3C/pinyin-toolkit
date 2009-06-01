@@ -9,7 +9,7 @@ import urllib, urllib2
 
 # This function will send a sample query to Google Translate and return true or false depending on success
 # It is used to determine connectivity for the Anki session (and thus whether Pinyin Toolkit should use online services or not)
-def gCheck(destlanguage='en'):
+def gCheck(self,destlanguage='en'):
     return lookup(u"这是一个网络试验", destlanguage) != None
 
 # The lookup function is based on code from the Chinese Example Sentence Plugin by <aaron@lamelion.com>
