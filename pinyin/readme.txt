@@ -144,11 +144,6 @@ you should turn them off in the settings section.
 
 Vital fix-issues
 - sound generation broken in my version [even after your changes earlier today] It may be a windows related bug. I note there is now a media directory in the pinyin dir. I presume this is unintentional?
-- [earlier today, unchekd in latest] previously mentioned bug on 生日 etc in German version now returns pinyin of "生 rì" and no German translation
-    - 操你妈 in english [now works]
-    - 生日 in German 
-- track down why HanDeDict doesn't always retrieve entries that are known to be there
-
 - the pinyin object's def init could be improved using a regex check rather than the final number. I had worked on this previously but it was complex so I dropped it.
 - erhua issue (see below)
 

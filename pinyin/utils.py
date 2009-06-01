@@ -93,6 +93,29 @@ def iserhuapinyintoken(token):
     return type(token) == pinyin.Pinyin and token.word == 'r' and token.tone == 5
 
 """
+Lazy evaluation: defer evaluation of the function, then cache the result.
+"""
+class Thunk(object):
+    def __init__(self, function):
+        # Need to initialize all fields or __getattr__ gets a look at them!
+        self.__called = False
+        self.__result = None
+        self.__function = function
+    
+    def __call__(self):
+        if self.__called:
+            return self.__result
+        
+        self.__called = True
+        self.__result = self.__function()
+        self.__function = None # For garbage collection
+        return self.__result
+
+    # Transparent proxying of access onto the thing inside the thunk!
+    def __getattr__(self, name):
+        return getattr(self.__call__(), name)
+
+"""
 Use the regex to parse the text, alternately yielding match objects and strings
 """
 def regexparse(regex, text):
@@ -123,6 +146,13 @@ def regexparse(regex, text):
 if __name__=='__main__':
     import unittest
     import re
+    
+    class ThunkTest(unittest.TestCase):
+        def testCall(self):
+            self.assertEquals(Thunk(lambda: 5)(), 5)
+        
+        def testTransparency(self):
+            self.assertEquals(Thunk(lambda: "hello!").rstrip("!"), "hello")
     
     class RegexParseTest(unittest.TestCase):
         def testParseSimple(self):

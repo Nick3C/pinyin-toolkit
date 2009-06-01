@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from pinyin import *
+from utils import *
 
 """
 Colorize readings according to the reading in the Pinyin.
@@ -85,7 +86,8 @@ if __name__=='__main__':
     import unittest
     import dictionary
     
-    dictionary = dictionary.PinyinDictionary.load("en")
+    # Shared dictionary
+    englishdict = Thunk(lambda: dictionary.PinyinDictionary.load("en"))
     
     class PinyinColorizerTest(unittest.TestCase):
         def testRSuffix(self):
@@ -107,7 +109,7 @@ if __name__=='__main__':
     
         # Test helpers
         def colorize(self, what):
-            return Colorizer().colorize(dictionary.reading(what)).flatten()
+            return Colorizer().colorize(englishdict.reading(what)).flatten()
     
     class CharacterColorizerTest(unittest.TestCase):
         def testColorize(self):
@@ -126,7 +128,7 @@ if __name__=='__main__':
     
         # Test helpers
         def colorize(self, what):
-            return Colorizer().colorize(dictionary.tonedchars(what)).flatten()
+            return Colorizer().colorize(englishdict.tonedchars(what)).flatten()
     
     class PinyinAudioReadingsTest(unittest.TestCase):
         default_raw_available_media = ["na3.mp3", "ma4.mp3", "xiao3.mp3", "ma3.mp3", "ci2.mp3", "dian3.mp3",
@@ -162,7 +164,7 @@ if __name__=='__main__':
             self.assertEqual(self.audioreading(u"根"), "[sound:gen1.mp3]")
     
         def testMediaMissing(self):
-            _, mediamissing = PinyinAudioReadings([], [".mp3"]).audioreading(dictionary.reading(u"根"))
+            _, mediamissing = PinyinAudioReadings([], [".mp3"]).audioreading(englishdict.reading(u"根"))
             self.assertTrue(mediamissing)
     
         def testCaptialization(self):
@@ -172,7 +174,7 @@ if __name__=='__main__':
         # Test helpers
         def audioreading(self, what, raw_available_media=default_raw_available_media):
             available_media = dict([(filename, filename) for filename in raw_available_media])
-            output, mediamissing = PinyinAudioReadings(available_media, [".mp3", ".ogg"]).audioreading(dictionary.reading(what))
+            output, mediamissing = PinyinAudioReadings(available_media, [".mp3", ".ogg"]).audioreading(englishdict.reading(what))
             self.assertFalse(mediamissing)
             return output
     
