@@ -140,7 +140,6 @@ you should turn them off in the settings section.
 Nick specific bugs:
     - sound generation broken in my version
     - maybe a windows bug
-    - MW lookup totally broken
     
 
 
@@ -153,9 +152,15 @@ Nick specific bugs:
 
 = Future Development (simple) =
 * dictionary update auto-downloads
-* where dictionary contains "to " automatically as "verb" to a field called "Type"
-* shortcut key to force regenerate all fields
+* add shortcut key to force regenerate all fields
+* tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 [too complex to do based on other sandhi as they are context specific]) - note: Nick tested this using a yellow color for pinyin (to show change to 2nd tone) didn't work and interfered with memory; perhaps could try again with a (very slightly) lighter green color but maybe better justnot to do this.
 * look at borrowing code from the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
+
+Future [big, non-trivial, and/or unimportant changes]
+* dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp
+* selective blanking feature. Save the PREVIOUS values of each field somewhere when filling the fields [possibly in hidden html in each filled field]. When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
+* add a config tab to the Anki preferences window
+* where dictionary contains "to " automatically as "verb" to a field called "Type"
 * merge Nick's tone colorisation plugin into this plugin (lets you change the tone colors using ctrl+F1 through to Ctrl+F5 [dictionary is not perfect and chanees need to be made. Seems better to have the feature built-in.
 * [side-issue] port the code from Kanji Graph plugin into this plugin [adds a graph showing how many unique hanzi in deck over time] (can't simply change fields, uses Japanese specific functions)
 

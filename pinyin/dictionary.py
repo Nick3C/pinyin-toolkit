@@ -7,7 +7,7 @@ import re
 
 from pinyin import *
 import meanings
-import utils
+from utils import *
 
 """
 Encapsulates one or more Chinese dictionaries, and provides the ability to transform
@@ -38,12 +38,13 @@ class PinyinDictionary(object):
     
     def __init__(self, dictnames, simplifiedcharindex, needmeanings):
         # Save the simplified index
-        self.simplifiedcharindex = simplifiedcharindex
+        self.__simplifiedcharindex = simplifiedcharindex
         
         # Build the actual dictionary, giving precedence to dictionaries later on in the input list
+        self.__maxcharacterlen = 0
         self.__readings = {}
         self.__definition = {}
-        for dictpath in [os.path.join(utils.executiondir(), dictname) for dictname in dictnames]:
+        for dictpath in [os.path.join(executiondir(), dictname) for dictname in dictnames]:
             # Avoid loading dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
             if os.path.exists(dictpath):
                 self.loadsingledict(dictpath, needmeanings)
@@ -61,21 +62,22 @@ class PinyinDictionary(object):
                 lcharacters = m.group(1)
                 rcharacters = m.group(2)
                 raw_pinyin = m.group(3)
-                
-                # Find out the set of characters we should use as keys - if simplified and traditional coincide we can save space
-                unique_characters = list(set([lcharacters, rcharacters]))
+                raw_definition = m.group(5)
                 
                 # Parse readings
-                for characters in unique_characters:
-                    self.__readings[characters] = self.parsepinyin(raw_pinyin)
+                pinyin = self.parsepinyin(raw_pinyin)
                 
-                # Parse meanings
-                if needmeanings:
-                    meanings = m.group(5)
-                    if meanings:
-                        for characters in unique_characters:
-                            # We just save the raw meaning into the dictionary, so we don't clean up meanings we never look at
-                            self.__definition[characters] = meanings
+                # Save meanings and readings
+                for characters in [lcharacters, rcharacters]:
+                    # Update the maximum character length
+                    self.__maxcharacterlen = max(self.__maxcharacterlen, len(characters))
+                    
+                    # Always save the readings
+                    self.__readings[characters] = pinyin
+                    
+                    if needmeanings and raw_definition:
+                        # We just save the raw definition into the dictionary, so we don't clean up meanings we never look at
+                        self.__definition[characters] = raw_definition
         finally:
             file.close()
 
@@ -92,7 +94,7 @@ class PinyinDictionary(object):
         # Special treatment for the erhua suffix: never show the tone in the string representation.
         # NB: currently hideneutraltone defaults to True, so this is sort of pointless.
         last_token = tokens[-1]
-        if utils.iserhuapinyintoken(last_token):
+        if iserhuapinyintoken(last_token):
             last_token.hideneutraltone = True
         
         return tokens
@@ -110,7 +112,7 @@ class PinyinDictionary(object):
             # punctuation is typically followed by a space whereas the Chinese
             # equivalents are not.
             have_some_text = len(tokens) > 0
-            is_punctuation = utils.ispunctuation(thing)
+            is_punctuation = ispunctuation(thing)
             already_have_space = have_some_text and tokens[-1].endswith(u' ')
             if have_some_text and not(is_punctuation) and not(already_have_space):
                 tokens.append(u' ')
@@ -121,7 +123,7 @@ class PinyinDictionary(object):
             for n, reading_token in enumerate(reading_tokens):
                 # Don't add spaces if this is the first token or if we are at the
                 # last token and have an erhua
-                if n != 0 and (n != reading_tokens_count - 1 or not(utils.iserhuapinyintoken(reading_token))):
+                if n != 0 and (n != reading_tokens_count - 1 or not(iserhuapinyintoken(reading_token))):
                     tokens.append(u' ')
                 
                 tokens.append(reading_token)
@@ -180,7 +182,7 @@ class PinyinDictionary(object):
                     return None, None
                 else:
                     # We got a raw definition, but we need to clean up it before using it
-                    foundmeanings, foundmeasurewords = meanings.MeaningFormatter(self.simplifiedcharindex, prefersimptrad).parsedefinition(definition, self.tonedchars)
+                    foundmeanings, foundmeasurewords = meanings.MeaningFormatter(self.__simplifiedcharindex, prefersimptrad).parsedefinition(definition, self.tonedchars)
 
         return foundmeanings, foundmeasurewords
 
@@ -268,51 +270,35 @@ class PinyinDictionary(object):
         # Iterate through the text
         i = 0;
         while i < len(sentence):
-            largest_word = None
-            
-            # Look for progressively bigger multi-syllabic chinese words
-            j = i + 1
-            while j <= len(sentence) :
-                candidate_word = sentence[i:j]
+            # Try all possible word lengths (naive, but easy to code)
+            found_something = False
+            for word_len in range(self.__maxcharacterlen, 0, -1):
+                candidate_word = sentence[i:i + word_len]
                 if self.__readings.has_key(candidate_word) :
-                    # The candidate word looked like a real one -
-                    # record it as the largest word so far
-                    largest_word = candidate_word
-                    # try again with a bigger word
-                    j += 1
-                elif len(candidate_word) == 1:
-                    # If it's a single character and not found,
-                    # then we'll just give back the original character itself.
-                    yield (False, candidate_word)
-                    # Look for new words, starting from just after this character
-                    break
-                else:
-                    # A multiple-character word that isn't in the dictionary.
-                    # It's POSSIBLE that it will be in there if we kept looking,
-                    # but for now let's just assume this is the end
+                    # A real word! Let's yield it immediately
+                    yield (True, candidate_word)
+                    
+                    # Continue looking for a new word after the end of this one
+                    found_something = True
+                    i += word_len
                     break
             
-            if largest_word == None:
-                # If the largest_word is empty, then either we didn't find a word
-                # in front at all, OR we just added it to the reading.  In either case,
-                # we should start the search again strictly after the current character
-                i = j
-            else:
-                # Find the tokens recorded in the dictionary for this word and yield them
-                yield (True, largest_word)
-                                
-                # Continue looking for new words after the end of this one
-                i += len(largest_word)
+            if not(found_something):
+                # Failed to find a single valid word in this text, so let's just yield
+                # a single character token. TODO: yield multi-character tokens for efficiency.
+                yield (False, sentence[i:i+1])
+                i += 1
 
 
 # Testsuite
 if __name__=='__main__':
     import unittest
     
-    # Preload commonly-used dictionaries to prevent reading them several times
-    pinyindict = PinyinDictionary.load('pinyin', True)
-    englishdict = PinyinDictionary.load('en', True)
-            
+    # Thunk commonly-used dictionaries to prevent reading them several times
+    pinyindict = Thunk(lambda: PinyinDictionary.load('pinyin', True))
+    englishdict = Thunk(lambda: PinyinDictionary.load('en', True))
+    germandict = Thunk(lambda: PinyinDictionary.load('de', True))
+    
     class TestPinyinDictionary(unittest.TestCase):
         def testTonedTokens(self):
             toned = pinyindict.tonedchars(u"一个")
@@ -350,10 +336,9 @@ if __name__=='__main__':
             self.assertEquals(self.flatmeanings(pinyindict, u"一个"), None)
         
         def testGermanDictionary(self):
-            dict = PinyinDictionary.load('de', True)
-            self.assertEquals(dict.reading(u"请").flatten(), "qing3")
-            self.assertEquals(dict.reading(u"請").flatten(), "qing3")
-            self.assertEquals(self.flatmeanings(dict, u"請"), ["Bitte ! (u.E.) (Int)", "bitten, einladen (u.E.) (V)"])
+            self.assertEquals(germandict.reading(u"请").flatten(), "qing3")
+            self.assertEquals(germandict.reading(u"請").flatten(), "qing3")
+            self.assertEquals(self.flatmeanings(germandict, u"請"), ["Bitte ! (u.E.) (Int)", "bitten, einladen (u.E.) (V)"])
     
         def testEnglishDictionary(self):
             self.assertEquals(englishdict.reading(u"鼓聲").flatten(), "gu3 sheng1")
@@ -365,6 +350,10 @@ if __name__=='__main__':
             self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
             self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
             self.assertEquals(self.flatmeanings(dict, u"白天"), [u"journée (n.v.) (n)"])
+    
+        def testWordsWhosePrefixIsNotInDictionary(self):
+            self.assertEquals(germandict.reading(u"生日").flatten(), "sheng1 ri4")
+            self.assertEquals(self.flatmeanings(germandict, u"生日"), [u"Geburtstag (S)"])
     
         def testSimpMeanings(self):
             self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="simp"), [u"book", u"letter", u"same as 书经 Book of History", u"MW: 本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])

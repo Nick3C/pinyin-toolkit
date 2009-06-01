@@ -66,7 +66,7 @@ meaningseperator = "<br />"
 #meaningseperator = "; "
 #meaningseperator = " | "
 
-# Prefer simplified or traditional characters? (for very limited circumstances such as when checking measure words)
+# Prefer simplified or traditional characters? This will be used when formatting meanings with embedded Hanzi and measure words.
 prefersimptrad = "simp"
 #prefersimptrad = "trad"
 
