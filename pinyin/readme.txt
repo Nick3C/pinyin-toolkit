@@ -131,34 +131,28 @@ you should turn them off in the settings section.
 == Bug-Hunting To-Do-List & Future Development Plans ==
 
 = Bug Fix =
-- I get a prompt on one of my decks that there is no audio when there is
-- doesn't cut mw from dict entry after copying to the MW field [you don't want it in the entry and in the measure word field, only one of them] should do only if successfuly put in mw field
-- [earlier today, unchekd in latest] previously mentioned bug on 生日 etc in German version now returns pinyin of "生 rì" and no German translation
-    - due to dictionary not findifn the first character (or an earlier one) so abandoning the lookup.
-    - solution provisionally started in code
-- if atempt to use without audio I get the popup but the download will not start; toolbar option does not start audio download either
-Nick specific bugs:
-    - sound generation broken in my version
-    - maybe a windows bug
-    
-
+- audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
+- audio download does not worth (not the same as the audio bug)    
 
 = Mods & Tweaks =
 * move two options from Tools menu to Tools -> Advanced (rarely used functions, probably each only once per deck)
-* change pinyin recognition to regex instead of length check
-* erhua changes
 * have audio downloader rename the 4 5th tone audio files
 * Change pinyin recognition to a regex expression http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108
-
+* erhua changes
+* audio error could be improved by:
+    * finish the auto-fill even if there is an error
+    * not make the add window disappear from the taskbar (and focus change to anki)
+    
+    
 = Future Development (simple) =
 * dictionary update auto-downloads
 * add shortcut key to force regenerate all fields
 * tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 [too complex to do based on other sandhi as they are context specific]) - note: Nick tested this using a yellow color for pinyin (to show change to 2nd tone) didn't work and interfered with memory; perhaps could try again with a (very slightly) lighter green color but maybe better justnot to do this.
 * look at borrowing code from the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
+* dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp [google translate can already do this, but needs internet]
 
 Future [big, non-trivial, and/or unimportant changes]
-* dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp
-* selective blanking feature. Save the PREVIOUS values of each field somewhere when filling the fields [possibly in hidden html in each filled field]. When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
+* selective blanking feature. Save the PREVIOUS (post-lookup) value of each field somewhere when filling the fields (perhaps in hidden html) then, When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
 * add a config tab to the Anki preferences window
 * where dictionary contains "to " automatically as "verb" to a field called "Type"
 * merge Nick's tone colorisation plugin into this plugin (lets you change the tone colors using ctrl+F1 through to Ctrl+F5 [dictionary is not perfect and chanees need to be made. Seems better to have the feature built-in.
@@ -176,7 +170,7 @@ Future [big, non-trivial, and/or unimportant changes]
 
 = Highly Experimental Future Development =
 [in case we ever get bored!] 
-- Consider python library for Chinese: http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/content/announcing-eclectus-han-character-dictionary
+- Consider incorporating python library for Chinese: http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/content/announcing-eclectus-han-character-dictionary
 - Pinyin experiments
     - trial using superscript tone marks as per http://www.pinyinology.com/gr/gr2.html
     - trial Place names to have many first letter caps [incorrect in pinyin] http://www.pinyinology.com/pinyin/signs3/signs3.html and http://www.pinyinology.com/pinyin/transition.html

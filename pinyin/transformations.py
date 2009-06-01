@@ -3,6 +3,7 @@
 
 from pinyin import *
 from utils import *
+import sys
 
 """
 Colorize readings according to the reading in the Pinyin.
@@ -70,7 +71,7 @@ class PinyinAudioReadings(object):
             
             # Find path to first suitable media in the possibilty list
 
-            for possiblebase in possiblebases:
+            for possiblebase in possiblebases:            
                 media = self.mediafor(possiblebase)
                 if media:
                     break
