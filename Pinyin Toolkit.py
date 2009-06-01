@@ -32,15 +32,22 @@ CFDICT_Ver="Wed Jan 21 01:49:53 2009" # [n=593] http://www.chinaboard.de/fr/cfdi
 
 ############  Language Masterswitch  ############
 # The following option controls the language used for translation and dictionary lookup.
-dictlanguage="en"
+# uncomment your preference or add a new entry
+dictlanguage="en"    # English (en):         Full support (online and offline)
+#dictlanguage="de"   # German (de):          Full support (online and offline)
+#dictlanguage="fr"   # French (fr):          Hybrid support (online and partial offline)
 
-# Note that best results occur when Pinyin Toolkit is used with a local dictionary and online support
-# Full support:     "en" (english)    "de" (German)
-# Hybrid-support:   "fr" (French)     [the CFDICT is still in its infancy]
-# Partial-support:   (all other language)
+                     # ALL OTHER LANGUAGES:  Online Support only
+#dictlanguage="es"   # Spanish  (es)
+#dictlanguage="hi"   # Hindi (hi)
+#dictlanguage="pt"   # Portugese  (pt)
+#dictlanguage="ar"   # Arabic (ar)
+#dictlanguage="bn"   # Bengali (bn)
+#dictlanguage="ru"   # Russian (ru)
+#dictlanguage="ja"   # Japanese (ja)
 
-# Codes for partial supported languages can be found here: http://www.loc.gov/standards/iso639-2/php/code_list.php
-# Do not change to another full/hybrid support language without downloading the dictionary or you will break local lookup.
+# To find the language code for your language go here: http://www.loc.gov/standards/iso639-2/php/code_list
+# Note that languages with Full (and partial) support can access additional features and benefits.
 
 ############### Settings Section ###############
 
