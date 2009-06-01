@@ -47,7 +47,7 @@ dictlanguage="en"
 ### Options ###
 
 tonify                       = True   # Should we output tone marks rather than numbers on pinyin? True or False
-colorizedpinyingeneration    = True   # Should we try and write readings that include colorized pinyin? True or False
+colorizedpinyingeneration    = True   # Should we try and write readings and measure words that include colorized pinyin? True or False
 meaninggeneration            = True   # Should we try and fill out a field called Meaning with the definition? True or False
 fallbackongoogletranslate    = True   # Should we use Google to fill out the Meaning field if needs be? True or False
 colorizedcharactergeneration = True   # Should we try and fill out a field called Color with a colored version of the character? True or False

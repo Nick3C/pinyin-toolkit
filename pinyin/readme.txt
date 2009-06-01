@@ -71,7 +71,9 @@ you should turn them off in the settings section.
 * Large-scale re-write and optimisation of the code by Max Bolingbroke (many thanks!)
 * Automatic translation of non-dictionary words & phrase [can be used for almost any language]
 * Add [limited] support for new CFDICT (French)
-* MW added automatically if in dictionary [only applies to English]
+* MW with pinyin added automatically to your deck if in dictionary (if enabled) [only applies to English]
+* Dictionary definition and measure word have their simplified/traditional variant selected according
+  to user preferences
 * Don't generate audio tags if sounds are missing
 * Use a fifth tone audio sample if one is provided, otherwise switch to 4th tone
 * Try several file extensions when we need a bit of audio, using the order: .mp3, .ogg, .wav
