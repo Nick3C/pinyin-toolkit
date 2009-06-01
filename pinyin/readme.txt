@@ -25,7 +25,9 @@ Entries should be separated by spaces. Here are some examples:
 一一 一一 [yi1 yi1] /one by one/one after another/
 一共 一共 [yi1 gong4] /altogether/
 
-Note that you can omit the meaning and surrounding / if you don't want to include meaning data, but everything else is required.
+Note that you can omit the meaning and surrounding "/"s if you don't want to include meaning data, but everything else is required:
+一一 一一 [yi1 yi1]
+一共 一共 [yi1 gong4]
 
 
 == Installation ==
@@ -86,6 +88,7 @@ you should turn them off in the settings section.
 * Many smaller modifications to improve usability
 * Improved documentation
 
+
 # Version 0.04 (19/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
 * Two versions are now being distributed: English (using CC-CEDICT) and German (using HanDeDict)
    - Thanks to Rainer Menes for suggesting use of HanDeDict
@@ -122,9 +125,11 @@ you should turn them off in the settings section.
 * Dictionary updated to use adapted version of CC-CEDICT
 * entries increasing from 44,783 to 82,941
 
+
 # Version 0.02[r] (03/2009)   Damien Elmes  [http://ichi2.net/]
 * Ported to Anki 0.9.9.6 and tidied up
 * Brian Vaughan no longer maintaing plugin
+
 
 # Version 0.01[r] (2008)    Brian Vaughan [http://brianvaughan.net]
 * Original release
@@ -141,7 +146,7 @@ Vital fix-issues
 - doesn't cut mw from dict entry after copying to the MW field [you don't want it in the entry and in the measure word field, only one of them] should do only if successfuly put in mw field
 - [earlier today, unchekd in latest] previously mentioned bug on 生日 etc in German version now returns pinyin of "生 rì" and no German translation
     - 操你妈 in english [now works]
-    - 生日 in German
+    - 生日 in German 
 - track down why HanDeDict doesn't always retrieve entries that are known to be there
 
 - the pinyin object's def init could be improved using a regex check rather than the final number. I had worked on this previously but it was complex so I dropped it.
@@ -161,13 +166,15 @@ Comments
 Future [big, non-trivial, and/or unimportant changes]
 * add shortcut key to force regenerate all fields
 * dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp
-* tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 [too complex, varies on meaning])
+* tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 [too complex to do based on other sandhi as they are context specific]) - note: Nick tested this using a yellow color for pinyin (to show change to 2nd tone) didn't work and interfered with memory; perhaps could try again with a (very slightly) lighter green color but maybe better justnot to do this.
 * selective blanking feature. Save the PREVIOUS values of each field somewhere when filling the fields [possibly in hidden html in each filled field]. When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
 * store the settings in a separate file config.ini (to have a ver number and be renamed to config.bak on each upgrade if new settings added)
 * add a config tab to the Anki preferences window
 * look at borrowing code from the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
 * where dictionary contains "to " automatically as "verb" to a field called "Type"
 * add a true pinyin mode and option switch (no breaks between sylabels in same words) [this will require a full index, as above]
+* merge Nick's tone colorisation plugin into this plugin (lets you change the tone colors using ctrl+F1 through to Ctrl+F5 [dictionary is not perfect and chanees need to be made. Seems better to have the feature built-in.
+* [side-issue] port the code from Kanji Graph plugin into this plugin [adds a graph showing how many unique hanzi in deck over time] (can't simply change fields, uses Japanese specific functions)
 
 
 == Licensing ==
