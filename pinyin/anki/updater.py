@@ -42,10 +42,10 @@ class FieldUpdater(object):
             # We didn't get any meanings, don't update the field
             return None
         
-        # Prepare all the meanings by flattening them
-        meanings = [self.preparetokens(dictmeaning) for dictmeaning in dictmeanings]
+        # Prepare all the meanings by flattening them and removing empty entries
+        meanings = [meaning for meaning in [self.preparetokens(dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
         
-        # Don't add meanings if it is disabled or there is only one meaning
+        # Don't add meaning numbers if it is disabled or there is only one meaning
         if len(meanings) > 1 and self.config.numbermeanings != None:
             def meaningnumber(n):
                 if n < len(self.config.numbermeanings):

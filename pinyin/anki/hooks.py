@@ -23,8 +23,8 @@ class FocusHook(Hook):
     def onFocusLost(self, fact, field):
         # Have we just moved off the expression field in a Mandarin model?
         expressionField = utils.chooseField(self.config.candidateFieldNamesByKey['expression'], fact)
-        if field.name != expressionField or not(anki.utils.findTag(self.config.modelTag, fact.model.tags)):
-            return
+        if field.value.strip() == "" or field.name != expressionField or not(anki.utils.findTag(self.config.modelTag, fact.model.tags)):
+            return # TODO: Why are we not blanking the fields if the user blanks the expression??
 
         # Update the card, ignoring any errors
         pinyin.utils.suppressexceptions(lambda: self.updater.updatefact(self.notifier, fact, field.value))

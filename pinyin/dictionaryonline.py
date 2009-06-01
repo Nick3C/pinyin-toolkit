@@ -48,7 +48,7 @@ def lookup(query, destlanguage):
     
     if result != "":
         # Non-empty result: use it as the meaning
-        return result
+        return result.strip('"')
     else:
         return None
 
@@ -60,10 +60,10 @@ if __name__ == "__main__":
             self.assertEquals(gTrans(""), [])
         
         def testTranslateEnglish(self):
-            self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), [u'"Hello, You are my friend?"<br /><span style="color:gray"><small>[Google Translate]</small></span>'])
+            self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), [u'Hello, You are my friend?<br /><span style="color:gray"><small>[Google Translate]</small></span>'])
         
         def testTranslateFrench(self):
-            self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), [u'"Bonjour, Vous \xeates mon ami?"<br /><span style="color:gray"><small>[Google Translate]</small></span>'])
+            self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), [u'Bonjour, Vous \xeates mon ami?<br /><span style="color:gray"><small>[Google Translate]</small></span>'])
         
         def testCheck(self):
             self.assertEquals(gCheck(), True)
