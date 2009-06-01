@@ -11,24 +11,23 @@ class FieldUpdater(object):
         self.dictionary = dictionary
         self.availablemedia = availablemedia
         self.notifier = notifier
-        
-        self.meaningformatter = meanings.MeaningFormatter(self.config.detectmeasurewords,
-                                                          self.dictionary.simplifiedcharindex,
-                                                          self.config.prefersimptrad)
+    
+    def preparetokens(self, tokens):
+        if self.config.colorizedpinyingeneration:
+            tokens = transformations.Colorizer().colorize(tokens)
+    
+        return tokens.flatten(tonify=self.config.tonify)
     
     #
     # Generation
     #
     
-    def generatereading(self, reading):
-        if self.config.colorizedpinyingeneration:
-            reading = transformations.Colorizer().colorize(reading)
-    
+    def generatereading(self, dictreading):
         # TODO: do we really want lower case here? If so, we should do it for colorized pinyin as well.
-        return reading.flatten(tonify=self.config.tonify).lower() # Put pinyin into lowercase before anything is done to it
+        return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
     
-    def generateaudio(self, notifier, reading):
-        output, mediamissing = transformations.PinyinAudioReadings(self.availablemedia, self.config.audioextensions).audioreading(reading)
+    def generateaudio(self, notifier, dictreading):
+        output, mediamissing = transformations.PinyinAudioReadings(self.availablemedia, self.config.audioextensions).audioreading(dictreading)
     
         # Show a warning the first time we detect that we're missing some sounds
         if mediamissing:
@@ -38,10 +37,13 @@ class FieldUpdater(object):
     
         return output
     
-    def generatemeanings(self, meanings):
-        if meanings == None or len(meanings) == 0:
+    def generatemeanings(self, dictmeanings):
+        if dictmeanings == None or len(dictmeanings) == 0:
             # We didn't get any meanings, don't update the field
             return None
+        
+        # Prepare all the meanings by flattening them
+        meanings = [self.preparetokens(dictmeaning) for dictmeaning in dictmeanings]
         
         # Don't add meanings if it is disabled or there is only one meaning
         if len(meanings) > 1 and self.config.numbermeanings != None:
@@ -58,13 +60,13 @@ class FieldUpdater(object):
         # Splice the meaning lines together with the seperator
         return self.config.meaningseperator.join(meanings)
     
-    def generatemeasureword(self, measurewords):
-        if measurewords == None or len(measurewords) == 0:
+    def generatemeasureword(self, dictmeasurewords):
+        if dictmeasurewords == None or len(dictmeasurewords) == 0:
             # No measure word, so don't update the field
             return None
         
         # Just use the first measure word meaning, if there was more than one
-        return measurewords[0]
+        return self.preparetokens(dictmeasurewords[0])
     
     def generatecoloredcharacters(self, expression):
         return transformations.Colorizer().colorize(self.dictionary.tonedchars(expression)).flatten()
@@ -93,28 +95,35 @@ class FieldUpdater(object):
                 fact[audioField] = u""
     
         # Figure out the reading for the expression field
-        reading = self.dictionary.reading(expression)
+        dictreading = self.dictionary.reading(expression)
     
         # Preload the meaning, but only if we absolutely have to
         if utils.needmeanings(self.config):
-            dictmeanings = self.dictionary.meanings(expression)
-            
-            # If the dictionary can't answer our question, ask Google Translate
-            # If there is a long word followed by another word then this will be treated as a phrase
-            # Phrases are also queried using googletranslate rather than the local dictionary
-            # This helps deal with small dictionaries (for example French)
-            if dictmeanings == None and self.config.fallbackongoogletranslate:
-                onlymeanings = dictionaryonline.gTrans(expression, self.config.dictlanguage)
-                measurewords = None
+            hasMeasureWordField = fieldNames["mw"] != None
+            if self.config.detectmeasurewords and hasMeasureWordField:
+                # Get measure words and meanings seperately
+                dictmeanings, dictmeasurewords = self.dictionary.meanings(expression, self.config.prefersimptrad)
             else:
-                onlymeanings, measurewords = self.meaningformatter.splitmeanings(dictmeanings)
+                # Get meanings and measure words together in one list
+                dictmeanings = self.dictionary.flatmeanings(expression, self.config.prefersimptrad)
+                dictmeasurewords = None
+            
+            # If the dictionary can't answer our question, ask Google Translate.
+            # If there is a long word followed by another word then this will be treated as a phrase.
+            # Phrases are also queried using googletranslate rather than the local dictionary.
+            # This helps deal with small dictionaries (for example French)
+            if dictmeanings == None and dictmeasurewords == None and self.config.fallbackongoogletranslate:
+                dictmeanings = pinyin.TokenList([dictionaryonline.gTrans(expression, self.config.dictlanguage)])
+    
+            # TODO: Nick wants to do something with audio for measure words here?
+            # " [sound:MW]" # DEBUG - pass to audio loop
     
         # Do the updates on the fields the user has requested:
         updaters = {
-                'reading' : (True,                                     lambda: self.generatereading(reading)),
-                'meaning' : (self.config.meaninggeneration,            lambda: self.generatemeanings(onlymeanings)),
-                'mw'      : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(measurewords)),
-                'audio'   : (self.config.audiogeneration,              lambda: self.generateaudio(notifier, reading)),
+                'reading' : (True,                                     lambda: self.generatereading(dictreading)),
+                'meaning' : (self.config.meaninggeneration,            lambda: self.generatemeanings(dictmeanings)),
+                'mw'      : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
+                'audio'   : (self.config.audiogeneration,              lambda: self.generateaudio(notifier, dictreading)),
                 'color'   : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression))
             }
     
