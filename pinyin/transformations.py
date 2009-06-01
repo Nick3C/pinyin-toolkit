@@ -37,13 +37,13 @@ Output audio reading corresponding to a textual reading.
 """
 class PinyinAudioReadings(object):
     def __init__(self, available_media, audioextensions):
-        self.available_media = available_media
+        self.available_media = dict([(name.lower(), filename) for name, filename in available_media.items()])
         self.audioextensions = audioextensions
     
     def mediafor(self, basename):
         # Check all possible extensions in order of priority
         for extension in self.audioextensions:
-            name = basename.lower() + extension
+            name = (basename + extension).lower()
             if name in self.available_media:
                 return self.available_media[name]
         
@@ -164,16 +164,21 @@ if __name__=='__main__':
             self.assertEqual(self.audioreading(u"根"), "[sound:gen1.mp3]")
     
         def testMediaMissing(self):
-            _, mediamissing = PinyinAudioReadings([], [".mp3"]).audioreading(englishdict.reading(u"根"))
+            _, mediamissing = PinyinAudioReadings({}, [".mp3"]).audioreading(englishdict.reading(u"根"))
             self.assertTrue(mediamissing)
     
-        def testCaptialization(self):
+        def testCaptializationInPinyin(self):
             # NB: 上海 is in the dictionary with capitalized pinyin (Shang4 hai3)
             self.assertEqual(self.audioreading(u"上海", raw_available_media=["shang4.mp3", "hai3.mp3"]), "[sound:shang4.mp3][sound:hai3.mp3]")
+        
+        def testCapitializationInFilesystem(self):
+            self.assertEqual(self.audioreading(u"根", available_media={"GeN1.mP3" : "GeN1.mP3" }), "[sound:GeN1.mP3]")
     
         # Test helpers
-        def audioreading(self, what, raw_available_media=default_raw_available_media):
-            available_media = dict([(filename, filename) for filename in raw_available_media])
+        def audioreading(self, what, raw_available_media=default_raw_available_media, available_media=None):
+            if not(available_media):
+                available_media = dict([(filename, filename) for filename in raw_available_media])
+            
             output, mediamissing = PinyinAudioReadings(available_media, [".mp3", ".ogg"]).audioreading(englishdict.reading(what))
             self.assertFalse(mediamissing)
             return output
