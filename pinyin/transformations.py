@@ -46,11 +46,12 @@ class PinyinAudioReadings(object):
             if name in self.available_media:
                 return self.available_media[name]
         
-        # No suitable media existed! Return a prompt for the user to download the files [can turn audiogen off if they don't want to]
-        return "[Media Error - Click on 'Tools' -> 'Download Mandarin Text-to-Speech Audio Fils']"
+        # No suitable media existed!
+        return None
     
     def audioreading(self, tokens):
         output = u""
+        mediamissing = False
         for token in tokens:
             # Remove the 儿 （r) from pinyin [too complicated to handle automatically].
             # Also skip anything that doesn't look like pinyin, such as English words
@@ -69,11 +70,14 @@ class PinyinAudioReadings(object):
                 if media:
                     break
             
-            # If we've managed to find some media, we can put it into the output:
             if media:
+                # If we've managed to find some media, we can put it into the output:
                 output += '[sound:' + media +']'
+            else:
+                # Otherwise, set a flag we will use to notify the user
+                mediamissing = True
         
-        return output
+        return (output, mediamissing)
 
 
 # Testsuite
@@ -157,9 +161,15 @@ if __name__=='__main__':
         def testPriority(self):
             self.assertEqual(self.audioreading(u"根"), "[sound:gen1.mp3]")
     
+        def testMediaMissing(self):
+            _, mediamissing = PinyinAudioReadings([], [".mp3"]).audioreading(dictionary.reading(u"根"))
+            self.assertTrue(mediamissing)
+    
         # Test helpers
         def audioreading(self, what, raw_available_media=default_raw_available_media):
             available_media = dict([(filename, filename) for filename in raw_available_media])
-            return PinyinAudioReadings(available_media, [".mp3", ".ogg"]).audioreading(dictionary.reading(what))
+            output, mediamissing = PinyinAudioReadings(available_media, [".mp3", ".ogg"]).audioreading(dictionary.reading(what))
+            self.assertFalse(mediamissing)
+            return output
     
     unittest.main()

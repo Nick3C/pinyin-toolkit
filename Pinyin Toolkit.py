@@ -57,8 +57,8 @@ detectmeasurewords           = True   # Should we try and put measure words sepe
 # Should we give each meaning a number? Uncomment the line showing how you would like them to be numbered:
 numbermeanings = [u"㊀", u"㊁", u"㊂", u"㊃", u"㊄", u"㊅", u"㊆", u"㊇", u"㊈", u"㊉", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]
 #numbermeanings = [u"①", u"②", u"③", u"④", u"⑤", u"⑥", u"⑦", u"⑧", u"⑨", u"⑩", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]
-#numbermeanings = True         # use simple "(1)", "(2)", "(3)", "(4)", "(5)" ...
-#numbermeanings   = False      # do not give each entry a number
+#numbermeanings = []           # use simple "(1)", "(2)", "(3)", "(4)", "(5)" ...
+#numbermeanings = None         # do not give each entry a number
 
 # Seperator for meaning dictionary entries. Uncomment the one you want or add your own:
 meaningseperator = "<br />"
@@ -77,6 +77,8 @@ audioextensions = [".ogg", ".mp3", ".wav"]
 # You should not have to change this setting as it defaults to a free and usable sound-set.
 # Be aware that you may be able to find higher quality audio files from other sources.
 mandarinsoundsurl = "http://www.chinese-lessons.com/sounds/Mandarin_sounds.zip"
+# TODO: these files contain some problem file names that do not match the pinyin standard.
+# For example "me.mp3" instead of "me5.mp3" or "me4.mp3" - need to find a way to fix this.
 
 
 ### Field Settings ###
@@ -113,11 +115,11 @@ from anki.features.chinese import onFocusLost as oldHook
 
 from pinyin import pinyin, transformations, dictionary, dictionaryonline, media, utils
 
-# Test internet connectivity by performing a gTrans call
-# If this call fails then translations are disabled until Anki is restarted
-# This prevents a several second delay from occuring when chaging field with no internet
+# Test internet connectivity by performing a gTrans call.
+# If this call fails then translations are disabled until Anki is restarted.
+# This prevents a several second delay from occuring when changing a field with no internet
 if (fallbackongoogletranslate):
-    fallbackongoogletranslate = dictionaryonline.gCheck(u'这是一个网络试验',dictlanguage)
+    fallbackongoogletranslate = dictionaryonline.gCheck(dictlanguage)
 
 # Global dictionary instance for the language under consideration
 needmeanings = meaninggeneration or detectmeasurewords
@@ -141,6 +143,10 @@ try:
         available_media[os.path.basename(orig_path)] = filename
 except IOError:
     available_media = {}
+
+
+# We only want to show the warning about having missing media once per session
+shownmediamissing = False
 
 
 def chooseField(candidateFieldNames, fact):
@@ -185,7 +191,6 @@ def downloadAndInstallSounds():
 action = QtGui.QAction('Download Mandarin text-to-speech Audio Files', mw)
 action.setStatusTip('Download and install a sample set of Mandarin audio files into this deck. This will enable automatic text-to-speech.')
 action.setEnabled(True)
-# note that these files contain some problem file names that do not match the pinyin standard. For example "me.mp3" instead of "me5.mp3" or "me4.mp3"
 
 mw.connect(action, QtCore.SIGNAL('triggered()'), downloadAndInstallSounds)
 mw.mainWin.menuTools.addAction(action)
@@ -233,6 +238,8 @@ def updatefact(fact, expression):
         # DEBUG Me - Auto generated pinyin should be at least "[sound:" + ".xxx]" (12 characters) plus pinyin (max 6). i.e. 18
         # DEBUG - Split string around "][" to get the audio of each sound in an array. Blank the field unless any one string is longer than 20 characters
         # Exploit the fact that pinyin text-to-speech pinyin should be no longer than 18 characters to guess that anything longer is user generated
+        # MaxB comment: I don't think that will work, because we import the Mandarin Sounds into anki and it gives them /long/ names.  Instead, how
+        # about we check if all of the audio files referenced are files in the format pinyin<tone>.mp3?
         audioField = fieldNames['audio']
         if audioField != None and len(fact[audioField]) < 40:
             fact[audioField] = u""
@@ -259,16 +266,22 @@ def updatefact(fact, expression):
     else:
         current_reading = reading
     
+    # TODO: do we really want lower case here? If so, we should do it for colorized pinyin as well.
     pinyin = current_reading.flatten(tonify=tonify).lower() # Put pinyin into lowercase before anything is done to it
     
     # Define how we are going to format the meaning field (if at all)
     def formatmeanings(meanings):
-        if len(meanings)>1:
-            if not numbermeanings == False:
-                if numbermeanings == True:
-                    meanings = ["(" + str(n + 1) + ") " + meaning for n, meaning in enumerate(meanings)]
+        # Don't add meanings if it is disabled or there is only one meaning
+        if len(meanings) > 1 and numbermeanings != None:
+            def meaningnumber(n):
+                if n < len(numbermeanings):
+                    return numbermeanings[n]
                 else:
-                    meanings = [ numbermeanings[n] + " "  + meaning for n, meaning in enumerate(meanings)]   
+                    # Ensure that we fall back on normal (n) numbers if there are more numbers than we have in the supplied list
+                    return "(" + str(n) + ")"
+            
+            # Add numbers to all the meanings in the list
+            meanings = [meaningnumber(n) + " " + meaning for n, meaning in enumerate(meanings)]
         return meaningseperator.join(meanings)
     
     # Define how we are going to format the measure word field:
@@ -280,12 +293,25 @@ def updatefact(fact, expression):
             # Just use the first measure word meaning, if there was more than one
             return measurewords[0]
     
+    # How to generate the audio information
+    def generateaudio():
+        output, mediamissing = transformations.PinyinAudioReadings(available_media, audioextensions).audioreading(reading)
+        
+        # Show a warning the first time we detect that we're missing some sounds
+        if mediamissing and not(shownmediamissing):
+            ui.utils.showInfo("We appear to be missing some audio samples. This might be our fault, but if you haven't already done so, "
+                              + "please use 'Tools' -> 'Download Mandarin text-to-speech Audio Files' to install the samples. Alternatively, "
+                              + "you can disable the text-to-speech functionality in the Pinyin Toolkit settings.")
+            shownmediamissing = True
+        
+        return output
+    
     # Do the updates on the fields the user has requested:
     updaters = {
             'reading' : (True,                         lambda: pinyin),
             'meaning' : (meaninggeneration,            lambda: formatmeanings([meaning for meaning in meanings if not(detectmeasurewords) or measurewordmeaning(meaning) == None])),
             'mw'      : (detectmeasurewords,           lambda: formatmeasureword([measurewordmeaning(meaning) for meaning in meanings if measurewordmeaning(meaning)])),
-            'audio'   : (audiogeneration,              lambda: transformations.PinyinAudioReadings(available_media, audioextensions).audioreading(reading)),
+            'audio'   : (audiogeneration,              generateaudio),
             'color'   : (colorizedcharactergeneration, lambda: transformations.Colorizer().colorize(dictionary.tonedchars(expression)).flatten())
         }
     

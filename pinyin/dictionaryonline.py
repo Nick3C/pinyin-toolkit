@@ -22,16 +22,16 @@ def gTrans(src=None,destlanguage='en'):
     try:
         req=urllib2.urlopen(con)
     except urllib2.HTTPError, detail:
-        return oops
+        return [oops]
     except urllib2.URLError, detail:
-        return oops
+        return [oops]
     ret=U''
     for line in req:
         line=line.decode('utf-8').strip()
         ret+=line
     if ret !="":        # if a result is found then:
         ret += succeed  # append a notice that this is auto-translated text (so user knows it may contain mistakes)
-    return ret 
+    return [ret]
 
 # This function will parse a sample query through google translate and return true or false depending on success
 # It is used to determine connectivity for the Anki session (and thus whether Pinyin Toolkit should use online services or not)
