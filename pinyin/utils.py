@@ -10,11 +10,17 @@ import unicodedata
 import pinyin
 
 """
+Is the current user a developer?
+"""
+def debugmode():
+    return getpass.getuser() in ["mbolingbroke"]
+
+"""
 Suppress exceptions originating from execution of the given action, unless
 the current user is a developer
 """
 def suppressexceptions(action):
-    if getpass.getuser() in ["mbolingbroke"]:
+    if debugmode():
         # Don't suppress exceptions for the developers!
         action()
     else:

@@ -1,63 +1,9 @@
-from pinyin import pinyin, transformations, dictionary, dictionaryonline, media
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from pinyin import pinyin, transformations, dictionary, dictionaryonline, media, meanings
 
 import utils
-
-class MeaningFormatter(object):
-    def __init__(self, config):
-        self.config = config
-    
-    def splitmeanings(self, dictmeanings):
-        # If we didn't get any information from the dictionary, just give up
-        if dictmeanings == None:
-            return None, None
-        
-        # Replace all occurence of CL: with MW: as that is more meaningful
-        dictmeanings = [dictmeaning.replace("CL:", "MW:") for dictmeaning in dictmeanings]
-        
-        if not(self.config.detectmeasurewords):
-            # Return any measure words as part of the list of meanings
-            onlymeanings, measurewords = dictmeanings, None
-        else:
-            # OK, we're looking for measure words - scan each meaning looking for some
-            onlymeanings, measurewords = [], []
-            for dictmeaning in dictmeanings:
-                measureword = self.parsemeasureword(dictmeaning)
-                if measureword != None:
-                    # It's a measure word - append to measure word list
-                    measurewords.append(measureword)
-                else:
-                    # Not a measure word, so it must be a plain meaning
-                    onlymeanings.append(dictmeaning)
-        
-        return onlymeanings, measurewords
-    
-    # Allows us to detect measure word data from dictionary
-    # Currently only English CC-CEDICT support this function
-    def parsemeasureword(self, meaning):
-        # TODO: this routine is somewhat broken
-        if meaning.startswith("MW:"):
-            # use a for loop to go through each reading entry to collect any starting with "CL:", cut into an array
-            # go through the array here with each of the MW lines
-            # DEBUG - need a fix for some CC-CEDICT lines that are formatted "CL:[char1],[char2],[char3]" but this is not common and not very important
-
-            # chose either simplified or traditional measure word based on preferences
-            # somewhat complex format of this statement allows for easy inclusion of other dictionaries in the future
-            MWposdiv = meaning.find("|")
-            if self.config.dictlanguage == "en":
-                if self.config.prefersimptrad == "simp":
-                    MWposstart = MWposdiv - 1
-                else:
-                    MWposstart = MWposdiv + 1
-                MWposend=MWposstart+1
-                MWentry = meaning[MWposstart:MWposend] + meaning[MWposdiv+2:] # cut measure word as per selection and add to pinyin         
-            else:
-                MWentry = meaning
-            mwaduio = " [sound:MW]" # DEBUG - pass to audio loop
-            MWentry = MWentry.replace("["," - ").replace("]","") + mwaduio
-        
-            return MWentry
-        else:
-            return None
 
 class FieldUpdater(object):
     def __init__(self, config, dictionary, availablemedia, notifier):
@@ -65,6 +11,10 @@ class FieldUpdater(object):
         self.dictionary = dictionary
         self.availablemedia = availablemedia
         self.notifier = notifier
+        
+        self.meaningformatter = meanings.MeaningFormatter(self.config.detectmeasurewords,
+                                                          self.dictionary.simplifiedcharindex,
+                                                          self.config.prefersimptrad)
     
     #
     # Generation
@@ -157,7 +107,7 @@ class FieldUpdater(object):
                 onlymeanings = dictionaryonline.gTrans(expression, self.config.dictlanguage)
                 measurewords = None
             else:
-                onlymeanings, measurewords = MeaningFormatter(self.config).splitmeanings(dictmeanings)
+                onlymeanings, measurewords = self.meaningformatter.splitmeanings(dictmeanings)
     
         # Do the updates on the fields the user has requested:
         updaters = {

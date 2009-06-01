@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 def chooseField(candidateFieldNames, fact):
     # Find the first field that is present in the fact
     for candidateField in candidateFieldNames:
