@@ -190,6 +190,68 @@ class PinyinDictionary(object):
         # Strip HTML
         sentence = re.sub('<(?!(?:a\s|/a|!))[^>]*>', '', sentence)
         
+        
+        # DEBUG - New unfinished code to hunt for matches from largest to smallest in efficient way
+        """
+        # Use a two loop structure to hunt for words, starting with longest word and then checking for smaller units:
+        
+        #  1 2 3 4
+        #a _ _ _ _   Start with the longest word
+        #  _ _ _     Reduce Length and loop again
+        #  _ _ _     
+        #b _ _       Reduce Length again and do small loop
+        #    _ _
+        #      _ _
+        #c _
+        #    _
+        #      _
+        #        _
+        
+        # once second loop has finished we may have found something in eg sentence[1:2]
+        # if so then we should skip the found word and start from the end of the first word
+
+        #function that deals does a lookup and returns the result as a list [True/False,startpos/None,length/None]
+        def checkisword(candidate_word,i,startpos,length):
+            if self.__readings.has_key(candidate_word) :
+                # The candidate word was found in the dictionary. Yay!
+                return True,startpos,length
+                largest_word = candidate_word
+            elif len(candidate_word) == 1:
+                # If it's a single character and not found,
+                # then we'll just give back the original character itself.
+                yield (False, candidate_word)
+                # Look for new words, starting from just after this character
+            else:
+                # This word isn't in the dictionary.
+                # It's POSSIBLE that it will be in there if we kept looking,
+                # but for now let's just assume this is the end
+
+        
+        # Set defalts      
+        isphrase=False                       # assume not a phrase
+        senlen=len(sentence)
+        checklen=senlen                       # start with whole phrase as check
+        foundwords=[]
+        foundwords[0]=[]
+        
+        while checklen > 0:                   # create a big loop that wil iterate the size of the word being checked
+            startpos=0
+            while startpos < endpos:          # create a small loop that starts at the first charecter and hunts for words of this length
+                checkword(sentenced[startpos:endpos])
+                endpos=startpos+checklength    # 
+                startpost+=1                   # add one to the start position and iterate the small loop
+
+            checklen-=1                        # decrease the check length by 1 and iterate the big loop
+ 
+                foundwordstartpos[i]=startpos
+                foundwordendpos[i]=
+
+                    
+        """
+
+        
+        
+        
         # Iterate through the text
         i = 0;
         while i < len(sentence):
