@@ -144,8 +144,6 @@ you should turn them off in the settings section.
 
 Vital fix-issues
 - sound generation broken in my version [even after your changes earlier today] It may be a windows related bug. I note there is now a media directory in the pinyin dir. I presume this is unintentional?
-- I have tried to do something to improve MW generation. I am still not very happy with the consequences of multiple measure words and wasn't able to test the code after breaking it :$
-- doesn't cut mw from dict entry after copying to the MW field [you don't want it in the entry and in the measure word field, only one of them] should do only if successfuly put in mw field
 - [earlier today, unchekd in latest] previously mentioned bug on 生日 etc in German version now returns pinyin of "生 rì" and no German translation
     - 操你妈 in english [now works]
     - 生日 in German 

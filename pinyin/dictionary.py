@@ -61,6 +61,7 @@ class PinyinDictionary(object):
                 lcharacters = m.group(1)
                 rcharacters = m.group(2)
                 raw_pinyin = m.group(3)
+                raw_definition = m.group(5)
                 
                 # Find out the set of characters we should use as keys - if simplified and traditional coincide we can save space
                 unique_characters = list(set([lcharacters, rcharacters]))
@@ -69,13 +70,11 @@ class PinyinDictionary(object):
                 for characters in unique_characters:
                     self.__readings[characters] = self.parsepinyin(raw_pinyin)
                 
-                # Parse meanings
-                if needmeanings:
-                    meanings = m.group(5)
-                    if meanings:
-                        for characters in unique_characters:
-                            # We just save the raw meaning into the dictionary, so we don't clean up meanings we never look at
-                            self.__definition[characters] = meanings
+                # Save meanings
+                if needmeanings and raw_definition:
+                    for characters in [lcharacters, rcharacters]:
+                        # We just save the raw definition into the dictionary, so we don't clean up meanings we never look at
+                        self.__definition[characters] = raw_definition
         finally:
             file.close()
 
@@ -250,7 +249,8 @@ if __name__=='__main__':
     # Preload commonly-used dictionaries to prevent reading them several times
     pinyindict = PinyinDictionary.load('pinyin', True)
     englishdict = PinyinDictionary.load('en', True)
-            
+    germandict = PinyinDictionary.load('de', True)
+    
     class TestPinyinDictionary(unittest.TestCase):
         def testTonedTokens(self):
             toned = pinyindict.tonedchars(u"一个")
@@ -288,10 +288,9 @@ if __name__=='__main__':
             self.assertEquals(self.flatmeanings(pinyindict, u"一个"), None)
         
         def testGermanDictionary(self):
-            dict = PinyinDictionary.load('de', True)
-            self.assertEquals(dict.reading(u"请").flatten(), "qing3")
-            self.assertEquals(dict.reading(u"請").flatten(), "qing3")
-            self.assertEquals(self.flatmeanings(dict, u"請"), ["Bitte ! (u.E.) (Int)", "bitten, einladen (u.E.) (V)"])
+            self.assertEquals(germandict.reading(u"请").flatten(), "qing3")
+            self.assertEquals(germandict.reading(u"請").flatten(), "qing3")
+            self.assertEquals(germanself.flatmeanings(dict, u"請"), ["Bitte ! (u.E.) (Int)", "bitten, einladen (u.E.) (V)"])
     
         def testEnglishDictionary(self):
             self.assertEquals(englishdict.reading(u"鼓聲").flatten(), "gu3 sheng1")
@@ -303,6 +302,10 @@ if __name__=='__main__':
             self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
             self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
             self.assertEquals(self.flatmeanings(dict, u"白天"), [u"journée (n.v.) (n)"])
+    
+        def testWordsWhosePrefixIsNotInDictionary(self):
+            self.assertEquals(germandict.reading(u"生日").flatten(), "sheng1 ri4")
+            self.assertEquals(self.flatmeanings(germandict, u"生日"), [u"birthday"])
     
         def testSimpMeanings(self):
             self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="simp"), [u"book", u"letter", u"same as 书经 Book of History", u"MW: 本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])
