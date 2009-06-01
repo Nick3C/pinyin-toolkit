@@ -104,8 +104,8 @@ import getpass
 
 from PyQt4 import QtGui, QtCore
 
-from ankiqt import mw
-from ankiqt.ui import utils
+from ankiqt import mw, ui
+import ui.utils
 
 import anki
 from anki.hooks import addHook, removeHook
@@ -172,15 +172,15 @@ addHook('fact.focusLost', onFocusLost)
 def downloadAndInstallSounds():
     # Download ZIP, using cache if necessary
     the_media = media.MediaDownloader().download(mandarinsoundsurl,
-                                                 lambda: utils.showInfo("Downloading the sounds - this might take a while!"))
-                                                    
+                                                 lambda: ui.utils.showInfo("Downloading the sounds - this might take a while!"))
+    
     # Install each file from the ZIP into Anki
     the_media.extractand(mw.deck.addMedia)
     
     # Tell the user we are done
     exampleAudioField = candidateFieldNamesByKey['audio'][0]
-    utils.showInfo("Finished installing Mandarin sounds! These sound files will be used automatically as long as you have "
-                   + " the: <b>" + exampleAudioField + "</b> field in your deck, and the text: <b>%(" + exampleAudioField + ")s</b> in your card template")
+    ui.utils.showInfo("Finished installing Mandarin sounds! These sound files will be used automatically as long as you have "
+                      + " the: <b>" + exampleAudioField + "</b> field in your deck, and the text: <b>%(" + exampleAudioField + ")s</b> in your card template")
 
 action = QtGui.QAction('Download Mandarin text-to-speech Audio Files', mw)
 action.setStatusTip('Download and install a sample set of Mandarin audio files into this deck. This will enable automatic text-to-speech.')
@@ -204,7 +204,7 @@ def fillMissingInformation():
         expressionField = chooseField(candidateFieldNamesByKey['expression'], card.fact)
         updatefact(card.fact, card.fact[expressionField])
     
-    utils.showInfo("All missing information has been successfully added to your deck.")
+    ui.utils.showInfo("All missing information has been successfully added to your deck.")
 
 action = QtGui.QAction('Fill all missing card data using Pinyin Toolkit', mw)
 # DEBUG consider future feature to add missing measure words cards after doing so (not now)
@@ -249,6 +249,9 @@ def updatefact(fact, expression):
         # This helps deal with small dictionaries (for example French)
         if meanings == None and fallbackongoogletranslate:
             meanings = dictionaryonline.gTrans(expression, dictlanguage)
+        # Otherwise, default meanings to an empty list
+        if meanings == None:
+            meanings = []
     
     # Generate the pinyin - we're always going to need it
     if colorizedpinyingeneration:
@@ -280,7 +283,7 @@ def updatefact(fact, expression):
     # Do the updates on the fields the user has requested:
     updaters = {
             'reading' : (True,                         lambda: pinyin),
-            'meaning' : (meaninggeneration,            lambda: formatmeanings([meaning for meaning in meanings if detectmeasurewords or measurewordmeaning(meaning) == None])),
+            'meaning' : (meaninggeneration,            lambda: formatmeanings([meaning for meaning in meanings if not(detectmeasurewords) or measurewordmeaning(meaning) == None])),
             'mw'      : (detectmeasurewords,           lambda: formatmeasureword([measurewordmeaning(meaning) for meaning in meanings if measurewordmeaning(meaning)])),
             'audio'   : (audiogeneration,              lambda: transformations.PinyinAudioReadings(available_media, audioextensions).audioreading(reading)),
             'color'   : (colorizedcharactergeneration, lambda: transformations.Colorizer().colorize(dictionary.tonedchars(expression)).flatten())
