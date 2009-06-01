@@ -7,53 +7,54 @@ import urllib, urllib2
 # For now this modle provides support for google translate. In the future more dictionaries may be added.
 
 
-# Translate the parsed text from Chinese into target language using google translate
-# The gTrans function is based on code the Chinese Example Sentence Plugin by aaron@lamelion.com
-def gTrans(src=None,destlanguage='en'):
-    if src == None: # if no query then return nothing
-        return
-    elif not (fallbackongoogletranslate): # if called when not meant to be active then just quit (so don't get an error message returned)
-        return
-    # Set up URL query
-    url="http://translate.google.com/translate_a/t?client=t&text=%s&sl=%s&tl=%s"%(urllib.quote(src.encode('utf-8')),'zh-CN',destlanguage)
-    con=urllib2.Request(url, headers={'User-Agent':'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'}, origin_req_host='http://translate.google.com')
-    # Set what the return messages will be on success & faliure
-    succeed='<br /><span style="color:gray"><small>[Google Translate]</small></span>'
-    oops='<span style="color:gray">[Internet Error]</span>'
-    
-    try:
-        req=urllib2.urlopen(con)
-    except urllib2.HTTPError, detail:
-        return [oops]
-    except urllib2.URLError, detail:
-        return [oops]
-    ret=u''
-    for line in req:
-        line=line.decode('utf-8').strip()
-        ret+=line
-    if ret !=u'':        # if a result is found then:
-        ret = ret.replace('"','') + succeed  # cut quotation marks and append a notice that this is auto-translated text (so user knows it may contain mistakes)
-    return [ret]
-
-# This function will parse a sample query through google translate and return true or false depending on success
+# This function will send a sample query to Google Translate and return true or false depending on success
 # It is used to determine connectivity for the Anki session (and thus whether Pinyin Toolkit should use online services or not)
-def gCheck(testphrase=u"这是一个网络试验",destlanguage="en"):
-    url="http://translate.google.com/translate_a/t?client=t&text=%s&sl=%s&tl=%s"%(urllib.quote(testphrase.encode('utf-8')),'zh-CN',destlanguage)
-    con=urllib2.Request(url, headers={'User-Agent':'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'}, origin_req_host='http://translate.google.com')
-    try:
-        req=urllib2.urlopen(con)
-    except urllib2.HTTPError, detail:
-        return False
-    except urllib2.URLError, detail:
-        return False
-    return True
+def gCheck(destlanguage='en'):
+    return lookup(u"这是一个网络试验", destlanguage) != None
+
+# The lookup function is based on code from the Chinese Example Sentence Plugin by <aaron@lamelion.com>
+def lookup(query, destlanguage):
+    if query == None or query.strip() == u"":
+        # No meanings if we don't have a query
+        return None
+    # Set up URL
+    url = "http://translate.google.com/translate_a/t?client=t&text=%s&sl=%s&tl=%s" % (urllib.quote(query.encode('utf-8')), 'zh-CN', destlanguage)
+    con = urllib2.Request(url, headers={'User-Agent':'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'}, origin_req_host='http://translate.google.com')
     
+    # Open the connection
+    try:
+        req = urllib2.urlopen(con)
+    except urllib2.HTTPError, detail:
+        return None
+    except urllib2.URLError, detail:
+        return None
+    
+    # Build the result from the request
+    result = u""
+    for line in req:
+        line = line.decode('utf-8').strip()
+        result += line
+    
+    if result != "":
+        # Non-empty result: use it as the meaning
+        return result
+    else:
+        return None
 
 if __name__ == "__main__":
     import unittest
     
     class GoogleTranslateTest(unittest.TestCase):
-        def testTranslate(self):
-            self.assertEquals(googletranslate(u"你好，你是我的朋友吗？", "en"), "")
+        def testTranslateNothing(self):
+            self.assertEquals(gTrans(""), [])
+        
+        def testTranslateEnglish(self):
+            self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), [u'"Hello, You are my friend?"<br /><span style="color:gray"><small>[Google Translate]</small></span>'])
+        
+        def testTranslateFrench(self):
+            self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), [u'"Bonjour, Vous \xeates mon ami?"<br /><span style="color:gray"><small>[Google Translate]</small></span>'])
+        
+        def testCheck(self):
+            self.assertEquals(gCheck(), True)
     
     unittest.main()

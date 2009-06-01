@@ -52,15 +52,6 @@ Note that you can omit the meaning and surrounding "/"s if you don't want to inc
       as Anki wipes them in media checks.  Commercial software (such as Wenlin) includes high quality versions you can use.
   - finally, add a substitution like %(Audio)s to the HTML generated from your model
 
-
-
-
-  - ensure your model has a field called "Audio"
-  - obtain audio files in the format "ni3.ogg", "hao3.ogg" a sample set can be obtained 
-  - note that commercial software (such as Wenlin) includes higher quality versions you can use
-  - place the files in your deck's media directory (keep a copy, as Anki wipes them in media checks)
-  - finally, add a substitution like %(Audio)s to the HTML generated from your model
-
 If you plan not to use features such as character colorisation or audio generation,
 you should turn them off in the settings section.
 
@@ -145,8 +136,8 @@ Vital fix-issues
 - I have tried to do something to improve MW generation. I am still not very happy with the consequences of multiple measure words and wasn't able to test the code after breaking it :$
 - doesn't cut mw from dict entry after copying to the MW field [you don't want it in the entry and in the measure word field, only one of them] should do only if successfuly put in mw field
 - [earlier today, unchekd in latest] previously mentioned bug on 生日 etc in German version now returns pinyin of "生 rì" and no German translation
-    - 操你妈 in english [now works]
-    - 生日 in German 
+    - due to dictionary not findifn the first character (or an earlier one) so abandoning the lookup.
+    - solution provisionally started in code
 - track down why HanDeDict doesn't always retrieve entries that are known to be there
 
 - the pinyin object's def init could be improved using a regex check rather than the final number. I had worked on this previously but it was complex so I dropped it.

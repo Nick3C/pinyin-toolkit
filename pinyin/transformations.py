@@ -85,7 +85,7 @@ if __name__=='__main__':
     import unittest
     import dictionary
     
-    dictionary = dictionary.PinyinDictionary.load("English")
+    dictionary = dictionary.PinyinDictionary.load("en")
     
     class PinyinColorizerTest(unittest.TestCase):
         def testRSuffix(self):
@@ -164,6 +164,10 @@ if __name__=='__main__':
         def testMediaMissing(self):
             _, mediamissing = PinyinAudioReadings([], [".mp3"]).audioreading(dictionary.reading(u"根"))
             self.assertTrue(mediamissing)
+    
+        def testCaptialization(self):
+            # NB: 上海 is in the dictionary with capitalized pinyin (Shang4 hai3)
+            self.assertEqual(self.audioreading(u"上海", raw_available_media=["shang4.mp3", "hai3.mp3"]), "[sound:shang4.mp3][sound:hai3.mp3]")
     
         # Test helpers
         def audioreading(self, what, raw_available_media=default_raw_available_media):

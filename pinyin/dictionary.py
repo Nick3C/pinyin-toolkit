@@ -17,10 +17,10 @@ class PinyinDictionary(object):
     lineregex = re.compile(r"^([^#\s]+)\s+([^\s]+)\s+\[([^\]]+)\](\s+)?(.*)$")
     
     languagedicts = {
-            'en'     : 'dict-cc-cedict.txt',
-            'de'     : 'dict-handedict.txt',
-            'fr'     : 'dict-cfdict.txt',
-            'pinyin' : 'dict-pinyin.txt' # Not really a language, but handy for tests
+            'en'     : ('dict-cc-cedict.txt', 1),
+            'de'     : ('dict-handedict.txt', 0),
+            'fr'     : ('dict-cfdict.txt', 0),
+            'pinyin' : ('dict-pinyin.txt', 1) # Not really a language, but handy for tests
         }
     
     @classmethod
@@ -28,14 +28,17 @@ class PinyinDictionary(object):
         if not(needmeanings):
             # We can use the English dictionary if meanings are not required.  This is a good idea because it
             # has more pinyin than either of the other language dictionaries.
-            languagedict = cls.languagedicts['en']
+            (languagedict, simplifiedcharindex) = cls.languagedicts['en']
         else:
             # Default to the pinyin-only dictionary if this language doesn't have a dictionary.
-            languagedict = cls.languagedicts.get(language, 'dict-pinyin.txt')
+            (languagedict, simplifiedcharindex) = cls.languagedicts.get(language, ('dict-pinyin.txt', 1))
         
-        return PinyinDictionary([languagedict, 'dict-supplimentary.txt', 'dict-userdict.txt'], needmeanings)
+        return PinyinDictionary([languagedict, 'dict-supplimentary.txt', 'dict-userdict.txt'], simplifiedcharindex, needmeanings)
     
-    def __init__(self, dictnames, needmeanings):
+    def __init__(self, dictnames, simplifiedcharindex, needmeanings):
+        # Save the simplified index
+        self.simplifiedcharindex = simplifiedcharindex
+        
         # Build the actual dictionary, giving precedence to dictionaries later on in the input list
         self.__readings = {}
         self.__meanings = {}
@@ -54,12 +57,12 @@ class PinyinDictionary(object):
                     continue
                 
                 # Extract information from dictionary
-                simplified = m.group(1)  # Actually, they are only sometimes this way around. In the French,
-                traditional = m.group(2) # German and Pinyin dictionaries it goes traditional /and then/ simplified
+                lcharacters = m.group(1)
+                rcharacters = m.group(2)
                 raw_pinyin = m.group(3)
                 
                 # Find out the set of characters we should use as keys - if simplified and traditional coincide we can save space
-                unique_characters = list(set([simplified, traditional]))
+                unique_characters = list(set([lcharacters, rcharacters]))
                 
                 # Parse readings
                 for characters in unique_characters:
@@ -322,8 +325,13 @@ if __name__=='__main__':
             self.assertEquals(englishdict.meanings(u"English"), None)
 
         def testMissingDictionary(self):
-            dict = PinyinDictionary(['idontexist.txt'], True)
+            dict = PinyinDictionary(['idontexist.txt'], 1, True)
             self.assertEquals(dict.reading(u"个").flatten(), u"个")
+            self.assertEquals(dict.meanings(u"个"), None)
+        
+        def testMissingLanguage(self):
+            dict = PinyinDictionary.load('foobar', True)
+            self.assertEquals(dict.reading(u"个").flatten(), "ge4")
             self.assertEquals(dict.meanings(u"个"), None)
         
         def testPinyinDictionary(self):
