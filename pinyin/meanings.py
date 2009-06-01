@@ -13,7 +13,7 @@ class MeaningFormatter(object):
         self.simplifiedcharindex = simplifiedcharindex
         self.prefersimptrad = prefersimptrad
     
-    def parsedefinition(self, raw_definition):
+    def parsedefinition(self, raw_definition, tonedchars_callback=None):
         meanings, measurewords = [], []
         for definition in raw_definition.strip().lstrip("/").rstrip("/").split("/"):
             # Remove spaces and replace all occurences of "CL:" with "MW:" as that is more meaningful
@@ -32,7 +32,7 @@ class MeaningFormatter(object):
             for ismatch, thing in utils.regexparse(self.embeddedchineseregex, definition):
                 if ismatch:
                     # A match - we can append a representation of the tokens it contains
-                    tokens.extend(self.formatmatch(thing))
+                    tokens.extend(self.formatmatch(thing, tonedchars_callback))
                 else:
                     # Just a string: append it as-is
                     tokens.append(thing)
@@ -45,7 +45,7 @@ class MeaningFormatter(object):
             
         return meanings, measurewords
     
-    def formatmatch(self, match):
+    def formatmatch(self, match, tonedchars_callback):
         if match.group(3) != None:
             # A single character standing by itself, with no | - just use the character
             character = match.group(3)
@@ -63,8 +63,13 @@ class MeaningFormatter(object):
             yield " - "
             yield thepinyin
         else:
-            # TODO: look up the tone for the character so we can display it more nicely, as in the other case
-            yield character
+            if tonedchars_callback:
+                # Look up the tone for the character so we can display it more nicely, as in the other branch
+                for token in tonedchars_callback(character):
+                    yield token
+            else:
+                # No callback, so the best we can do is to include the characters verbatim
+                yield character
 
 if __name__=='__main__':
     import unittest
@@ -110,9 +115,13 @@ if __name__=='__main__':
             self.assertEquals(means, self.shu_trad_meanings)
             self.assertEquals(mws, self.shu_trad_mws)
     
+        def testCallback(self):
+            means, mws = self.parse(1, "simp", self.shu_def, tonedchars_callback=lambda x: ["JUNK"])
+            self.assertEquals(means, [u'JUNK', u'JUNK', u'JUNKJUNK JUNKJUNK JUNKJUNK JUNKJUNK JUNKJUNK JUNK'])
+    
         # Test helpers
-        def parse(self, simplifiedcharindex, prefersimptrad, definition):
-            means, mws = MeaningFormatter(simplifiedcharindex, prefersimptrad).parsedefinition(definition)
+        def parse(self, simplifiedcharindex, prefersimptrad, definition, tonedchars_callback=None):
+            means, mws = MeaningFormatter(simplifiedcharindex, prefersimptrad).parsedefinition(definition, tonedchars_callback)
             return [mean.flatten() for mean in means], [mw.flatten() for mw in mws]
     
     unittest.main()
