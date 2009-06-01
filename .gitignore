@@ -11,3 +11,6 @@ pinyin/media
 # Unwanted userdict.txt file (user should create it himself)
 # This prevents it being over-written on upgrades
 dict-userdict.txt
+
+# Windows shortcutes
+*.lnk
