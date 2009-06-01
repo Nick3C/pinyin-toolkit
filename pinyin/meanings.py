@@ -41,7 +41,6 @@ class MeaningFormatter(object):
     # Allows us to detect measure word data from dictionary
     # Currently only English CC-CEDICT support this function
     def parsemeasureword(self, meaning):
-        # TODO: this routine is somewhat broken
         if meaning.startswith("MW:"):
             finalmeasurewords = []
             for measureword in meaning.lstrip("MW:").split(","):
