@@ -13,7 +13,7 @@ import pinyin
 Is the current user a developer?
 """
 def debugmode():
-    return getpass.getuser() in ["mbolingbroke"]
+    return getpass.getuser() in ["mbolingbroke","Nick"]
 
 """
 Suppress exceptions originating from execution of the given action, unless
