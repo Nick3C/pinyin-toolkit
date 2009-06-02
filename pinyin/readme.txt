@@ -133,10 +133,7 @@ you should turn them off in the settings section.
 = Bug Fix =
 - audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
   * I think we decided this is a capitalisation issue.  Does it work now?
-- support multiple sound packs
 - erhua needs serious overhaul
-- dates colored in the dictionary
-  * Jane Austen (1775-1817)
 - capitalisation of pinyin in the meaning field not consistent with reading
 
 = Mods & Tweaks =

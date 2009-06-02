@@ -119,7 +119,9 @@ class PinyinDictionary(object):
         def addword(tokens, thing):
             # Add characters to the tokens /without/ spaces between them, but with tone info
             for character, reading_token in zip(thing, self.__readings[thing]):
-                if hasattr(reading_token, "tone"):
+                # Avoid making the numbers from the supplementary dictionary into toned
+                # things, because it confuses users :-)
+                if hasattr(reading_token, "tone") and not(character.isdecimal()):
                     tokens.append(TonedCharacter(character, reading_token.tone))
                 else:
                     # Sometimes the tokens do not have tones (e.g. in the translation for T-shirt)
@@ -234,6 +236,12 @@ if __name__=='__main__':
             toned = pinyindict.tonedchars(u"T恤")
             self.assertEquals(toned.flatten(), u"T恤")
             self.assertEquals(toned[1].tone, 4)
+
+        def testTonedTokenNumbers(self):
+            # Although it kind of makes sense to return the arabic numbers with tone colors, users don't expect it :-)
+            toned = pinyindict.tonedchars(u"1994")
+            self.assertEquals(toned.flatten(), u"1994")
+            self.assertEquals([hasattr(token, "tone") for token in toned], [False, False, False, False])
 
         def testPhraseMeanings(self):
             self.assertEquals(self.flatmeanings(englishdict, u"一杯啤酒"), None)
