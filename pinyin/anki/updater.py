@@ -79,7 +79,8 @@ class FieldUpdater(object):
         # Discover the final field names
         fieldNames = dict([(key, utils.chooseField(candidateFieldNames, fact)) for key, candidateFieldNames in self.config.candidateFieldNamesByKey.items()])
     
-        # If there is no expression, zero every field
+        # AutoBlanking Feature - If there is no expression, zeros relevant fields
+        # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
         if fieldNames['expression'] != None and not(fact[fieldNames['expression']]):
             for key in ["reading", "meaning", "color", "mw"]:
                 if fieldNames[key] != None:
@@ -115,7 +116,7 @@ class FieldUpdater(object):
             if dictmeanings == None and dictmeasurewords == None and self.config.fallbackongoogletranslate:
                 dictmeanings = pinyin.TokenList([dictionaryonline.gTrans(expression, self.config.dictlanguage)])
     
-            # TODO: Nick wants to do something with audio for measure words here?
+            # DEBUG: Nick wants to do something with audio for measure words here?
             # " [sound:MW]" # DEBUG - pass to audio loop
     
         # Do the updates on the fields the user has requested:

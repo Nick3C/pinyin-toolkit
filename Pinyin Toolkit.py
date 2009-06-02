@@ -23,7 +23,7 @@
 
 
 ###############  Version Details ###############
-pinyin_toolkit="0.05 dev"
+pinyin_toolkit="0.05 dev feature complete 0.1"
 
 CCDict_Ver="2009-05-29T05:46:28Z" # [n=84885] http://www.mdbg.net/chindict/chindict.php?page=cc-cedict
 HanDeDict_Ver="Sat May 30 00:20:38 2009" # [n=169500] http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl&w=8
@@ -32,15 +32,22 @@ CFDICT_Ver="Wed Jan 21 01:49:53 2009" # [n=593] http://www.chinaboard.de/fr/cfdi
 
 ############  Language Masterswitch  ############
 # The following option controls the language used for translation and dictionary lookup.
-dictlanguage="en"
+# uncomment your preference or add a new entry
+dictlanguage="en"    # English (en):         Full support (online and offline)
+#dictlanguage="de"   # German (de):          Full support (online and offline)
+#dictlanguage="fr"   # French (fr):          Hybrid support (online and partial offline)
 
-# Note that best results occur when Pinyin Toolkit is used with a local dictionary and online support
-# Full support:     "en" (english)    "de" (German)
-# Hybrid-support:   "fr" (French)     [the CFDICT is still in its infancy]
-# Partial-support:   (all other language)
+                     # ALL OTHER LANGUAGES:  Online Support only
+#dictlanguage="es"   # Spanish  (es)
+#dictlanguage="hi"   # Hindi (hi)
+#dictlanguage="pt"   # Portugese  (pt)
+#dictlanguage="ar"   # Arabic (ar)
+#dictlanguage="bn"   # Bengali (bn)
+#dictlanguage="ru"   # Russian (ru)
+#dictlanguage="ja"   # Japanese (ja)
 
-# Codes for partial supported languages can be found here: http://www.loc.gov/standards/iso639-2/php/code_list.php
-# Do not change to another full/hybrid support language without downloading the dictionary or you will break local lookup.
+# To find the language code for your language go here: http://www.loc.gov/standards/iso639-2/php/code_list
+# Note that languages with Full (and partial) support can access additional features and benefits.
 
 ############### Settings Section ###############
 
@@ -92,7 +99,7 @@ candidateFieldNamesByKey = {
     'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
     'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
     'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
-    'mw'         : ["MW", "Measure Word", u"量词"]
+    'mw'         : ["MW", "Measure Word", "Classifier", u"量词"]
   }
 
 # The following line controls which model tag is used (it must match your deck).

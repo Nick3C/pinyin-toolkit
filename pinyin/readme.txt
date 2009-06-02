@@ -5,7 +5,7 @@ A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
 Copyright (C) 2009 Nicholas Cook & Max Bolingbroke
 Free software Licensed under GNU GPL
 
-== About This Plugin ==
+== Features ==
 The Pinyin Toolkit adds several useful features for Mandarin users:
 1 improved pinyin generation using a dictionary to guess the likely reading
 2 output tone marks instead of numbers
@@ -13,6 +13,7 @@ The Pinyin Toolkit adds several useful features for Mandarin users:
 4 look up the meaning of characters in English, German, or French (and/or use google translate for other languages)
 5 colorize character according to tone to assist visual learners [if enabled]
 6 generate the appropriate "[sound:ni2.ogg][sound:hao3.ogg]" tags to give rudimentary text-to-speech [if enabled]
+7 lookup the Measure Word for a character from CC-CEDICT (just English version for now)
 
 The plugin replaces standard Mandarin generation, so there is no need to rename your model or model tags.
 Features 1 to 4 will work automatically out of the box. Features 5 and 6 are optional extras that require enabling.
@@ -31,7 +32,6 @@ Note that you can omit the meaning and surrounding "/"s if you don't want to inc
 
 
 == Installation ==
-
 1) download using Anki shared-plugin download feature
 2) Ensure your model has the tag "Mandarin"
 3) Ensure your model has the fields:
@@ -52,15 +52,6 @@ Note that you can omit the meaning and surrounding "/"s if you don't want to inc
       as Anki wipes them in media checks.  Commercial software (such as Wenlin) includes high quality versions you can use.
   - finally, add a substitution like %(Audio)s to the HTML generated from your model
 
-
-
-
-  - ensure your model has a field called "Audio"
-  - obtain audio files in the format "ni3.ogg", "hao3.ogg" a sample set can be obtained 
-  - note that commercial software (such as Wenlin) includes higher quality versions you can use
-  - place the files in your deck's media directory (keep a copy, as Anki wipes them in media checks)
-  - finally, add a substitution like %(Audio)s to the HTML generated from your model
-
 If you plan not to use features such as character colorisation or audio generation,
 you should turn them off in the settings section.
 
@@ -72,8 +63,9 @@ you should turn them off in the settings section.
 #                            Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
 * Large-scale re-write and optimisation of the code by Max Bolingbroke (many thanks!)
 * Automatic translation of non-dictionary words & phrase [can be used for almost any language]
-* Add [limited] support for new CFDICT (French)
-* MW with pinyin added automatically to your deck if in dictionary (if enabled) [only applies to English]
+* Add [limited] support for new CFDICT (French) and create a third distribution
+* All distributions will now include all dictionaries for simplicity. Unwanted dictionaries can be deleted.
+* MW with pinyin added automatically to your deck if in dictionary (if enabled) only applies to English version
 * Dictionary definition and measure word have their simplified/traditional variant selected according
   to user preferences
 * Don't generate audio tags if sounds are missing
@@ -88,8 +80,8 @@ you should turn them off in the settings section.
 * Squash bug that means character colorisation to fail if audio generation off
 * Added code testsuite
 * Many smaller modifications to improve usability
+* Pinyin is recognised and colored anywhere in the text
 * Improved documentation
-
 
 # Version 0.04 (19/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
 * Two versions are now being distributed: English (using CC-CEDICT) and German (using HanDeDict)
@@ -104,7 +96,6 @@ you should turn them off in the settings section.
    - audio field is ignored if longer than 40 characters (i.e. if Anki has improved or recorded audio) [a better way to do this is in the works]
 * strip html from expression field before doing anything (prevents formating bugs)
 * several minor fixes and improvements to general usage
-
 
 # Version 0.03[r] (12/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
 * Simplified and traditional generation now happens each lookup (no need to chose one or the other)
@@ -122,16 +113,13 @@ you should turn them off in the settings section.
    - split dictionary into 3 parts (CC-CEDICT, supplementary, and user) [entries prioritised from latter to former]
    - supplementary dictionary contains previously hard-coded entries and new data such as numbers
 
-
 # Version 0.02.5[r] (21/03/2009)   Nick Cook <nick@n-line.co.uk>   [http://www.n-line.co.uk]
 * Dictionary updated to use adapted version of CC-CEDICT
 * entries increasing from 44,783 to 82,941
 
-
 # Version 0.02[r] (03/2009)   Damien Elmes  [http://ichi2.net/]
 * Ported to Anki 0.9.9.6 and tidied up
 * Brian Vaughan no longer maintaing plugin
-
 
 # Version 0.01[r] (2008)    Brian Vaughan [http://brianvaughan.net]
 * Original release
@@ -142,34 +130,132 @@ you should turn them off in the settings section.
 
 == Bug-Hunting To-Do-List & Future Development Plans ==
 
-Vital fix-issues
-- sound generation broken in my version [even after your changes earlier today] It may be a windows related bug. I note there is now a media directory in the pinyin dir. I presume this is unintentional?
-- the pinyin object's def init could be improved using a regex check rather than the final number. I had worked on this previously but it was complex so I dropped it.
-- erhua issue (see below)
+= Bug Fix =
+- audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
+- audio download does not worth (not the same as the audio bug)    
 
-Comments
-* I think I have fixed google translate, it works in the python shell but I managed to break something else before I could confirm in Anki
-* I think you may have misunderstood my comment on the neutral tone and erhua. The idea is that the space should be removed where there is an erhua, eg nǐ men2r [which is best passed to the lookup engine as menr2]. This creates a complication when coloring characters. For even more fun the er character isn't always an erhua, for example "er zi" where it is a separate sylabul and must not be merged. I didn't mean anything about the neutral tone [that was just a convenient way to have the character colorisation not break]. Also erhua are not necessarily  the end because we may be dealing with a phrase.
-* Is there an check on whether a file exists before loading the dictionaries? I think there should be, I added dict-userdict.txt to the .ignore file and plan not to distribute it in future (so that it is not overwritten when installing)
-* i don't see why separating traditional and simplified saves space. I used to have code doing that but I realised it was pointless. If they differ then a new entryis needed, if they are the same then the latter will just overwrite the former. The code will do nothing but slow-down the dictionary init
-* There was a good reason for me not using the folder structure you have chosen on git: my format allowed a hard-link for the plugin in the anki directory, then the GIT repositories could be stored and maintained from there. Is this such a bad idea?
-* In any event, I think that the readme is better placed in the plugin dir, it keeps the files tidy and prevents it being overwritten by other plugin readmes.
-* I am not too sure what to do about the traditional / simplified inconsistancy. I can't think of *any* situation where it matter. Even if we do a "swap simplified and traditional" then it should still be fine to do this. Although I guess if they have mixed form sentences that might cause problems.
-* I do thing that lowercase pinyin is a very sensible choice. unless we implement true pinyin (no space between the pinyin of multi-character words) it looks horrible. Even then it may look strange with color. Audio also must have lowercase (linux systems being caps-sensative)
-* we still have a problem with the audio in those Mandarin sounds not matching standard pinyin. Perhaps we could rename the non-matching ones after downloading them? I think "me.mp3" was one (should be "me4.mp3") there are a few more as I recall
-
-Future [big, non-trivial, and/or unimportant changes]
+= Mods & Tweaks =
+* memory footprint is getting a bit excessive (112mb for my deck)
+* move two options from Tools menu to Tools -> Advanced (rarely used functions, probably each only once per deck)
+* have audio downloader rename the 4 5th tone audio files
+* Change pinyin recognition to a regex expression http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108
+* erhua changes
+* audio error could be improved by:
+    * finish the auto-fill even if there is an error
+    * not make the add window disappear from the taskbar (and focus change to anki)
+* [I think we should ship all dictionaries in one package in future]
+* as a result of the above... we can use the english dictionary to do a MW lookup even in German, French and other languages
+* add feature to audio file full words before breaking down to sylabuls [eg "怎么样, first check: "zěn me yàng")
+    - I am aware that probability of a match gets less exponentialy less likely with length but have the chance to build large sound packs from various open source projects [see builging dictionary below]
+    
+= Future Development Plans (simple) =
+* consider chinesepod's free audio download as replacement for pinyn
+* Consider how other dictionaries can be usefully used:
+    - very useful but not sure if good for this: http://www.nciku.com
+    - (audio? too few?) http://en.wiktionary.org/wiki/他们 / http://upload.wikimedia.org/wikipedia/commons/Zh-t%C4%81men.ogg
+* dictionary update auto-downloads
 * add shortcut key to force regenerate all fields
-* dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp
 * tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 [too complex to do based on other sandhi as they are context specific]) - note: Nick tested this using a yellow color for pinyin (to show change to 2nd tone) didn't work and interfered with memory; perhaps could try again with a (very slightly) lighter green color but maybe better justnot to do this.
-* selective blanking feature. Save the PREVIOUS values of each field somewhere when filling the fields [possibly in hidden html in each filled field]. When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
-* store the settings in a separate file config.ini (to have a ver number and be renamed to config.bak on each upgrade if new settings added)
-* add a config tab to the Anki preferences window
 * look at borrowing code from the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
-* where dictionary contains "to " automatically as "verb" to a field called "Type"
-* add a true pinyin mode and option switch (no breaks between sylabels in same words) [this will require a full index, as above]
+* dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp [google translate can already do this, but needs internet]
 * merge Nick's tone colorisation plugin into this plugin (lets you change the tone colors using ctrl+F1 through to Ctrl+F5 [dictionary is not perfect and chanees need to be made. Seems better to have the feature built-in.
 * [side-issue] port the code from Kanji Graph plugin into this plugin [adds a graph showing how many unique hanzi in deck over time] (can't simply change fields, uses Japanese specific functions)
+
+= Future [big, non-trivial, and/or unimportant changes] =
+- Consider incorporating python library for Chinese: http://code.google.com/p/cjklib/
+    - would give Cantonese, IPA, Gwoyeu (partial Wade-Giles) and a ton of other functionality
+* support for Japanese using CEDICT (format is almost identical as EDICT is the parent of CEDICT, itself the parent of CC-CEDICT, et al)
+* selective blanking feature. Save the PREVIOUS (post-lookup) value of each field somewhere when filling the fields (perhaps in hidden html) then, When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
+* add a config tab to the Anki preferences window
+* where dictionary contains "to " automatically as "verb" to a field called "Type"
+* dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp
+
+= Future Development [big, non-trivial, and/or unimportant changes] =
+* auto-submit card as entry to CC-CEDICT, HanDeDict, and CFDICT from within Anki
+* similarity search, no entry and <5 character then suggest from dict (search for other entry that 2 or more of same characters; MDBG online does this now)
+* enhanced auto-blanking selective blanking feature. Save the PREVIOUS values of each field somewhere when filling the fields [possibly in hidden html in each filled field]. When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
+* add a config tab to the Anki preferences window
+* consider viability of using English deck for MW lookup no matter what other settings are [planned distribution of all dicts]
+* Impliment True Pinyin
+* tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 
+
+= Highly Experimental Future Development =
+[in case we ever get bored!] 
+- support for other romanisation systems:
+    - wade giles
+    - Gwoyeu Romatzyh - http://home.iprimus.com.au/richwarm/gr/gr.htm#whatisgr
+    - (bopomofo)
+    - IPA
+    - Cantonese
+* add dictionary for GR version of CEDICT (big5 only, no unicode) http://home.iprimus.com.au/richwarm/gr/gr.htm#grdict
+- Pinyin experiments
+    - trial using superscript tone marks as per http://www.pinyinology.com/gr/gr2.html
+    - trial Place names to have many first letter caps [incorrect in pinyin] http://www.pinyinology.com/pinyin/signs3/signs3.html and http://www.pinyinology.com/pinyin/transition.html
+    - tone change rules:
+        - tone sandhi
+        - yi1 (一) changes 
+        - bu4 (不) changes
+        - third tone high/low rules
+  - bopomofo conversion [easy but not that useful]
+- Consider errors in CC-CEDICT http://www.stud.uni-karlsruhe.de/~uyhc/node/152
+    - Consider errors in HanDeDict http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/content/consistency-check-handedict-unihan-pinyin-pronunciations
+    - Consider cross-check script
+
+
+== Notes on Design == [add commentary on why features are how they are]
+This section provides some notes on development methodology and explains why some features have been implimented as they have.
+
+1) Colorisation
+Having studied Chinese for several years, it became apparnet to me that it was extremly difficult to remember the tone for a given Hanzi.
+
+It came to be that it would be very useful to colorise the pinyin and the characters in order to remember them.
+I looked on the internet to see if others had developed this idea. At the time I only came across 
+
+2) Text-to-Speech
+One of the main ideas behind the Pinyin Toolkit is that it is much easier to learn a language when you can hear it.
+Mandarin is an idea language for text-to-speech conversion because there are a relatively small number of unique sounds (around a thousand)
+
+The plugin allows the user to download the Chinese-Lessons Sample audio files automatically.
+However, there are better audio fles available if you are prepared to look for them.
+To save you some time you can find a list giving this information to you below.
+
+=Mono-sylabic=
+ChineseLessons.com                  [n=1,189]   .mp3    [average quality]      http://www.chinese-lessons.com/download.htm
+ChinesePod.com free pinyin tool     [n=1,627]   .mp3    [licensing restrict]   http://chinesepod.com/resources/pronunciation
+SWAC Audio Files                    [n=1,000]   .ogg    [need renaming script] http://swac-collections.org/download.php
+WenLin Audio Files                  [n=1,675]   .wav    [commercial license]   http://www.wenlin.com/
+
+The reccommended audio files are the ChinesePod.com files. They are distributed freely at the above link but licensing prevents us from including them.
+If you want to upgrade to these files then go to the webpage, download the files (keep a copy!) and place them in your media directory, replacing any files there already. 
+
+In the future Pinyin Toolkit will support complex word packs such as "ni2hao3.ogg" but for now the information below is just for reference.
+=Complex Words=
+[add details]
+
+
+3) Pinyin Spacing
+http://www.cjkware.com/2008/po1.html
+
+3) Third Tone Sandhi
+There is no support for the third tone sandhi.
+Future support is planned for (3,3) tone sandhis but not (3,3,3) because of the relevance of context.
+This support will only be for audio.
+Past experiments have suggested that using a light yellow color to show the change to 2 in (3,3) has a negative impact on memory.
+In the future a test may be carried on out using a lighter green color instead.
+
+4) Other Tone Sandhis
+Unsupported
+DEBUG
+
+5) erhua
+The idea is that the space should be removed where there is an erhua, eg nǐ men2r [which is best passed to the lookup engine as menr2]. This creates a complication when coloring characters. For even more fun the er character isn't always an erhua, for example "er zi" where it is a separate sylabul and must not be merged. I didn't mean anything about the neutral tone [that was just a convenient way to have the character colorisation not break]. Also erhua are not necessarily  the end because we may be dealing with a phrase.
+DEBUG
+
+6) True Pinyin
+DEBUG
+
+7) Audo-Blanking
+DEBUG
 
 
 == Licensing ==
@@ -197,6 +283,12 @@ Licensing of HanDeDict is  Creative Commons Attribution-Share Alike 2.0 Germany 
 Chinese-French dictionary CFDICT, available at <http://www.chinaboard.de/cfdict.php?mode=dl>
 Licensing of CFDICT is Creative Commons Attribution-Share Alike 2.5 French <http://creativecommons.org/licenses/by-sa/2.5/fr/>
 
+Japanese-English dictionary EDICT, available at <http://www.csse.monash.edu.au/~jwb/j_edict.html>
+Licensing of EDICT is Createive Commons Attribut-Share Alike 3.0 Unported <http://www.edrdg.org/edrdg/licence.html>
+
 -Audio Files-
-Mandarin Sounds, available at: <http://www.chinese-lessons.com/download.htm
+Mandarin Sounds, available at: <http://www.chinese-lessons.com/download.htm>
 Licensing of Mandarin Sounds is Creative Commons Attribution-Noncommercial-No Derivative Works 3.0 United States <http://creativecommons.org/licenses/by-nc-nd/3.0/us/>
+
+SWAC Audio Collection, available at: <http://creativecommons.org/licenses/by/2.0/fr/deed.en_US>
+Licensing is Creative Commons Attribution 2.0 France <http://creativecommons.org/licenses/by/2.0/fr/deed.en_US>
