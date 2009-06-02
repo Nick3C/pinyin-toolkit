@@ -12,16 +12,15 @@ import pinyin
 """
 Is the current user a developer?
 """
-#Check for users
-# on macos you can type echo %username% to get this but it doesn't work on windows.
-#def debugmode():
-#    return getpass.getuser() in ["mbolingbroke","Nick"]
-
-# Uncomment the following two lines to force developer mode
 def debugmode():
-   return True
-
-
+    # Uncomment to force debug mode:
+    #return True
+    
+    # Username as reported on Windows by typing into cmd:
+    #   echo %USERNAME%
+    #
+    # Or your login name on OS X / Linux.
+    return getpass.getuser().lower() in [user.lower() for user in ["mbolingbroke", "Nick"]]
 
 """
 Suppress exceptions originating from execution of the given action, unless
