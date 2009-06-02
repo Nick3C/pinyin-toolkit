@@ -130,12 +130,31 @@ class MediaPack(object):
             return []
     
     @classmethod
-    def discoverimportedpacks(cls, mediaindex):
+    def discoverimportedpacks(cls, mediadircontents, mediaindex):
+        # Normalize case from the directory listing so that the removal check works reliably
+        if mediadircontents != None:
+            mediadircontents = [os.path.normcase(mediadircontent) for mediadircontent in mediadircontents]
+        
+        # Iterate over files and pluck them out into this dictionary of dictionaries
         known_pack_contents = {}
         for orig_path, filename in mediaindex:
             # Note that orig_path is a FULL path so need to call os.path.basename on it
             orig_dir, orig_filename = os.path.split(orig_path)
             orig_containing_dir = os.path.basename(os.path.normpath(orig_dir))
+            
+            # Remove the file from consideration for the manual media lookup stage
+            try:
+                # If we couldn't list the media directory we aren't going to add any manual
+                # packs, so it's alright not to remove it from the list of paths (and we couldn't anyway).
+                if mediadircontents != None:
+                    # NB: we can only do this reliably because we normalized the case above
+                    mediadircontents.remove(os.path.normcase(filename))
+            except:
+                # Tried to remove the file from the directory listing, but it's not actually
+                # in the list.  This means that the database entry is actually out of date and
+                # we should ignore it
+                log.info("Out of date database entry for %s -> %s", orig_filename, filename)
+                continue
             
             # If we can't determine a pack name, default it to Imported:
             if orig_containing_dir == None or orig_containing_dir.strip('.') == '':
@@ -155,16 +174,20 @@ class MediaPack(object):
             pack_contents[orig_filename] = filename
         
         # Turn the pack contents into some actual packs and return them:
-        return [MediaPack(pack_name, pack_contents) for pack_name, pack_contents in known_pack_contents.items()]
+        return mediadircontents, [MediaPack(pack_name, pack_contents) for pack_name, pack_contents in known_pack_contents.items()]
     
     @classmethod
     def discover(cls, mediadircontents, mediaindex):
         # Media comes from two sources:
-        #  1) Media copied into the media directory by the user. All of the sounds from this
-        #     location are added to one pack, which is called Manual.
-        #  2) Media imported into the media directory by Anki. We detect this by consulting the media
+        #  1) Media imported into the media directory by Anki. We detect this by consulting the media
         #     database and looking for files whose original path had the foo5.extension format.
-        return cls.discovermanualpacks(mediadircontents) + cls.discoverimportedpacks(mediaindex)
+        #     NB: we don't want include files that we can attribute to an imported pack to the Manual one,
+        #     so this method returns the REMAINING files in the contents.
+        mediadircontents, importedpacks = cls.discoverimportedpacks(mediadircontents, mediaindex)
+        
+        #  2) Media copied into the media directory by the user. All of the sounds from this
+        #     location are added to one pack, which is called Manual.
+        return cls.discovermanualpacks(mediadircontents) + importedpacks
 
 if __name__ == "__main__":
     import unittest
@@ -186,20 +209,24 @@ if __name__ == "__main__":
                               [MediaPack("Manual", {"helllo.mp3" : "hElLLo.mp3", "world.ogg" : "world.oGg"})])
     
         def testDiscoverImported(self):
-            self.assertEquals(MediaPack.discover(None, [("hello.mp3", "HASH1.mp3"), ("world.ogg", "HASH2.ogg")]),
+            self.assertEquals(MediaPack.discover(["HASH1.mp3", "HASH2.ogg"], [("hello.mp3", "HASH1.mp3"), ("world.ogg", "HASH2.ogg")]),
                               [MediaPack("Imported", {"hello.mp3" : "HASH1.mp3", "world.ogg" : "HASH2.ogg"})])
         
         def testDiscoverImportedFromDirectory(self):
-            self.assertEquals(MediaPack.discover(None, [(os.path.join("foo", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]),
+            self.assertEquals(MediaPack.discover(["HASH1.mp3", "HASH2.ogg"], [(os.path.join("foo", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]),
                               [MediaPack("foo", {"hello.mp3" : "HASH1.mp3", "world.ogg" : "HASH2.ogg"})])
         
         def testDiscoverImportedFromSeveralDirectories(self):
-            self.assertEquals(MediaPack.discover(None, [(os.path.join("bar", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]),
+            self.assertEquals(MediaPack.discover(["HASH1.mp3", "HASH2.ogg"], [(os.path.join("bar", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]),
                               [MediaPack("foo", {"world.ogg" : "HASH2.ogg"}), MediaPack("bar", {"hello.mp3" : "HASH1.mp3"})])
         
         def testDiscoverImportedFromDeepDirectory(self):
-            self.assertEquals(MediaPack.discover(None, [(os.path.join(os.path.join("foo", "bar"), "hello.mp3"), "HASH1.mp3")]),
+            self.assertEquals(MediaPack.discover(["HASH1.mp3"], [(os.path.join(os.path.join("foo", "bar"), "hello.mp3"), "HASH1.mp3")]),
                               [MediaPack("bar", {"hello.mp3" : "HASH1.mp3"})])
+        
+        def testDiscoverDiscardInvalidImportedFiles(self):
+            self.assertEquals(MediaPack.discover(["HASH1.mp3"], [(os.path.join("foo", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]),
+                              [MediaPack("foo", {"hello.mp3" : "HASH1.mp3"})])
         
         def testMediaForCase(self):
             pack = MediaPack("Example", {"fOo.mP3" : "REsuLT"})
