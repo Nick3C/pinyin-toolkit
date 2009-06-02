@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from logger import log
 from pinyin import *
 from utils import *
 
@@ -19,6 +20,8 @@ class Colorizer(object):
       }
      
     def colorize(self, tokens):
+        log.info("Requested colorization for %d tokens", len(tokens))
+        
         output = TokenList()
         for token in tokens:
             if hasattr(token, "tone"):
@@ -48,9 +51,12 @@ class PinyinAudioReadings(object):
                 return self.available_media[name]
         
         # No suitable media existed!
+        log.warning("Couldn't find media for %s", basename)
         return None
     
     def audioreading(self, tokens):
+        log.info("Requested audio reading for %d tokens", len(tokens))
+        
         output = u""
         mediamissing = False
         for token in tokens:

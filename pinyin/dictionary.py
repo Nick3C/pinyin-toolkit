@@ -5,6 +5,7 @@ import codecs
 import os
 import re
 
+from logger import log
 from pinyin import *
 import meanings
 from utils import *
@@ -44,10 +45,13 @@ class PinyinDictionary(object):
         self.__maxcharacterlen = 0
         self.__readings = {}
         self.__definition = {}
-        for dictpath in [os.path.join(executiondir(), dictname) for dictname in dictnames]:
+        for dictpath in [os.path.join(pinyindir(), dictname) for dictname in dictnames]:
             # Avoid loading dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
             if os.path.exists(dictpath):
+                log.info("Loading dictionary from %s", dictpath)
                 self.loadsingledict(dictpath, needmeanings)
+            else:
+                log.warn("Skipping missing dictionary at %s", dictpath)
     
     def loadsingledict(self, dictpath, needmeanings):
         file = codecs.open(dictpath, "r", encoding='utf-8')
@@ -103,6 +107,8 @@ class PinyinDictionary(object):
     Given a string of Hanzi, return the result rendered into a list of Pinyin and unrecognised tokens (as strings).
     """
     def reading(self, sentence):
+        log.info("Requested reading for %s", sentence)
+        
         def addword(tokens, thing):
             # If we already have some text building up, add a preceding space.
             # However, if the word we got looks like punctuation, don't do it.
@@ -134,6 +140,8 @@ class PinyinDictionary(object):
     Given a string of Hanzi, return the result rendered into a list of characters with tone information and unrecognised tokens (as string).
     """
     def tonedchars(self, sentence):
+        log.info("Requested toned characters for %s", sentence)
+        
         def addword(tokens, thing):
             # Add characters to the tokens /without/ spaces between them, but with tone info
             for character, reading_token in zip(thing, self.__readings[thing]):
@@ -166,12 +174,15 @@ class PinyinDictionary(object):
     If there is more than one recognisable thing then assume it is a phrase and don't return a meaning.
     """
     def meanings(self, sentence, prefersimptrad):
+        log.info("Requested meanings for %s", sentence)
+        
         foundmeanings, foundmeasurewords = None, None
         for recognised, word in self.parse(sentence):
             if recognised:
                 # A recognised thing! Did we recognise something else already?
                 if foundmeanings != None or foundmeasurewords != None:
                     # This is a phrase with more than one word - let someone else translate it
+                    log.info("We found a phrase, so returning no meanings")
                     return None, None
                 
                 # Find the definition in the dictionary
@@ -179,6 +190,7 @@ class PinyinDictionary(object):
                 if definition == None:
                     # NB: we return None if there is no meaning in the codomain. This case can
                     # occur if the dictionary was built with needmeanings=False
+                    log.info("We appear to have loaded a dictionary with no meanings, so returning early")
                     return None, None
                 else:
                     # We got a raw definition, but we need to clean up it before using it

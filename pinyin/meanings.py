@@ -3,6 +3,7 @@
 
 import re
 
+from logger import log
 import pinyin
 import utils
 
@@ -14,6 +15,8 @@ class MeaningFormatter(object):
         self.prefersimptrad = prefersimptrad
     
     def parsedefinition(self, raw_definition, tonedchars_callback=None):
+        log.info("Parsing the raw definition %s", raw_definition)
+        
         meanings, measurewords = [], []
         for definition in raw_definition.strip().lstrip("/").rstrip("/").split("/"):
             # Remove spaces and replace all occurences of "CL:" with "MW:" as that is more meaningful

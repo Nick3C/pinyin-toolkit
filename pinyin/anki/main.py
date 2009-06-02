@@ -5,21 +5,25 @@ import os
 
 import pinyin.dictionaryonline
 import pinyin.dictionary
-#import pinyin.shortcutkeys
+from pinyin.logger import log
 
 import hooks
+import notifier
+import shortcutkeys
 import updater
 import utils
-import notifier
 
 
 class PinyinToolkit(object):
     def __init__(self, mw, config):
+        log.info("Pinyin Toolkit is initializing")
+        
         # Test internet connectivity by performing a gTrans call.
         # If this call fails then translations are disabled until Anki is restarted.
         # This prevents a several second delay from occuring when changing a field with no internet
         if (config.fallbackongoogletranslate):
             config.fallbackongoogletranslate = pinyin.dictionaryonline.gCheck(config.dictlanguage)
+            log.info("Google Translate reports status %s", config.fallbackongoogletranslate)
         
         # Store the configuration and mw
         self.mw = mw
@@ -51,13 +55,19 @@ class PinyinToolkit(object):
             mediaDir = self.mw.deck.mediaDir()
             if mediaDir:
                 # An accessible mediaDir exists - look through it for files
-                available_media.update(dict([(filename, filename) for filename in os.listdir(mediaDir)]))
+                for filename in os.listdir(mediaDir):
+                    log.info("Discovered %s -> %s (old format media)", filename, filename)
+                    available_media[filename] = filename
+            else:
+                log.info("The media directory was either not present or not accessible")
         
             #  2) Media imported into the media directory by Anki. We detect this by consulting the media
             #     database and looking for files whose original path had the foo5.extension format.
             for orig_path, filename in self.mw.deck.s.all("select originalPath, filename from media"):
                 # Note that originalPath is a FULL path so need to call os.path.basename on it
-                available_media[os.path.basename(orig_path)] = filename
+                orig_filename = os.path.basename(orig_path)
+                log.info("Discovered %s -> %s (new format media)", orig_filename, filename)
+                available_media[orig_filename] = filename
         except IOError:
             available_media = {}
         

@@ -34,7 +34,9 @@ def suppressexceptions(action):
         try:
             action()
         except:
-            pass
+            # NB: have to delay the import of logger because it depends on utils
+            from logger import log
+            log.exception("Had to suppress an exception")
 
 """
 Utility function that reports whether a string consists of a single punctuation
@@ -47,7 +49,7 @@ def ispunctuation(what):
 """
 Reports the absolute directory name that the pinyin/ directory has at runtime
 """
-def executiondir():
+def pinyindir():
     try:
         return os.path.dirname(os.path.realpath( __file__ ))
     except NameError:

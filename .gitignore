@@ -12,6 +12,9 @@ pinyin/media
 # This prevents it being over-written on upgrades
 dict-userdict.txt
 
+# Logs
+Pinyin Toolkit.log
+
 # Windows shortcutes
 *.lnk
 

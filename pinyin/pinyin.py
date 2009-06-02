@@ -173,13 +173,13 @@ if __name__ == "__main__":
     
     class PinyinTest(unittest.TestCase):
         def testUnicode(self):
-            self.assertEquals(unicode(Pinyin(u"hen3", u"很")), u"hen3")
+            self.assertEquals(unicode(Pinyin(u"hen3")), u"hen3")
         
         def testStr(self):
-            self.assertEquals(str(Pinyin(u"hen3", u"很")), u"hen3")
+            self.assertEquals(str(Pinyin(u"hen3")), u"hen3")
         
         def testStrNeutralTone(self):
-            py = Pinyin(u"ma5", u"吗")
+            py = Pinyin(u"ma5")
             self.assertEquals(str(py), u"ma")
             
             # Since the default is to hide neutral tones, this doesn't do anything yet
@@ -187,17 +187,17 @@ if __name__ == "__main__":
             self.assertEquals(str(py), u"ma")
         
         def testNumericFormat(self):
-            self.assertEquals(Pinyin(u"hen3", u"很").numericformat(), u"hen3")
+            self.assertEquals(Pinyin(u"hen3").numericformat(), u"hen3")
             
         def testNumericFormatNeutralTone(self):
-            self.assertEquals(Pinyin(u"ma5", u"吗").numericformat(), u"ma5")
-            self.assertEquals(Pinyin(u"ma5", u"吗").numericformat(hideneutraltone=True), u"ma")
+            self.assertEquals(Pinyin(u"ma5").numericformat(), u"ma5")
+            self.assertEquals(Pinyin(u"ma5").numericformat(hideneutraltone=True), u"ma")
         
         def testTonifiedFormat(self):
-            self.assertEquals(Pinyin(u"hen3", u"很").tonifiedformat(), u"hěn")
+            self.assertEquals(Pinyin(u"hen3").tonifiedformat(), u"hěn")
         
         def testTonifiedFormatNeutralTone(self):
-            self.assertEquals(Pinyin(u"ma5", u"吗").tonifiedformat(), u"ma")
+            self.assertEquals(Pinyin(u"ma5").tonifiedformat(), u"ma")
     
     class PinyinTonifierTest(unittest.TestCase):
         def testEasy(self):
@@ -213,9 +213,9 @@ if __name__ == "__main__":
     
     class TokenListTest(unittest.TestCase):
         def testFlatten(self):
-            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3", u"很"), u' b', Pinyin(u"ma5", u"吗")]).flatten(), u"a hen3 bma")
+            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3"), u' b', Pinyin(u"ma5")]).flatten(), u"a hen3 bma")
             
         def testFlattenTonified(self):
-            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3", u"很"), u' b', Pinyin(u"ma5", u"吗")]).flatten(tonify=True), u"a hěn bma")
+            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3"), u' b', Pinyin(u"ma5")]).flatten(tonify=True), u"a hěn bma")
     
     unittest.main()
