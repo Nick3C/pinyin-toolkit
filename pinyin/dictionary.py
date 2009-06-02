@@ -106,7 +106,7 @@ class PinyinDictionary(object):
                 tokens.append(u' ')
             
             # Add this reading into the token list with nice formatting
-            tokens.appendwordreading(self.__readings[thing])
+            tokens.appendspacedwordreading(self.__readings[thing])
         
         return self.mapparsedtokens(sentence, addword)
 

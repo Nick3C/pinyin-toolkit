@@ -63,7 +63,7 @@ class MeaningFormatter(object):
             # There was some pinyin for the character after it - include it
             tokens.append(character)
             tokens.append(" - ")
-            tokens.appendwordreading(TokenList.fromspacedstring(match.group(4)))
+            tokens.appendspacedwordreading(TokenList.fromspacedstring(match.group(4)))
         else:
             if tonedchars_callback:
                 # Look up the tone for the character so we can display it more nicely, as in the other branch

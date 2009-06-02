@@ -179,7 +179,7 @@ class TokenList(list):
         else:
             return flatreading
     
-    def appendwordreading(self, reading_tokens):
+    def appendspacedwordreading(self, reading_tokens):
         # Add the tokens to the tokens, with spaces between the components
         reading_tokens_count = len(reading_tokens)
         for n, reading_token in enumerate(reading_tokens):
@@ -261,12 +261,12 @@ if __name__ == "__main__":
         
         def testAppendSingleReading(self):
             tokens = TokenList([u'junk '])
-            tokens.appendwordreading(TokenList([u"hen3"]))
+            tokens.appendspacedwordreading(TokenList([u"hen3"]))
             self.assertEquals(tokens.flatten(), u"junk hen3")
         
         def testAppendMultipleReadings(self):
             tokens = TokenList([u'junk '])
-            tokens.appendwordreading(TokenList([u"hen3", u"ma5"]))
+            tokens.appendspacedwordreading(TokenList([u"hen3", u"ma5"]))
             self.assertEquals(tokens.flatten(), u"junk hen3 ma5")
         
         # TODO: test handling of erhua in append

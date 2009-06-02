@@ -133,8 +133,6 @@ you should turn them off in the settings section.
 = Bug Fix =
 - audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
   * I think we decided this is a capitalisation issue.  Does it work now?
-- audio download does not worth (not the same as the audio bug)
-  * Related to the capitalisation issue, I think.
 
 = Mods & Tweaks =
 * memory footprint is getting a bit excessive (112mb for my deck)
