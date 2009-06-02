@@ -69,7 +69,7 @@ class PinyinDictionary(object):
                 raw_definition = m.group(5)
                 
                 # Parse readings
-                pinyin = self.parsepinyin(raw_pinyin)
+                pinyin = TokenList.fromspacedstring(raw_pinyin)
                 
                 # Save meanings and readings
                 for characters in [lcharacters, rcharacters]:
@@ -84,24 +84,6 @@ class PinyinDictionary(object):
                         self.__definition[characters] = raw_definition
         finally:
             file.close()
-
-    def parsepinyin(self, raw_pinyin):
-        # Read the pinyin into the array: sometimes this field contains
-        # english (e.g. in the pinyin for 'T shirt') so we better handle that
-        tokens = TokenList()
-        for the_raw_pinyin in raw_pinyin.split():
-            try:
-                tokens.append(Pinyin(the_raw_pinyin))
-            except ValueError:
-                tokens.append(the_raw_pinyin)
-        
-        # Special treatment for the erhua suffix: never show the tone in the string representation.
-        # NB: currently hideneutraltone defaults to True, so this is sort of pointless.
-        last_token = tokens[-1]
-        if iserhuapinyintoken(last_token):
-            last_token.hideneutraltone = True
-        
-        return tokens
 
     """
     Given a string of Hanzi, return the result rendered into a list of Pinyin and unrecognised tokens (as strings).
@@ -123,16 +105,8 @@ class PinyinDictionary(object):
             if have_some_text and not(is_punctuation) and not(already_have_space):
                 tokens.append(u' ')
             
-            # Add the tokens to the tokens, with spaces between the components
-            reading_tokens = self.__readings[thing]
-            reading_tokens_count = len(reading_tokens)
-            for n, reading_token in enumerate(reading_tokens):
-                # Don't add spaces if this is the first token or if we are at the
-                # last token and have an erhua
-                if n != 0 and (n != reading_tokens_count - 1 or not(iserhuapinyintoken(reading_token))):
-                    tokens.append(u' ')
-                
-                tokens.append(reading_token)
+            # Add this reading into the token list with nice formatting
+            tokens.appendwordreading(self.__readings[thing])
         
         return self.mapparsedtokens(sentence, addword)
 

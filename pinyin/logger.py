@@ -14,6 +14,10 @@ except ImportError:
     # Fall back on non-rotating handler
     loghandler = logging.FileHandler(logfilepath)
 
+# Format quite verbosely, so we can grep for WARN
+loghandler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+
 # Create logger with that handler
 log = logging.getLogger('Pinyin Toolkit')
+log.setLevel(utils.debugmode() and logging.DEBUG or logging.WARNING)
 log.addHandler(loghandler)

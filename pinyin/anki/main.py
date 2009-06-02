@@ -36,11 +36,15 @@ class PinyinToolkit(object):
         dictionary = pinyin.dictionary.PinyinDictionary.load(config.dictlanguage, needmeanings=utils.needmeanings(config))
         availablemedia = self.discovermedia()
         self.updater = updater.FieldUpdater(self.config, dictionary, availablemedia, self.notifier)
+        
+        # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
+        # get garbage collected, causing garbage collection of the actions they contain
+        self.hooks = [hookbuilder(self.mw, self.notifier, self.config, self.updater) for hookbuilder in [hooks.FocusHook, hooks.SampleSoundsHook, hooks.MissingInformationHook]]
     
     def installhooks(self):
         # Install all hooks
-        for hookbuilder in [hooks.FocusHook, hooks.SampleSoundsHook, hooks.MissingInformationHook]:
-            hookbuilder(self.mw, self.notifier, self.config, self.updater).install()
+        for hook in self.hooks:
+            hook.install()
     
         # Tell Anki about the plugin
         self.mw.registerPlugin("Mandarin Chinese Pinyin Toolkit", 4)

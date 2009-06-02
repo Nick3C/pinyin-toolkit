@@ -4,7 +4,7 @@
 import re
 
 from logger import log
-import pinyin
+from pinyin import TokenList
 import utils
 
 class MeaningFormatter(object):
@@ -23,7 +23,7 @@ class MeaningFormatter(object):
             definition = definition.strip().replace("CL:", "MW:")
             
             # Detect measure-word ness
-            tokens = pinyin.TokenList()
+            tokens = TokenList()
             if definition.startswith("MW:"):
                 ismeasureword = True
                 
@@ -35,7 +35,7 @@ class MeaningFormatter(object):
             for ismatch, thing in utils.regexparse(self.embeddedchineseregex, definition):
                 if ismatch:
                     # A match - we can append a representation of the tokens it contains
-                    tokens.extend(self.formatmatch(thing, tonedchars_callback))
+                    self.formatmatch(tokens, thing, tonedchars_callback)
                 else:
                     # Just a string: append it as-is
                     tokens.append(thing)
@@ -48,7 +48,7 @@ class MeaningFormatter(object):
             
         return meanings, measurewords
     
-    def formatmatch(self, match, tonedchars_callback):
+    def formatmatch(self, tokens, match, tonedchars_callback):
         if match.group(3) != None:
             # A single character standing by itself, with no | - just use the character
             character = match.group(3)
@@ -61,18 +61,16 @@ class MeaningFormatter(object):
         
         if match.group(4) != None:
             # There was some pinyin for the character after it - include it
-            thepinyin = pinyin.Pinyin(match.group(4))
-            yield character
-            yield " - "
-            yield thepinyin
+            tokens.append(character)
+            tokens.append(" - ")
+            tokens.appendwordreading(TokenList.fromspacedstring(match.group(4)))
         else:
             if tonedchars_callback:
                 # Look up the tone for the character so we can display it more nicely, as in the other branch
-                for token in tonedchars_callback(character):
-                    yield token
+                tokens.extend(tonedchars_callback(character))
             else:
                 # No callback, so the best we can do is to include the characters verbatim
-                yield character
+                tokens.append(character)
 
 if __name__=='__main__':
     import unittest
@@ -82,6 +80,7 @@ if __name__=='__main__':
         shangwu_meanings = [u"morning"]
         shangwu_simp_mws = [u"个 - ge4"]
         shangwu_trad_mws = [u"個 - ge4"]
+        
         shu_def = u"/book/letter/same as 書經|书经 Book of History/CL:本[ben3],冊|册[ce4],部[bu4],叢|丛[cong2]/"
         shu_simp_meanings = [u"book", u"letter", u"same as 书经 Book of History"]
         shu_simp_mws = [u"本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"]
@@ -117,6 +116,12 @@ if __name__=='__main__':
             means, mws = self.parse(0, "simp", self.shu_def)
             self.assertEquals(means, self.shu_trad_meanings)
             self.assertEquals(mws, self.shu_trad_mws)
+    
+        def testSplitMultiEmbeddedPinyin(self):
+            # 詞典 词典 [ci2 dian3] /dictionary (of Chinese compound words)/also written 辭典|辞典[ci2 dian3]/CL:部[bu4],本[ben3]/
+            means, mws = self.parse(1, "simp", u"/dictionary (of Chinese compound words)/also written 辭典|辞典[ci2 dian3]/CL:部[bu4],本[ben3]/")
+            self.assertEquals(means, [u"dictionary (of Chinese compound words)", u"also written 辞典 - ci2 dian3"])
+            self.assertEquals(mws, [u"部 - bu4, 本 - ben3"])
     
         def testCallback(self):
             means, mws = self.parse(1, "simp", self.shu_def, tonedchars_callback=lambda x: ["JUNK"])
