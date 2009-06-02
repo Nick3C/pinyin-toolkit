@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from logger import log
 from pinyin import *
 from utils import *
-import sys
 
 """
 Colorize readings according to the reading in the Pinyin.
@@ -20,6 +20,8 @@ class Colorizer(object):
       }
      
     def colorize(self, tokens):
+        log.info("Requested colorization for %d tokens", len(tokens))
+        
         output = TokenList()
         for token in tokens:
             if hasattr(token, "tone"):
@@ -34,31 +36,34 @@ class Colorizer(object):
 """
 Output audio reading corresponding to a textual reading.
 * 2009 rewrites by Max Bolingbroke <batterseapower@hotmail.com>
-* 2009 modifications by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
+* 2009 original version by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
 """
 class PinyinAudioReadings(object):
     def __init__(self, available_media, audioextensions):
-        self.available_media = available_media
+        self.available_media = dict([(name.lower(), filename) for name, filename in available_media.items()])
         self.audioextensions = audioextensions
     
     def mediafor(self, basename):
         # Check all possible extensions in order of priority
         for extension in self.audioextensions:
-            name = basename.lower() + extension
+            name = (basename + extension).lower()
             if name in self.available_media:
                 return self.available_media[name]
         
         # No suitable media existed!
+        log.warning("Couldn't find media for %s", basename)
         return None
     
     def audioreading(self, tokens):
+        log.info("Requested audio reading for %d tokens", len(tokens))
+        
         output = u""
         mediamissing = False
         for token in tokens:
             # Remove any erhuas from audio before being generated.
             # For example we want 儿子 to be "er2 zi5" but "门儿" (men2r) must become "men2"
             # It seems unlikely we will ever get erhua audio (i.e "men2r.ogg") so this is likely to be permanent
-            """ DEBUG - add code fulfilling the above"""
+            # DEBUG - add code fulfilling the above
             # Also skip anything that doesn't look like pinyin, such as English words
             if type(token) != Pinyin or token.numericformat(hideneutraltone=False) == "r5":
                 continue
@@ -68,13 +73,16 @@ class PinyinAudioReadings(object):
             if token.tone == 5:
                 # Sometimes we can replace tone 5 with 4 in order to deal with lack of '[xx]5.ogg's
                 possiblebases.extend([token.word, token.word + '4'])
+            elif u"u:" in token.word:
+                # Typically u: is written as v in filenames
+                possiblebases.append(token.word.replace(u"u:", u"v") + str(token.tone))
             
             # Find path to first suitable media in the possibilty list
-
-            for possiblebase in possiblebases:            
+            for possiblebase in possiblebases:
                 media = self.mediafor(possiblebase)
                 if media:
                     break
+            
             if media:
                 # If we've managed to find some media, we can put it into the output:
                 output += '[sound:' + media +']'
@@ -145,7 +153,18 @@ if __name__=='__main__':
             self.assertEqual(self.audioreading(u"的", raw_available_media=["de5.mp3", "de.mp3", "de4.mp3"]), "[sound:de5.mp3]")
             self.assertEqual(self.audioreading(u"了", raw_available_media=["le4.mp3", "le.mp3"]), "[sound:le.mp3]")
             self.assertEqual(self.audioreading(u"吗", raw_available_media=["ma4.mp3"]), "[sound:ma4.mp3]")
+        
+        def testNv(self):
+            self.assertEqual(self.audioreading(u"女", raw_available_media=["nv3.mp3", "nu:3.mp3", "nu3.mp3"]), "[sound:nu:3.mp3]")
+            self.assertEqual(self.audioreading(u"女", raw_available_media=["nu3.mp3", "nv3.mp3"]), "[sound:nv3.mp3]")
+            self.assertMediaMissing(u"女", raw_available_media=["nu3.mp3"])
             
+        def testLv(self):
+            self.assertEqual(self.audioreading(u"侣", raw_available_media=["lv3.mp3"]), "[sound:lv3.mp3]")
+            self.assertMediaMissing(u"侣", raw_available_media=["lu3.mp3"])
+            self.assertEqual(self.audioreading(u"掠", raw_available_media=["lve4.mp3"]), "[sound:lve4.mp3]")
+            self.assertMediaMissing(u"掠", raw_available_media=["lue4.mp3"])
+        
         def testJunkSkipping(self):
             self.assertEqual(self.audioreading(u"Washington ! ! !"), "")
         
@@ -168,18 +187,33 @@ if __name__=='__main__':
             self.assertEqual(self.audioreading(u"根"), "[sound:gen1.mp3]")
     
         def testMediaMissing(self):
-            _, mediamissing = PinyinAudioReadings([], [".mp3"]).audioreading(englishdict.reading(u"根"))
-            self.assertTrue(mediamissing)
+            self.assertMediaMissing(u"根", raw_available_media=[".mp3"])
     
-        def testCaptialization(self):
+        def testCaptializationInPinyin(self):
             # NB: 上海 is in the dictionary with capitalized pinyin (Shang4 hai3)
             self.assertEqual(self.audioreading(u"上海", raw_available_media=["shang4.mp3", "hai3.mp3"]), "[sound:shang4.mp3][sound:hai3.mp3]")
+        
+        def testCapitializationInFilesystem(self):
+            self.assertEqual(self.audioreading(u"根", available_media={"GeN1.mP3" : "GeN1.mP3" }), "[sound:GeN1.mP3]")
     
         # Test helpers
-        def audioreading(self, what, raw_available_media=default_raw_available_media):
-            available_media = dict([(filename, filename) for filename in raw_available_media])
+        def audioreading(self, what, **kwargs):
+            available_media = self.expandavailablemedia(**kwargs)
             output, mediamissing = PinyinAudioReadings(available_media, [".mp3", ".ogg"]).audioreading(englishdict.reading(what))
+            
             self.assertFalse(mediamissing)
             return output
+        
+        def assertMediaMissing(self, what, **kwargs):
+            available_media = self.expandavailablemedia(**kwargs)
+            output, mediamissing = PinyinAudioReadings(available_media, [".mp3", ".ogg"]).audioreading(englishdict.reading(what))
+            
+            self.assertTrue(mediamissing)
+        
+        def expandavailablemedia(self, raw_available_media=default_raw_available_media, available_media=None):
+            if available_media:
+                return available_media
+            else:
+                return dict([(filename, filename) for filename in raw_available_media])
     
     unittest.main()

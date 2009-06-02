@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import utils
+
 """
 Represents a single Pinyin character in the system.
 """
@@ -20,9 +22,9 @@ class Pinyin(object):
     hen3
     """
     def __init__(self, text):
-        # Length check
-        if len(text) < 2 or len(text) > 6:
-            raise ValueError("The text '%s' was not the right length to be Pinyin - should be in the range 2 to 6 characters" % text)
+        # Length check (yes, you can get 7 character pinyin, such as zhuang1)
+        if len(text) < 2 or len(text) > 7:
+            raise ValueError("The text '%s' was not the right length to be Pinyin - should be in the range 2 to 7 characters" % text)
         
         # Extract the tone number, ensuring that the thing at the end of the string is actually a number
         try:
@@ -39,6 +41,15 @@ class Pinyin(object):
     
     def __unicode__(self):
         return self.numericformat(hideneutraltone=self.hideneutraltone)
+    
+    def __eq__(self, other):
+        if other == None:
+            return False
+        
+        return self.tone == other.tone and self.word == other.word
+    
+    def __ne__(self, other):
+        return not (self.__eq__(other))
     
     def numericformat(self, hideneutraltone=False):
         if hideneutraltone and self.tone == 5:
@@ -167,19 +178,49 @@ class TokenList(list):
             return PinyinTonifier().tonify(flatreading)
         else:
             return flatreading
+    
+    def appendspacedwordreading(self, reading_tokens):
+        # Add the tokens to the tokens, with spaces between the components
+        reading_tokens_count = len(reading_tokens)
+        for n, reading_token in enumerate(reading_tokens):
+            # Don't add spaces if this is the first token or if we are at the
+            # last token and have an erhua
+            if n != 0 and (n != reading_tokens_count - 1 or not(utils.iserhuapinyintoken(reading_token))):
+                self.append(u' ')
+            
+            self.append(reading_token)
+
+    @classmethod
+    def fromspacedstring(cls, raw_pinyin):
+        # Read the pinyin into the array: sometimes this field contains
+        # english (e.g. in the pinyin for 'T shirt') so we better handle that
+        tokens = TokenList()
+        for the_raw_pinyin in raw_pinyin.split():
+            try:
+                tokens.append(Pinyin(the_raw_pinyin))
+            except ValueError:
+                tokens.append(the_raw_pinyin)
+        
+        # Special treatment for the erhua suffix: never show the tone in the string representation.
+        # NB: currently hideneutraltone defaults to True, so this is sort of pointless.
+        last_token = tokens[-1]
+        if utils.iserhuapinyintoken(last_token):
+            last_token.hideneutraltone = True
+        
+        return tokens
 
 if __name__ == "__main__":
     import unittest
     
     class PinyinTest(unittest.TestCase):
         def testUnicode(self):
-            self.assertEquals(unicode(Pinyin(u"hen3", u"很")), u"hen3")
+            self.assertEquals(unicode(Pinyin(u"hen3")), u"hen3")
         
         def testStr(self):
-            self.assertEquals(str(Pinyin(u"hen3", u"很")), u"hen3")
+            self.assertEquals(str(Pinyin(u"hen3")), u"hen3")
         
         def testStrNeutralTone(self):
-            py = Pinyin(u"ma5", u"吗")
+            py = Pinyin(u"ma5")
             self.assertEquals(str(py), u"ma")
             
             # Since the default is to hide neutral tones, this doesn't do anything yet
@@ -187,17 +228,17 @@ if __name__ == "__main__":
             self.assertEquals(str(py), u"ma")
         
         def testNumericFormat(self):
-            self.assertEquals(Pinyin(u"hen3", u"很").numericformat(), u"hen3")
+            self.assertEquals(Pinyin(u"hen3").numericformat(), u"hen3")
             
         def testNumericFormatNeutralTone(self):
-            self.assertEquals(Pinyin(u"ma5", u"吗").numericformat(), u"ma5")
-            self.assertEquals(Pinyin(u"ma5", u"吗").numericformat(hideneutraltone=True), u"ma")
+            self.assertEquals(Pinyin(u"ma5").numericformat(), u"ma5")
+            self.assertEquals(Pinyin(u"ma5").numericformat(hideneutraltone=True), u"ma")
         
         def testTonifiedFormat(self):
-            self.assertEquals(Pinyin(u"hen3", u"很").tonifiedformat(), u"hěn")
+            self.assertEquals(Pinyin(u"hen3").tonifiedformat(), u"hěn")
         
         def testTonifiedFormatNeutralTone(self):
-            self.assertEquals(Pinyin(u"ma5", u"吗").tonifiedformat(), u"ma")
+            self.assertEquals(Pinyin(u"ma5").tonifiedformat(), u"ma")
     
     class PinyinTonifierTest(unittest.TestCase):
         def testEasy(self):
@@ -213,9 +254,30 @@ if __name__ == "__main__":
     
     class TokenListTest(unittest.TestCase):
         def testFlatten(self):
-            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3", u"很"), u' b', Pinyin(u"ma5", u"吗")]).flatten(), u"a hen3 bma")
+            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3"), u' b', Pinyin(u"ma5")]).flatten(), u"a hen3 bma")
             
         def testFlattenTonified(self):
-            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3", u"很"), u' b', Pinyin(u"ma5", u"吗")]).flatten(tonify=True), u"a hěn bma")
+            self.assertEquals(TokenList([u'a ', Pinyin(u"hen3"), u' b', Pinyin(u"ma5")]).flatten(tonify=True), u"a hěn bma")
+        
+        def testAppendSingleReading(self):
+            tokens = TokenList([u'junk '])
+            tokens.appendspacedwordreading(TokenList([u"hen3"]))
+            self.assertEquals(tokens.flatten(), u"junk hen3")
+        
+        def testAppendMultipleReadings(self):
+            tokens = TokenList([u'junk '])
+            tokens.appendspacedwordreading(TokenList([u"hen3", u"ma5"]))
+            self.assertEquals(tokens.flatten(), u"junk hen3 ma5")
+        
+        # TODO: test handling of erhua in append
+        
+        def testFromSingleSpacedString(self):
+            self.assertEquals(TokenList([Pinyin(u"hen3")]), TokenList.fromspacedstring(u"hen3"))
+        
+        def testFromMultipleSpacedString(self):
+            self.assertEquals(TokenList([Pinyin(u"hen3"), Pinyin(u"hao3")]), TokenList.fromspacedstring(u"hen3 hao3"))
+        
+        def testFromSpacedStringWithEnglish(self):
+            self.assertEquals(TokenList([u"T", Pinyin(u"xu4")]), TokenList.fromspacedstring(u"T xu4"))
     
     unittest.main()

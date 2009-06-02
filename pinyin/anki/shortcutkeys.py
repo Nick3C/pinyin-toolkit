@@ -5,6 +5,7 @@
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+
 from anki.hooks import wrap,addHook
 from ankiqt import mw
 from ankiqt import ui

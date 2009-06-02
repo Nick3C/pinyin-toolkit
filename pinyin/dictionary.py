@@ -5,6 +5,7 @@ import codecs
 import os
 import re
 
+from logger import log
 from pinyin import *
 import meanings
 from utils import *
@@ -44,10 +45,13 @@ class PinyinDictionary(object):
         self.__maxcharacterlen = 0
         self.__readings = {}
         self.__definition = {}
-        for dictpath in [os.path.join(executiondir(), dictname) for dictname in dictnames]:
+        for dictpath in [os.path.join(pinyindir(), dictname) for dictname in dictnames]:
             # Avoid loading dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
             if os.path.exists(dictpath):
+                log.info("Loading dictionary from %s", dictpath)
                 self.loadsingledict(dictpath, needmeanings)
+            else:
+                log.warn("Skipping missing dictionary at %s", dictpath)
     
     def loadsingledict(self, dictpath, needmeanings):
         file = codecs.open(dictpath, "r", encoding='utf-8')
@@ -65,7 +69,7 @@ class PinyinDictionary(object):
                 raw_definition = m.group(5)
                 
                 # Parse readings
-                pinyin = self.parsepinyin(raw_pinyin)
+                pinyin = TokenList.fromspacedstring(raw_pinyin)
                 
                 # Save meanings and readings
                 for characters in [lcharacters, rcharacters]:
@@ -81,28 +85,12 @@ class PinyinDictionary(object):
         finally:
             file.close()
 
-    def parsepinyin(self, raw_pinyin):
-        # Read the pinyin into the array: sometimes this field contains
-        # english (e.g. in the pinyin for 'T shirt') so we better handle that
-        tokens = TokenList()
-        for the_raw_pinyin in raw_pinyin.split():
-            try:
-                tokens.append(Pinyin(the_raw_pinyin))
-            except ValueError:
-                tokens.append(the_raw_pinyin)
-        
-        # Special treatment for the erhua suffix: never show the tone in the string representation.
-        # NB: currently hideneutraltone defaults to True, so this is sort of pointless.
-        last_token = tokens[-1]
-        if iserhuapinyintoken(last_token):
-            last_token.hideneutraltone = True
-        
-        return tokens
-
     """
     Given a string of Hanzi, return the result rendered into a list of Pinyin and unrecognised tokens (as strings).
     """
     def reading(self, sentence):
+        log.info("Requested reading for %s", sentence)
+        
         def addword(tokens, thing):
             # If we already have some text building up, add a preceding space.
             # However, if the word we got looks like punctuation, don't do it.
@@ -117,16 +105,8 @@ class PinyinDictionary(object):
             if have_some_text and not(is_punctuation) and not(already_have_space):
                 tokens.append(u' ')
             
-            # Add the tokens to the tokens, with spaces between the components
-            reading_tokens = self.__readings[thing]
-            reading_tokens_count = len(reading_tokens)
-            for n, reading_token in enumerate(reading_tokens):
-                # Don't add spaces if this is the first token or if we are at the
-                # last token and have an erhua
-                if n != 0 and (n != reading_tokens_count - 1 or not(iserhuapinyintoken(reading_token))):
-                    tokens.append(u' ')
-                
-                tokens.append(reading_token)
+            # Add this reading into the token list with nice formatting
+            tokens.appendspacedwordreading(self.__readings[thing])
         
         return self.mapparsedtokens(sentence, addword)
 
@@ -134,6 +114,8 @@ class PinyinDictionary(object):
     Given a string of Hanzi, return the result rendered into a list of characters with tone information and unrecognised tokens (as string).
     """
     def tonedchars(self, sentence):
+        log.info("Requested toned characters for %s", sentence)
+        
         def addword(tokens, thing):
             # Add characters to the tokens /without/ spaces between them, but with tone info
             for character, reading_token in zip(thing, self.__readings[thing]):
@@ -166,12 +148,15 @@ class PinyinDictionary(object):
     If there is more than one recognisable thing then assume it is a phrase and don't return a meaning.
     """
     def meanings(self, sentence, prefersimptrad):
+        log.info("Requested meanings for %s", sentence)
+        
         foundmeanings, foundmeasurewords = None, None
         for recognised, word in self.parse(sentence):
             if recognised:
                 # A recognised thing! Did we recognise something else already?
                 if foundmeanings != None or foundmeasurewords != None:
                     # This is a phrase with more than one word - let someone else translate it
+                    log.info("We found a phrase, so returning no meanings")
                     return None, None
                 
                 # Find the definition in the dictionary
@@ -179,6 +164,7 @@ class PinyinDictionary(object):
                 if definition == None:
                     # NB: we return None if there is no meaning in the codomain. This case can
                     # occur if the dictionary was built with needmeanings=False
+                    log.info("We appear to have loaded a dictionary with no meanings, so returning early")
                     return None, None
                 else:
                     # We got a raw definition, but we need to clean up it before using it
@@ -204,68 +190,6 @@ class PinyinDictionary(object):
         
         # Strip HTML
         sentence = re.sub('<(?!(?:a\s|/a|!))[^>]*>', '', sentence)
-        
-        
-        # DEBUG - New unfinished code to hunt for matches from largest to smallest in efficient way
-        """
-        # Use a two loop structure to hunt for words, starting with longest word and then checking for smaller units:
-        
-        #  1 2 3 4
-        #a _ _ _ _   Start with the longest word
-        #  _ _ _     Reduce Length and loop again
-        #  _ _ _     
-        #b _ _       Reduce Length again and do small loop
-        #    _ _
-        #      _ _
-        #c _
-        #    _
-        #      _
-        #        _
-        
-        # once second loop has finished we may have found something in eg sentence[1:2]
-        # if so then we should skip the found word and start from the end of the first word
-
-        #function that deals does a lookup and returns the result as a list [True/False,startpos/None,length/None]
-        def checkisword(candidate_word,i,startpos,length):
-            if self.__readings.has_key(candidate_word) :
-                # The candidate word was found in the dictionary. Yay!
-                return True,startpos,length
-                largest_word = candidate_word
-            elif len(candidate_word) == 1:
-                # If it's a single character and not found,
-                # then we'll just give back the original character itself.
-                yield (False, candidate_word)
-                # Look for new words, starting from just after this character
-            else:
-                # This word isn't in the dictionary.
-                # It's POSSIBLE that it will be in there if we kept looking,
-                # but for now let's just assume this is the end
-
-        
-        # Set defalts      
-        isphrase=False                       # assume not a phrase
-        senlen=len(sentence)
-        checklen=senlen                       # start with whole phrase as check
-        foundwords=[]
-        foundwords[0]=[]
-        
-        while checklen > 0:                   # create a big loop that wil iterate the size of the word being checked
-            startpos=0
-            while startpos < endpos:          # create a small loop that starts at the first charecter and hunts for words of this length
-                checkword(sentenced[startpos:endpos])
-                endpos=startpos+checklength    # 
-                startpost+=1                   # add one to the start position and iterate the small loop
-
-            checklen-=1                        # decrease the check length by 1 and iterate the big loop
- 
-                foundwordstartpos[i]=startpos
-                foundwordendpos[i]=
-
-                    
-        """
-
-        
-        
         
         # Iterate through the text
         i = 0;
@@ -354,6 +278,14 @@ if __name__=='__main__':
         def testWordsWhosePrefixIsNotInDictionary(self):
             self.assertEquals(germandict.reading(u"生日").flatten(), "sheng1 ri4")
             self.assertEquals(self.flatmeanings(germandict, u"生日"), [u"Geburtstag (S)"])
+    
+        def testProperName(self):
+            self.assertEquals(englishdict.reading(u"珍・奥斯汀").flatten(), u"Zhen1 · Ao4 si1 ting1")
+            self.assertEquals(self.flatmeanings(englishdict, u"珍・奥斯汀"), [u"Jane Austen (1775-1817), English novelist", u"also written 简・奥斯汀 - Jian3 · Ao4 si1 ting1"])
+    
+        def testShortPinyin(self):
+            self.assertEquals(englishdict.reading(u"股指").flatten(), "gu3 zhi3")
+            self.assertEquals(self.flatmeanings(englishdict, u"股指"), [u"stock market index", u"share price index", u"abbr. for 股票指数 - gu3 piao4 zhi3 shu4"])
     
         def testSimpMeanings(self):
             self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="simp"), [u"book", u"letter", u"same as 书经 Book of History", u"MW: 本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])

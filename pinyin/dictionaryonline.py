@@ -3,6 +3,8 @@
 
 import urllib, urllib2
 
+from logger import log
+
 # This module will takes a phrase and passes it to online services for translation
 # For now this modle provides support for google translate. In the future more dictionaries may be added.
 
@@ -33,11 +35,14 @@ def lookup(query, destlanguage):
     con = urllib2.Request(url, headers={'User-Agent':'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'}, origin_req_host='http://translate.google.com')
     
     # Open the connection
+    log.info("Issuing Google query for %s to %s", query, url)
     try:
         req = urllib2.urlopen(con)
     except urllib2.HTTPError, detail:
+        log.exception("HTTPError during request")
         return None
     except urllib2.URLError, detail:
+        log.exception("URLError during request")
         return None
     
     # Build the result from the request
@@ -50,6 +55,7 @@ def lookup(query, destlanguage):
         # Non-empty result: use it as the meaning
         return result.strip('"')
     else:
+        log.warn("Empty result from Google - unexpected behaviour!")
         return None
 
 if __name__ == "__main__":

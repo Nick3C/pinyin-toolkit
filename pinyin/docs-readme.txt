@@ -151,35 +151,49 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
                                   == Bug Fix ==
 
 - audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
-- audio download does not worth (not the same as the audio bug)    
+  * I think we decided this is a capitalisation issue.  Does it work now?
 
                                == Mods & Tweaks ==
 
 * Don't change from add window to main Anki window on faliure to find audio files
 * attempt to reduce memory footprint
 * move two options from Tools menu to Tools -> Advanced (rarely used functions, probably each only once per deck)
+  - I think we should have a Tools -> Pinyin Toolkit submenu with both things on
 * have audio downloader rename the 4 5th tone audio files
+  - Not sure we need to do this - the audio generation already looks for files with me.mp3 names as tone 5
 * Change pinyin recognition to a regex expression http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108
 * erhua changes
 * audio error could be improved by:
     * finish the auto-fill even if there is an error
     * not make the add window disappear from the taskbar (and focus change to anki)
 * [I think we should ship all dictionaries in one package in future]
+  - Agreed
 * as a result of the above... we can use the english dictionary to do a MW lookup even in German, French and other languages
+  - Sure. I think it would make sense for us to preprocess the dictionaries so we have these files:
+    * dict-pinyin.txt (just the pinyin)
+    * dict-en.txt, dict-fr.txt, dict-de.txt (just the language-specific meanings, excluding measure words)
+    * dict-mws.txt (just the measure words)
+  - Only dict-pinyin.txt would have to include both simplified and traditional characters, all the others could save space by
+    e.g. just including traditional
 * add feature to audio file full words before breaking down to sylabuls [eg "怎么样, first check: "zěn me yàng")
-    - I am aware that probability of a match gets less exponentialy less likely with length but have the chance to build large sound packs from various open source projects [see builging dictionary below]
+  - I am aware that probability of a match gets less exponentialy less likely with length but have the chance to build large sound packs from various open source projects [see builging dictionary below]
+  - I've been thinking about this as well. I think it will be easy to do this once I implement my proposed fix for Erhua.
     
                       == Future Development Plans (simple) ==
 
 * consider chinesepod's free audio download as replacement for pinyn
+    - There is also this: http://swac-collections.org/download.php
 * Consider how other dictionaries can be usefully used:
     - very useful but not sure if good for this: http://www.nciku.com
     - (audio? too few?) http://en.wiktionary.org/wiki/他们 / http://upload.wikimedia.org/wikipedia/commons/Zh-t%C4%81men.ogg
 * dictionary update auto-downloads
 * add shortcut key to force regenerate all fields
-* tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 [too complex to do based on other sandhi as they are context specific]) - note: Nick tested this using a yellow color for pinyin (to show change to 2nd tone) didn't work and interfered with memory; perhaps could try again with a (very slightly) lighter green color but maybe better justnot to do this.
+  - More accessible as a menu option
+* tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 [too complex to do based on other sandhi as they are context specific])
+  - note: Nick tested this using a yellow color for pinyin (to show change to 2nd tone) didn't work and interfered with memory; perhaps could try again with a (very slightly) lighter green color but maybe better justnot to do this.
 * look at borrowing code from the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
 * dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp [google translate can already do this, but needs internet]
+  - Will bloat memory requirements
 * merge Nick's tone colorisation plugin into this plugin (lets you change the tone colors using ctrl+F1 through to Ctrl+F5 [dictionary is not perfect and chanees need to be made. Seems better to have the feature built-in.
 * [side-issue] port the code from Kanji Graph plugin into this plugin [adds a graph showing how many unique hanzi in deck over time] (can't simply change fields, uses Japanese specific functions)
 

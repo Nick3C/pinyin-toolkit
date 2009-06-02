@@ -1,4 +1,5 @@
 import dictionary
+import logger
 import media
 import meanings
 import pinyin

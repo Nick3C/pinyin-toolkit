@@ -12,7 +12,13 @@ pinyin/media
 # This prevents it being over-written on upgrades
 dict-userdict.txt
 
-# Windows shortcutes
+# Generated UI stuff
+pinyin/forms/generated/
+
+# Logs
+Pinyin Toolkit.log
+
+# Windows shortcuts
 *.lnk
 
 # Allows a hardlink in pinyindir to be ignored

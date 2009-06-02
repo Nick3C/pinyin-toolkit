@@ -12,16 +12,18 @@ import pinyin
 """
 Is the current user a developer?
 """
-#Check for users
-# on macos you can type echo %username% to get this but it doesn't work on windows.
-#def debugmode():
-#    return getpass.getuser() in ["mbolingbroke","Nick"]
-
-# Uncomment the following two lines to force developer mode
 def debugmode():
-   return True
-
-
+    # Uncomment to force debug mode on:
+    #return True
+    
+    # Uncomment to force debug mode off:
+    #return False
+    
+    # Username as reported on Windows by typing into cmd:
+    #   echo %USERNAME%
+    #
+    # Or your login name on OS X / Linux.
+    return getpass.getuser().lower() in [user.lower() for user in ["mbolingbroke", "Nick"]]
 
 """
 Suppress exceptions originating from execution of the given action, unless
@@ -35,7 +37,9 @@ def suppressexceptions(action):
         try:
             action()
         except:
-            pass
+            # NB: have to delay the import of logger because it depends on utils
+            from logger import log
+            log.exception("Had to suppress an exception")
 
 """
 Utility function that reports whether a string consists of a single punctuation
@@ -48,7 +52,7 @@ def ispunctuation(what):
 """
 Reports the absolute directory name that the pinyin/ directory has at runtime
 """
-def executiondir():
+def pinyindir():
     try:
         return os.path.dirname(os.path.realpath( __file__ ))
     except NameError:

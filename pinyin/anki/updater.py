@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from pinyin import pinyin, transformations, dictionary, dictionaryonline, media, meanings
+from pinyin import dictionary, dictionaryonline, media, meanings, pinyin, transformations
+from pinyin.logger import log
 
 import utils
 
@@ -114,6 +115,7 @@ class FieldUpdater(object):
             # Phrases are also queried using googletranslate rather than the local dictionary.
             # This helps deal with small dictionaries (for example French)
             if dictmeanings == None and dictmeasurewords == None and self.config.fallbackongoogletranslate:
+                log.info("Falling back on Google for %s", expression)
                 dictmeanings = pinyin.TokenList([dictionaryonline.gTrans(expression, self.config.dictlanguage)])
     
             # DEBUG: Nick wants to do something with audio for measure words here?
