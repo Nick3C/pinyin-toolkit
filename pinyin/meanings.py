@@ -87,6 +87,15 @@ if __name__=='__main__':
         shu_trad_meanings = [u"book", u"letter", u"same as 書經 Book of History"]
         shu_trad_mws = [u"本 - ben3, 冊 - ce4, 部 - bu4, 叢 - cong2"]
         
+        def testDatesInMeaning(self):
+            means, mws = self.parseunflat(1, "simp", "/Jane Austen (1775-1817), English novelist/also written 简・奧斯汀|简・奥斯汀[Jian3 · Ao4 si1 ting1]/")
+            self.assertEquals(len(means), 2)
+            self.assertEquals(mws, [])
+            
+            interesting_tokens = [token for token in means[0] if token.strip() != u""]
+            self.assertEquals(interesting_tokens, [u"Jane", u"Austen", u"(1775-1817),", u"English", u"novelist"])
+            self.assertEquals([hasattr(token, "tone") for token in interesting_tokens], [False, False, False, False, False])
+        
         def testSplitNoMeasureWords(self):
             means, mws = self.parse(1, "simp", u"/morning/junk junk")
             self.assertEquals(means, [u"morning", u"junk junk"])
@@ -128,8 +137,11 @@ if __name__=='__main__':
             self.assertEquals(means, [u'JUNK', u'JUNK', u'JUNKJUNK JUNKJUNK JUNKJUNK JUNKJUNK JUNKJUNK JUNK'])
     
         # Test helpers
-        def parse(self, simplifiedcharindex, prefersimptrad, definition, tonedchars_callback=None):
-            means, mws = MeaningFormatter(simplifiedcharindex, prefersimptrad).parsedefinition(definition, tonedchars_callback)
+        def parse(self, *args, **kwargs):
+            means, mws = self.parseunflat(*args, **kwargs)
             return [mean.flatten() for mean in means], [mw.flatten() for mw in mws]
+        
+        def parseunflat(self, simplifiedcharindex, prefersimptrad, definition, tonedchars_callback=None):
+            return MeaningFormatter(simplifiedcharindex, prefersimptrad).parsedefinition(definition, tonedchars_callback=tonedchars_callback)
     
     unittest.main()

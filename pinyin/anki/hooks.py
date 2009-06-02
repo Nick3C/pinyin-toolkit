@@ -66,7 +66,7 @@ class SampleSoundsHook(MenuHook):
         log.info("User triggered sound download")
         
         # Download ZIP, using cache if necessary
-        the_media = pinyin.media.MediaDownloader().download(self.config.mandarinsoundsurl,
+        the_media = pinyin.media.MediaDownloader().download("Mandarin Sounds", self.config.mandarinsoundsurl,
                                                             lambda: self.notifier.info("Downloading the sounds - this might take a while!"))
     
         # Install each file from the ZIP into Anki
