@@ -7,10 +7,10 @@ from pinyin.logger import log
 import utils
 
 class FieldUpdater(object):
-    def __init__(self, config, dictionary, availablemedia, notifier):
+    def __init__(self, config, dictionary, mediapacks, notifier):
         self.config = config
         self.dictionary = dictionary
-        self.availablemedia = availablemedia
+        self.mediapacks = mediapacks
         self.notifier = notifier
     
     def preparetokens(self, tokens):
@@ -28,7 +28,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
     
     def generateaudio(self, notifier, dictreading):
-        output, mediamissing = transformations.PinyinAudioReadings(self.availablemedia, self.config.audioextensions, self.config.colorlist).audioreading(dictreading)
+        output, mediamissing = transformations.PinyinAudioReadings(self.mediapacks, self.config.audioextensions).audioreading(dictreading)
     
         # Show a warning the first time we detect that we're missing some sounds
         if mediamissing:

@@ -8,6 +8,11 @@ Thumbs.db
 # Python droppings
 *.pyc
 
+*.BACKUP*
+*.BASE*
+*.LOCAL*
+*.REMOTE*
+
 # Media directory
 pinyin/media
 

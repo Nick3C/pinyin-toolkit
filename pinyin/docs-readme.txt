@@ -227,8 +227,8 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
 
 - audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
   * I think we decided this is a capitalisation issue.  Does it work now?
-- support multiple sound packs
 - erhua needs serious overhaul
+- capitalisation of pinyin in the meaning field not consistent with reading
 
                                == Mods & Tweaks ==
 
@@ -259,8 +259,10 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
     
                       == Future Development Plans (simple) ==
 
-* consider chinesepod's free audio download as replacement for pinyn
-    - There is also this: http://swac-collections.org/download.php
+* Character order doesn't match numeral order for Arabic numerals.
+* In addition there are other troubles such as 335 being looked up as 33, 5.
+* I never could decide what to do about years eg 2000 could be either two thousand or 200年
+* We could always color number in colored characters differently
 * Consider how other dictionaries can be usefully used:
     - very useful but not sure if good for this: http://www.nciku.com
     - (audio? too few?) http://en.wiktionary.org/wiki/他们 / http://upload.wikimedia.org/wikipedia/commons/Zh-t%C4%81men.ogg

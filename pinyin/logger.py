@@ -11,6 +11,16 @@ try:
     import logging.handlers
     loghandler = logging.handlers.RotatingFileHandler(logfilepath, maxBytes=40000, backupCount=0)
 except ImportError:
+    # Delete the log file first to make sure it doesn't grow /too/ much
+    try:
+        os.remove(logfilepath)
+    except IOError, e:
+        # Happens in event of some quite serious problem, I guess :-)
+        pass
+    except OSError, e:
+        # Happens in event of file not existing
+        pass
+    
     # Fall back on non-rotating handler
     loghandler = logging.FileHandler(logfilepath)
 
