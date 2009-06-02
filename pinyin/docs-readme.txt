@@ -1,66 +1,80 @@
-########################################################################
-###                   Mandarin-Chinese Pinyin Toolkit                ### 
-########################################################################
+#################################################################################
+###                        Mandarin-Chinese Pinyin Toolkit                    ### 
+#################################################################################
 A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
 Copyright (C) 2009 Nicholas Cook & Max Bolingbroke
 Free software Licensed under GNU GPL
 
-== Features ==
+=== Features ====================================================================
 The Pinyin Toolkit adds several useful features for Mandarin users:
-1 improved pinyin generation using a dictionary to guess the likely reading
-2 output tone marks instead of numbers
-3 colorize pinyin according to tone mark to assist visual learners
-4 look up the meaning of characters in English, German, or French (and/or use google translate for other languages)
-5 colorize character according to tone to assist visual learners [if enabled]
-6 generate the appropriate "[sound:ni2.ogg][sound:hao3.ogg]" tags to give rudimentary text-to-speech [if enabled]
-7 lookup the Measure Word for a character from CC-CEDICT (just English version for now)
+
+1) improved pinyin generation using a dictionary to guess the likely reading
+2) output tone marks instead of numbers
+3) colorize pinyin according to tone mark to assist visual learners
+4) look up the meaning of characters in English, German, or French (and/or use google translate for other languages)
+5) colorize character according to tone to assist visual learners [if enabled]
+6) generate the appropriate "[sound:ni2.ogg][sound:hao3.ogg]" tags to give rudimentary text-to-speech [if enabled]
+7) lookup the Measure Word for a character from CC-CEDICT (just English version for now)
 
 The plugin replaces standard Mandarin generation, so there is no need to rename your model or model tags.
 Features 1 to 4 will work automatically out of the box. Features 5 and 6 are optional extras that require enabling.
 
-To add your own dictionary entries, create a file called "dict-userdict.txt" in the pinyin/ subdirectory with the entries
-in the same format as the other dictionaries i.e.:
-<simplified-without-spaces> <traditional-without-spaces> [<pinyin> ... <pinyin>] /<meaning>/.../<meaning>/
+                            == User Dictionaries =
+                            
+To add your own dictionary entries, create a file called "dict-userdict.txt" in the pinyin/ subdirectory
+Copy the format of the other dictionaires, i.e:
+     <simplified-without-spaces> <traditional-without-spaces> [<pinyin> ... <pinyin>] /<meaning>/.../<meaning>/
+Entries should be separated by spaces.
 
-Entries should be separated by spaces. Here are some examples:
+Here are some examples:
 一一 一一 [yi1 yi1] /one by one/one after another/
 一共 一共 [yi1 gong4] /altogether/
 
-Note that you can omit the meaning and surrounding "/"s if you don't want to include meaning data, but everything else is required:
+Note that you can omit the meaning and surrounding "/"s but everything else is required:
 一一 一一 [yi1 yi1]
 一共 一共 [yi1 gong4]
 
 
-== Installation ==
+=== Installation ================================================================
+
 1) download using Anki shared-plugin download feature
 2) Ensure your model has the tag "Mandarin"
-3) Ensure your model has the fields:
+3) Ensure your model has the the fields:
   - "Expression" or "Hanzi"
   - "Reading" or "Pinyin"
-  - "Meaning" or "Definition"
-  - If you don't like any of these names, you can add more options by editing the settings
-4) To activate character colorization:
-  - ensure your model has a field called "Color", "Colour" or "Colored Hanzi" to populate with colored characters
+  - "Meaning"
+  - You can change the name the pluhig looks for by editing Pinyin Toolkit.py
+
+4) To use character colorization:
+  - ensure your model has a field called "Color" to populate with colored characters
   - edit your models to use the new field
-  - The best way to do this is test on plain characters, but show colored characters in answers or where you are not testing reading or tones. 
+  - The best way to do this is:
+        a) format questions with B&W characters
+        b) show colored characters in answers where you are not testing reading or tones. 
+  - You can also download the Kanji stroke order font to get limited stroke-order support
+  - See: http://sites.google.com/site/nihilistorguk/
+
 5) To activate sound tag generation:
-  - ensure your model has a field called "Audio", "Sound" or "Spoken"
+  - ensure your model has a field called "Audio"
   - obtain audio files in the format "ni3.ogg", "hao3.ogg" (you can use .ogg, .wav and .mp3 files by default)
-    * You can download such files at <http://www.chinese-lessons.com/download.htm>, or use the Tools > Download Mandarin sound samples
-      menu option to automatically download and install them
-    * Alternatively, you can copy your own files directly into the media directory, or import them using Anki. It's advisable to keep a copy,
-      as Anki wipes them in media checks.  Commercial software (such as Wenlin) includes high quality versions you can use.
-  - finally, add a substitution like %(Audio)s to the HTML generated from your model
+    * You can use "Tools" > "Download Mandarin sound samples" to automatically install a sample set
+  - better quality audio can be found online. See the file "docs-audio.txt" for instructions
+  - these files should be placed in your deck's media directory
+  - finally, add your field to your card template  model %(Audio)s to the HTML generated from your model
 
-If you plan not to use features such as character colorisation or audio generation,
-you should turn them off in the settings section.
+* IT IS STRONGLY SUGGESTED YOU FOLLOW THE STEPS IN docs-audio.txt TO IMPROVE AUDIO SUPPORT! *
+
+You will find many settings can be changed in Pinyin Toolkit.py
+Features can also be turned on and off and the language settings varied.
+
+If you plan not to use certain features then you should turn them off to decrease memory usage.
 
 
+=== Changelog ===================================================================
 
-== Changelog ==
+Version 0.05   (05/06/2009)  Max Bolingbroke <batterseapower@hotmail.com>
+                             Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
 
-# Version 0.05 (__/06/2009)  Max Bolingbroke <batterseapower@hotmail.com>
-#                            Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
 * Large-scale re-write and optimisation of the code by Max Bolingbroke (many thanks!)
 * Automatic translation of non-dictionary words & phrase [can be used for almost any language]
 * Add [limited] support for new CFDICT (French) and create a third distribution
@@ -83,7 +97,9 @@ you should turn them off in the settings section.
 * Pinyin is recognised and colored anywhere in the text
 * Improved documentation
 
-# Version 0.04 (19/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
+
+Version 0.04   (19/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
+
 * Two versions are now being distributed: English (using CC-CEDICT) and German (using HanDeDict)
    - Thanks to Rainer Menes for suggesting use of HanDeDict
 * New character colorization feature
@@ -97,7 +113,9 @@ you should turn them off in the settings section.
 * strip html from expression field before doing anything (prevents formating bugs)
 * several minor fixes and improvements to general usage
 
-# Version 0.03[r] (12/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
+
+Version 0.03   (12/05/2009)  Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
+
 * Simplified and traditional generation now happens each lookup (no need to chose one or the other)
 * automatic English generation from dictionary
   - English will only be generated for exact matches (words) not phrases
@@ -113,29 +131,32 @@ you should turn them off in the settings section.
    - split dictionary into 3 parts (CC-CEDICT, supplementary, and user) [entries prioritised from latter to former]
    - supplementary dictionary contains previously hard-coded entries and new data such as numbers
 
-# Version 0.02.5[r] (21/03/2009)   Nick Cook <nick@n-line.co.uk>   [http://www.n-line.co.uk]
+Version 0.02.5 (21/03/2009)   Nick Cook <nick@n-line.co.uk>  [http://www.n-line.co.uk]
 * Dictionary updated to use adapted version of CC-CEDICT
 * entries increasing from 44,783 to 82,941
 
-# Version 0.02[r] (03/2009)   Damien Elmes  [http://ichi2.net/]
+Version 0.02   (03/2009)   Damien Elmes  [http://ichi2.net/]
 * Ported to Anki 0.9.9.6 and tidied up
 * Brian Vaughan no longer maintaing plugin
 
-# Version 0.01[r] (2008)    Brian Vaughan [http://brianvaughan.net]
+Version 0.01   (2008)    Brian Vaughan [http://brianvaughan.net]
 * Original release
 
-"[r]" means "Retroactive Version Number"
+NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
 
 
 
-== Bug-Hunting To-Do-List & Future Development Plans ==
+=== Bug-Hunting To-Do-List & Future Development Plans ===========================
 
-= Bug Fix =
+                                  == Bug Fix ==
+
 - audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
 - audio download does not worth (not the same as the audio bug)    
 
-= Mods & Tweaks =
-* memory footprint is getting a bit excessive (112mb for my deck)
+                               == Mods & Tweaks ==
+
+* Don't change from add window to main Anki window on faliure to find audio files
+* attempt to reduce memory footprint
 * move two options from Tools menu to Tools -> Advanced (rarely used functions, probably each only once per deck)
 * have audio downloader rename the 4 5th tone audio files
 * Change pinyin recognition to a regex expression http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108
@@ -148,7 +169,8 @@ you should turn them off in the settings section.
 * add feature to audio file full words before breaking down to sylabuls [eg "怎么样, first check: "zěn me yàng")
     - I am aware that probability of a match gets less exponentialy less likely with length but have the chance to build large sound packs from various open source projects [see builging dictionary below]
     
-= Future Development Plans (simple) =
+                      == Future Development Plans (simple) ==
+
 * consider chinesepod's free audio download as replacement for pinyn
 * Consider how other dictionaries can be usefully used:
     - very useful but not sure if good for this: http://www.nciku.com
@@ -161,7 +183,8 @@ you should turn them off in the settings section.
 * merge Nick's tone colorisation plugin into this plugin (lets you change the tone colors using ctrl+F1 through to Ctrl+F5 [dictionary is not perfect and chanees need to be made. Seems better to have the feature built-in.
 * [side-issue] port the code from Kanji Graph plugin into this plugin [adds a graph showing how many unique hanzi in deck over time] (can't simply change fields, uses Japanese specific functions)
 
-= Future [big, non-trivial, and/or unimportant changes] =
+                == Future [non-trivial / unimportant changes] ==
+                
 - Consider incorporating python library for Chinese: http://code.google.com/p/cjklib/
     - would give Cantonese, IPA, Gwoyeu (partial Wade-Giles) and a ton of other functionality
 * support for Japanese using CEDICT (format is almost identical as EDICT is the parent of CEDICT, itself the parent of CC-CEDICT, et al)
@@ -179,16 +202,17 @@ you should turn them off in the settings section.
 * Impliment True Pinyin
 * tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 
 
-= Highly Experimental Future Development =
-[in case we ever get bored!] 
-- support for other romanisation systems:
+                  == Highly Experimental Future Development ==
+                          [in case we ever get bored!] 
+                          
+* support for other romanisation systems:
     - wade giles
     - Gwoyeu Romatzyh - http://home.iprimus.com.au/richwarm/gr/gr.htm#whatisgr
     - (bopomofo)
     - IPA
     - Cantonese
 * add dictionary for GR version of CEDICT (big5 only, no unicode) http://home.iprimus.com.au/richwarm/gr/gr.htm#grdict
-- Pinyin experiments
+* Pinyin experiments
     - trial using superscript tone marks as per http://www.pinyinology.com/gr/gr2.html
     - trial Place names to have many first letter caps [incorrect in pinyin] http://www.pinyinology.com/pinyin/signs3/signs3.html and http://www.pinyinology.com/pinyin/transition.html
     - tone change rules:
@@ -197,12 +221,13 @@ you should turn them off in the settings section.
         - bu4 (不) changes
         - third tone high/low rules
   - bopomofo conversion [easy but not that useful]
-- Consider errors in CC-CEDICT http://www.stud.uni-karlsruhe.de/~uyhc/node/152
+* Consider errors in CC-CEDICT http://www.stud.uni-karlsruhe.de/~uyhc/node/152
     - Consider errors in HanDeDict http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/content/consistency-check-handedict-unihan-pinyin-pronunciations
     - Consider cross-check script
 
 
-== Notes on Design == [add commentary on why features are how they are]
+=== Design Notes ================================================================
+[add commentary on why features are how they are]
 This section provides some notes on development methodology and explains why some features have been implimented as they have.
 
 1) Colorisation
@@ -220,10 +245,10 @@ However, there are better audio fles available if you are prepared to look for t
 To save you some time you can find a list giving this information to you below.
 
 =Mono-sylabic=
-ChineseLessons.com                  [n=1,189]   .mp3    [average quality]      http://www.chinese-lessons.com/download.htm
-ChinesePod.com free pinyin tool     [n=1,627]   .mp3    [licensing restrict]   http://chinesepod.com/resources/pronunciation
-SWAC Audio Files                    [n=1,000]   .ogg    [need renaming script] http://swac-collections.org/download.php
-WenLin Audio Files                  [n=1,675]   .wav    [commercial license]   http://www.wenlin.com/
+ChineseLessons.com                  [n=1,189]   .mp3    [average quality]          http://www.chinese-lessons.com/download.htm
+ChinesePod.com free pinyin tool     [n=1,627]   .mp3    [licensing restrictions]   http://chinesepod.com/resources/pronunciation
+SWAC Audio Files                    [n=1,000]   .ogg    [need renaming script]     http://swac-collections.org/download.php
+WenLin Audio Files                  [n=1,675]   .wav    [commercial license]       http://www.wenlin.com/
 
 The reccommended audio files are the ChinesePod.com files. They are distributed freely at the above link but licensing prevents us from including them.
 If you want to upgrade to these files then go to the webpage, download the files (keep a copy!) and place them in your media directory, replacing any files there already. 
@@ -258,8 +283,10 @@ DEBUG
 DEBUG
 
 
-== Licensing ==
--Pinyin Toolkit-
+=== Licensing ===================================================================
+
+                             == Pinyin Toolkit==
+
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -273,7 +300,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
--Dictionaries-
+                              == Dictionaries ==
+                              
 Chinese-English CC-CEDICT, available at: <http://www.mdbg.net/chindict/chindict.php?page=cc-cedict>
 Licensing of CC-CEDICT is Creative Commons Attribution-Share Alike 3.0 <http://creativecommons.org/licenses/by-sa/3.0/>
 
@@ -286,9 +314,11 @@ Licensing of CFDICT is Creative Commons Attribution-Share Alike 2.5 French <http
 Japanese-English dictionary EDICT, available at <http://www.csse.monash.edu.au/~jwb/j_edict.html>
 Licensing of EDICT is Createive Commons Attribut-Share Alike 3.0 Unported <http://www.edrdg.org/edrdg/licence.html>
 
--Audio Files-
+                               == Audio Files ==
+                               
 Mandarin Sounds, available at: <http://www.chinese-lessons.com/download.htm>
 Licensing of Mandarin Sounds is Creative Commons Attribution-Noncommercial-No Derivative Works 3.0 United States <http://creativecommons.org/licenses/by-nc-nd/3.0/us/>
 
 SWAC Audio Collection, available at: <http://creativecommons.org/licenses/by/2.0/fr/deed.en_US>
 Licensing is Creative Commons Attribution 2.0 France <http://creativecommons.org/licenses/by/2.0/fr/deed.en_US>
+
