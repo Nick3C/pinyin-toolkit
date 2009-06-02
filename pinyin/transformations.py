@@ -10,22 +10,19 @@ Colorize readings according to the reading in the Pinyin.
 * 2009 rewrites by Max Bolingbroke <batterseapower@hotmail.com>
 * 2009 original version by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
 """
+
 class Colorizer(object):
-    tonecolors = {
-        1 : u"#ff0000",
-        2 : u"#ffaa00",
-        3 : u"#00aa00",
-        4 : u"#0000ff",
-        5 : u"#545454"
-      }
-     
+    def __init__(self, colorlist):
+        self.colorlist = colorlist
+        log.info("Colorlist has: %d", self.colorlist)
+        
     def colorize(self, tokens):
         log.info("Requested colorization for %d tokens", len(tokens))
         
         output = TokenList()
         for token in tokens:
             if hasattr(token, "tone"):
-                output.append(u'<span style="color:' + self.tonecolors.get(token.tone) + u'">')
+                output.append(u'<span style="color:' + self.colorlist.get(token.tone) + u'">')
                 output.append(token)
                 output.append(u'</span>')
             else:
@@ -121,7 +118,7 @@ if __name__=='__main__':
     
         # Test helpers
         def colorize(self, what):
-            return Colorizer().colorize(englishdict.reading(what)).flatten()
+            return Colorizer(colorlist).colorize(englishdict.reading(what)).flatten()
     
     class CharacterColorizerTest(unittest.TestCase):
         def testColorize(self):
@@ -140,7 +137,7 @@ if __name__=='__main__':
     
         # Test helpers
         def colorize(self, what):
-            return Colorizer().colorize(englishdict.tonedchars(what)).flatten()
+            return Colorizer(colorlist).colorize(englishdict.tonedchars(what)).flatten()
     
     class PinyinAudioReadingsTest(unittest.TestCase):
         default_raw_available_media = ["na3.mp3", "ma4.mp3", "xiao3.mp3", "ma3.mp3", "ci2.mp3", "dian3.mp3",

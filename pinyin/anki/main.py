@@ -9,9 +9,11 @@ from pinyin.logger import log
 
 import hooks
 import notifier
-import shortcutkeys
 import updater
 import utils
+
+import statsandgraphs
+import shortcutkeys
 
 
 class PinyinToolkit(object):
@@ -23,7 +25,7 @@ class PinyinToolkit(object):
         # This prevents a several second delay from occuring when changing a field with no internet
         if (config.fallbackongoogletranslate):
             config.fallbackongoogletranslate = pinyin.dictionaryonline.gCheck(config.dictlanguage)
-            log.info("Google Translate reports status %s", config.fallbackongoogletranslate)
+            log.info("Google Translate has tested internet access and reports status %s", config.fallbackongoogletranslate)
         
         # Store the configuration and mw
         self.mw = mw

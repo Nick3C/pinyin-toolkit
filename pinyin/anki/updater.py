@@ -15,7 +15,7 @@ class FieldUpdater(object):
     
     def preparetokens(self, tokens):
         if self.config.colorizedpinyingeneration:
-            tokens = transformations.Colorizer().colorize(tokens)
+            tokens = transformations.Colorizer(colorlist=self.config.colorlist).colorize(tokens)
     
         return tokens.flatten(tonify=self.config.tonify)
     
@@ -28,7 +28,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
     
     def generateaudio(self, notifier, dictreading):
-        output, mediamissing = transformations.PinyinAudioReadings(self.availablemedia, self.config.audioextensions).audioreading(dictreading)
+        output, mediamissing = transformations.PinyinAudioReadings(self.availablemedia, self.config.audioextensions, self.config.colorlist).audioreading(dictreading)
     
         # Show a warning the first time we detect that we're missing some sounds
         if mediamissing:
@@ -70,7 +70,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictmeasurewords[0])
     
     def generatecoloredcharacters(self, expression):
-        return transformations.Colorizer().colorize(self.dictionary.tonedchars(expression)).flatten()
+        return transformations.Colorizer(self.config).colorize(self.dictionary.tonedchars(expression)).flatten()
     
     #
     # Core updater routine
