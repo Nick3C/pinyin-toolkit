@@ -161,6 +161,10 @@ you should turn them off in the settings section.
   - I've been thinking about this as well. I think it will be easy to do this once I implement my proposed fix for Erhua.
     
 = Future Development Plans (simple) =
+* Character order doesn't match numeral order for Arabic numerals.
+* In addition there are other troubles such as 335 being looked up as 33, 5.
+* I never could decide what to do about years eg 2000 could be either two thousand or 200年
+* We could always color number in colored characters differently
 * consider chinesepod's free audio download as replacement for pinyn
     - There is also this: http://swac-collections.org/download.php
 * Consider how other dictionaries can be usefully used:
