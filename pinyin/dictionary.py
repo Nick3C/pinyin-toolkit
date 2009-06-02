@@ -117,8 +117,15 @@ class PinyinDictionary(object):
         log.info("Requested toned characters for %s", sentence)
         
         def addword(tokens, thing):
+            # If we can't associate characters with tokens on a one-to-one basis we had better give up
+            reading_tokens = self.__readings[thing]
+            if len(thing) != len(reading_tokens):
+                log.warn("Couldn't produce toned characters for %s because there are a different number of reading tokens than characters", thing)
+                tokens.append(thing)
+                return
+            
             # Add characters to the tokens /without/ spaces between them, but with tone info
-            for character, reading_token in zip(thing, self.__readings[thing]):
+            for character, reading_token in zip(thing, reading_tokens):
                 # Avoid making the numbers from the supplementary dictionary into toned
                 # things, because it confuses users :-)
                 if hasattr(reading_token, "tone") and not(character.isdecimal()):
@@ -241,7 +248,12 @@ if __name__=='__main__':
             # Although it kind of makes sense to return the arabic numbers with tone colors, users don't expect it :-)
             toned = pinyindict.tonedchars(u"1994")
             self.assertEquals(toned.flatten(), u"1994")
-            self.assertEquals([hasattr(token, "tone") for token in toned], [False, False, False, False])
+            self.assertEquals([hasattr(token, "tone") for token in toned], [False, False, False])
+
+        def testNumbersWherePinyinLengthDoesntMatchCharacters(self):
+            self.assertEquals(englishdict.tonedchars(u"1000000000").flatten(), u"1000000000")
+            self.assertEquals(englishdict.reading(u"1000000000").flatten(), u"yi1 shi2 yi4")
+            self.assertEquals(self.flatmeanings(englishdict, u"1000000000"), None)
 
         def testPhraseMeanings(self):
             self.assertEquals(self.flatmeanings(englishdict, u"一杯啤酒"), None)
