@@ -279,6 +279,14 @@ if __name__=='__main__':
             self.assertEquals(germandict.reading(u"生日").flatten(), "sheng1 ri4")
             self.assertEquals(self.flatmeanings(germandict, u"生日"), [u"Geburtstag (S)"])
     
+        def testProperName(self):
+            self.assertEquals(englishdict.reading(u"珍・奥斯汀").flatten(), u"Zhen1 · Ao4 si1 ting1")
+            self.assertEquals(self.flatmeanings(englishdict, u"珍・奥斯汀"), [u"Jane Austen (1775-1817), English novelist", u"also written 简・奥斯汀 - Jian3 · Ao4 si1 ting1"])
+    
+        def testShortPinyin(self):
+            self.assertEquals(englishdict.reading(u"股指").flatten(), "gu3 zhi3")
+            self.assertEquals(self.flatmeanings(englishdict, u"股指"), [u"stock market index", u"share price index", u"abbr. for 股票指数 - gu3 piao4 zhi3 shu4"])
+    
         def testSimpMeanings(self):
             self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="simp"), [u"book", u"letter", u"same as 书经 Book of History", u"MW: 本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])
         
