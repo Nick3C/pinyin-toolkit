@@ -13,8 +13,11 @@ import pinyin
 Is the current user a developer?
 """
 def debugmode():
-    # Uncomment to force debug mode:
+    # Uncomment to force debug mode on:
     #return True
+    
+    # Uncomment to force debug mode off:
+    #return False
     
     # Username as reported on Windows by typing into cmd:
     #   echo %USERNAME%
