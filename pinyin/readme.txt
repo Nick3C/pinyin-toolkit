@@ -133,6 +133,8 @@ you should turn them off in the settings section.
 = Bug Fix =
 - audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
   * I think we decided this is a capitalisation issue.  Does it work now?
+- support multiple sound packs
+- erhua needs serious overhaul
 
 = Mods & Tweaks =
 * memory footprint is getting a bit excessive (112mb for my deck)
