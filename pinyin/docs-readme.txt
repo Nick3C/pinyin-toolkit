@@ -157,6 +157,7 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
 
                                == Mods & Tweaks ==
 
+* look at getting Anki to start loading second audio file before first audio file has finishedplaying as this will dramatically reduce gap between words and make phrass sounds more natural
 * Don't change from add window to main Anki window on faliure to find audio files
 * attempt to reduce memory footprint
 * move two options from Tools menu to Tools -> Advanced (rarely used functions, probably each only once per deck)
@@ -196,12 +197,13 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
 * look at borrowing code from the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
 * dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp [google translate can already do this, but needs internet]
   - Will bloat memory requirements
+  - maybe we can just use google translate then. we just set to and from to be chinese simp and trad (this is probably better overall actually)
 * merge Nick's tone colorisation plugin into this plugin (lets you change the tone colors using ctrl+F1 through to Ctrl+F5 [dictionary is not perfect and chanees need to be made. Seems better to have the feature built-in.
 * [side-issue] port the code from Kanji Graph plugin into this plugin [adds a graph showing how many unique hanzi in deck over time] (can't simply change fields, uses Japanese specific functions)
 
                 == Future [non-trivial / unimportant changes] ==
                 
-- Consider incorporating python library for Chinese: http://code.google.com/p/cjklib/
+* Consider incorporating python library for Chinese: http://code.google.com/p/cjklib/
     - would give Cantonese, IPA, Gwoyeu (partial Wade-Giles) and a ton of other functionality
 * support for Japanese using CEDICT (format is almost identical as EDICT is the parent of CEDICT, itself the parent of CC-CEDICT, et al)
 * selective blanking feature. Save the PREVIOUS (post-lookup) value of each field somewhere when filling the fields (perhaps in hidden html) then, When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
