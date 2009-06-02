@@ -1,49 +1,52 @@
 #################################################################################
-###                        Mandarin-Chinese Pinyin Toolkit                    ### 
+###                   Mandarin-Chinese Pinyin Toolkit (PyKit)                 ### 
+###                          Version 0.05 (__/06/2009)                        ###
 #################################################################################
-A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
-Copyright (C) 2009 Nicholas Cook & Max Bolingbroke
-Free software Licensed under GNU GPL
+# A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>#
+# Copyright (C) 2009 Nicholas Cook & Max Bolingbroke                            #
+# Free software Licensed under GNU GPL                                          #
+#################################################################################
+
+       YOU ARE STRONGLY ADVISED TO READ THE INSTALATION INSTRUCTIONS
+         NOT DOING SO MAY MEAN YOU MISS OUT ON CORE PYKIT FEATURES
+
 
 === Features ====================================================================
-The Pinyin Toolkit adds several useful features for Mandarin users:
+The Pinyin Toolkit, or PyKit (pronounced 'Pie-Kit') adds many useful features to
+Anki to assist the study of Mandarin. The aim of the project is to greatly enhance
+the user-experience for students studying Chinese language.
 
-1) improved pinyin generation using a dictionary to guess the likely reading
-2) output tone marks instead of numbers
-3) colorize pinyin according to tone mark to assist visual learners
-4) look up the meaning of characters in English, German, or French (and/or use google translate for other languages)
-5) colorize character according to tone to assist visual learners [if enabled]
-6) generate the appropriate "[sound:ni2.ogg][sound:hao3.ogg]" tags to give rudimentary text-to-speech [if enabled]
-7) lookup the Measure Word for a character from CC-CEDICT (just English version for now)
+PyKit's core features include:
+ 1) improved automatic pinyin generation using a dictionary to guess the reading
+ 2) colorization of pinyin according to tone (to assist visual learners)
+ 3) colorization of Hanzi according to tone (to assist visual learners)
+ 4) text-to-speech conversion to assist (auditory learners)
+ 5) advanced dictionary lookup for Chinese into Engish, German, and French
+ 6) machine-translation of non-dictionary words and phrases using online tools
+ 7) automatic transcription of measure words (MW) into their own field
 
-The plugin replaces standard Mandarin generation, so there is no need to rename your model or model tags.
-Features 1 to 4 will work automatically out of the box. Features 5 and 6 are optional extras that require enabling.
+A number of other smaller improvesments and conveniences are also included:
+ -  option to chose either number or tone-mark output
+ -  the automatic blanking of auto-generated fields when 
+ -  shortcut support to change colors using control+Fx keys, matching the tones
+ -  automatic downloading of a suitable voice audio-pack to use with text-to-speech
+ -  automatic filling of empty fields in the deck with missing information
+ -  much greater support of non-standard field names ( "Hanzi", 英语" and so on)
+ -  support for user dictionaires (to customise translated or pinyin rendering)
 
-                            == User Dictionaries =
-                            
-To add your own dictionary entries, create a file called "dict-userdict.txt" in the pinyin/ subdirectory
-Copy the format of the other dictionaires, i.e:
-     <simplified-without-spaces> <traditional-without-spaces> [<pinyin> ... <pinyin>] /<meaning>/.../<meaning>/
-Entries should be separated by spaces.
-
-Here are some examples:
-一一 一一 [yi1 yi1] /one by one/one after another/
-一共 一共 [yi1 gong4] /altogether/
-
-Note that you can omit the meaning and surrounding "/"s but everything else is required:
-一一 一一 [yi1 yi1]
-一共 一共 [yi1 gong4]
+ ... to be followed in the future by a raft of forthcoming features!
 
 
 === Installation ================================================================
 
-1) download using Anki shared-plugin download feature
+1) download PyKit using Anki shared-plugin download feature
 2) Ensure your model has the tag "Mandarin"
-3) Ensure your model has the the fields:
-  - "Expression" or "Hanzi"
-  - "Reading" or "Pinyin"
-  - "Meaning"
-  - You can change the name the pluhig looks for by editing Pinyin Toolkit.py
+3) Ensure your model has fields that represent the following items:
+        a) "Expression" i.e. "Chinese"
+        b) "Reading" i.e. "Pinyin"
+        c) "Meaning" i.e. "English", "German", "French" or you local language
+  - PyKit is loaded 
+  - You can change the name the pluhig looks for by editing "Pinyin Toolkit.py"
 
 4) To use character colorization:
   - ensure your model has a field called "Color" to populate with colored characters
@@ -64,10 +67,83 @@ Note that you can omit the meaning and surrounding "/"s but everything else is r
 
 * IT IS STRONGLY SUGGESTED YOU FOLLOW THE STEPS IN docs-audio.txt TO IMPROVE AUDIO SUPPORT! *
 
-You will find many settings can be changed in Pinyin Toolkit.py
+You will find many settings can be changed in "Pinyin Toolkit.py"
 Features can also be turned on and off and the language settings varied.
 
 If you plan not to use certain features then you should turn them off to decrease memory usage.
+
+
+=== Feature Guide & Design Notes ================================================
+[add commentary on why features are how they are]
+This section provides some notes on development methodology and explains why some features have been implimented as they have.
+
+1) Colorisation
+Having studied Chinese for several years, it became apparnet to me that it was extremly difficult to remember the tone for a given Hanzi.
+
+It came to be that it would be very useful to colorise the pinyin and the characters in order to remember them.
+I looked on the internet to see if others had developed this idea. At the time I only came across 
+
+2) Text-to-Speech
+One of the main ideas behind the PyKit is that it is much easier to learn a language when you can hear it.
+Mandarin is an idea language for text-to-speech conversion because there are a relatively small number of unique sounds (around a thousand)
+
+The plugin allows the user to download the Chinese-Lessons Sample audio files automatically.
+However, there are better audio fles available if you are prepared to look for them.
+To save you some time you can find a list giving this information to you below.
+
+=Mono-sylabic=
+ChineseLessons.com                  [n=1,189]   .mp3    [average quality]          http://www.chinese-lessons.com/download.htm
+ChinesePod.com free pinyin tool     [n=1,627]   .mp3    [licensing restrictions]   http://chinesepod.com/resources/pronunciation
+SWAC Audio Files                    [n=1,000]   .ogg    [need renaming script]     http://swac-collections.org/download.php
+WenLin Audio Files                  [n=1,675]   .wav    [commercial license]       http://www.wenlin.com/
+
+The reccommended audio files are the ChinesePod.com files. They are distributed freely at the above link but licensing prevents us from including them.
+If you want to upgrade to these files then go to the webpage, download the files (keep a copy!) and place them in your media directory, replacing any files there already. 
+
+In the future PyKit will support complex word packs such as "ni2hao3.ogg" but for now the information below is just for reference.
+=Complex Words=
+[add details]
+
+
+3) Pinyin Spacing
+http://www.cjkware.com/2008/po1.html
+
+3) Third Tone Sandhi
+There is no support for the third tone sandhi.
+Future support is planned for (3,3) tone sandhis but not (3,3,3) because of the relevance of context.
+This support will only be for audio.
+Past experiments have suggested that using a light yellow color to show the change to 2 in (3,3) has a negative impact on memory.
+In the future a test may be carried on out using a lighter green color instead.
+
+4) Other Tone Sandhis
+Unsupported
+DEBUG
+
+5) erhua
+The idea is that the space should be removed where there is an erhua, eg nǐ men2r [which is best passed to the lookup engine as menr2]. This creates a complication when coloring characters. For even more fun the er character isn't always an erhua, for example "er zi" where it is a separate sylabul and must not be merged. I didn't mean anything about the neutral tone [that was just a convenient way to have the character colorisation not break]. Also erhua are not necessarily  the end because we may be dealing with a phrase.
+DEBUG
+
+6) True Pinyin
+DEBUG
+
+                              == Audo-Blanking ==
+DEBUG
+
+                            == User Dictionaries ==
+                            
+To add your own dictionary entries, create a file called "dict-userdict.txt" in the pinyin/ subdirectory
+Copy the format of the other dictionaires, i.e:
+    <simplified-without-spaces> <traditional-without-spaces> [<pinyin> ... <pinyin>] /<meaning>/.../<meaning>/
+
+Entries should be separated by spaces.
+
+Here are some examples:
+一一 一一 [yi1 yi1] /one by one/one after another/
+一共 一共 [yi1 gong4] /altogether/
+
+Note that you can omit the meaning and surrounding "/"s but everything else is required:
+一一 一一 [yi1 yi1]
+一共 一共 [yi1 gong4]
 
 
 === Changelog ===================================================================
@@ -145,7 +221,6 @@ Version 0.01   (2008)    Brian Vaughan [http://brianvaughan.net]
 NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
 
 
-
 === Bug-Hunting To-Do-List & Future Development Plans ===========================
 
                                   == Bug Fix ==
@@ -161,7 +236,7 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
 * Don't change from add window to main Anki window on faliure to find audio files
 * attempt to reduce memory footprint
 * move two options from Tools menu to Tools -> Advanced (rarely used functions, probably each only once per deck)
-  - I think we should have a Tools -> Pinyin Toolkit submenu with both things on
+  - I think we should have a Tools -> PyKit submenu with both things on
 * have audio downloader rename the 4 5th tone audio files
   - Not sure we need to do this - the audio generation already looks for files with me.mp3 names as tone 5
 * Change pinyin recognition to a regex expression http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108
@@ -243,67 +318,9 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
     - Consider errors in HanDeDict http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/content/consistency-check-handedict-unihan-pinyin-pronunciations
     - Consider cross-check script
 
-
-=== Design Notes ================================================================
-[add commentary on why features are how they are]
-This section provides some notes on development methodology and explains why some features have been implimented as they have.
-
-1) Colorisation
-Having studied Chinese for several years, it became apparnet to me that it was extremly difficult to remember the tone for a given Hanzi.
-
-It came to be that it would be very useful to colorise the pinyin and the characters in order to remember them.
-I looked on the internet to see if others had developed this idea. At the time I only came across 
-
-2) Text-to-Speech
-One of the main ideas behind the Pinyin Toolkit is that it is much easier to learn a language when you can hear it.
-Mandarin is an idea language for text-to-speech conversion because there are a relatively small number of unique sounds (around a thousand)
-
-The plugin allows the user to download the Chinese-Lessons Sample audio files automatically.
-However, there are better audio fles available if you are prepared to look for them.
-To save you some time you can find a list giving this information to you below.
-
-=Mono-sylabic=
-ChineseLessons.com                  [n=1,189]   .mp3    [average quality]          http://www.chinese-lessons.com/download.htm
-ChinesePod.com free pinyin tool     [n=1,627]   .mp3    [licensing restrictions]   http://chinesepod.com/resources/pronunciation
-SWAC Audio Files                    [n=1,000]   .ogg    [need renaming script]     http://swac-collections.org/download.php
-WenLin Audio Files                  [n=1,675]   .wav    [commercial license]       http://www.wenlin.com/
-
-The reccommended audio files are the ChinesePod.com files. They are distributed freely at the above link but licensing prevents us from including them.
-If you want to upgrade to these files then go to the webpage, download the files (keep a copy!) and place them in your media directory, replacing any files there already. 
-
-In the future Pinyin Toolkit will support complex word packs such as "ni2hao3.ogg" but for now the information below is just for reference.
-=Complex Words=
-[add details]
-
-
-3) Pinyin Spacing
-http://www.cjkware.com/2008/po1.html
-
-3) Third Tone Sandhi
-There is no support for the third tone sandhi.
-Future support is planned for (3,3) tone sandhis but not (3,3,3) because of the relevance of context.
-This support will only be for audio.
-Past experiments have suggested that using a light yellow color to show the change to 2 in (3,3) has a negative impact on memory.
-In the future a test may be carried on out using a lighter green color instead.
-
-4) Other Tone Sandhis
-Unsupported
-DEBUG
-
-5) erhua
-The idea is that the space should be removed where there is an erhua, eg nǐ men2r [which is best passed to the lookup engine as menr2]. This creates a complication when coloring characters. For even more fun the er character isn't always an erhua, for example "er zi" where it is a separate sylabul and must not be merged. I didn't mean anything about the neutral tone [that was just a convenient way to have the character colorisation not break]. Also erhua are not necessarily  the end because we may be dealing with a phrase.
-DEBUG
-
-6) True Pinyin
-DEBUG
-
-7) Audo-Blanking
-DEBUG
-
-
 === Licensing ===================================================================
 
-                             == Pinyin Toolkit==
+                             == PyKit==
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
