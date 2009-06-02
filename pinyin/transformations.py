@@ -33,7 +33,7 @@ class Colorizer(object):
 """
 Output audio reading corresponding to a textual reading.
 * 2009 rewrites by Max Bolingbroke <batterseapower@hotmail.com>
-* 2009 modifications by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
+* 2009 original version by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
 """
 class PinyinAudioReadings(object):
     def __init__(self, available_media, audioextensions):
