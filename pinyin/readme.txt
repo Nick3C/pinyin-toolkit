@@ -142,21 +142,32 @@ you should turn them off in the settings section.
 * audio error could be improved by:
     * finish the auto-fill even if there is an error
     * not make the add window disappear from the taskbar (and focus change to anki)
+* [I think we should ship all dictionaries in one package in future]
+* as a result of the above... we can use the english dictionary to do a MW lookup even in German, French and other languages
+* add feature to audio file full words before breaking down to sylabuls [eg "怎么样, first check: "zěn me yàng")
+    - I am aware that probability of a match gets less exponentialy less likely with length but have the chance to build large sound packs from various open source projects [see builging dictionary below]
     
-    
-= Future Development (simple) =
+= Future Development Plans (simple) =
+* consider chinesepod's free audio download as replacement for pinyn
+* Consider how other dictionaries can be usefully used:
+    - very useful but not sure if good for this: http://www.nciku.com
+    - (audio? too few?) http://en.wiktionary.org/wiki/他们 / http://upload.wikimedia.org/wikipedia/commons/Zh-t%C4%81men.ogg
 * dictionary update auto-downloads
 * add shortcut key to force regenerate all fields
 * tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 [too complex to do based on other sandhi as they are context specific]) - note: Nick tested this using a yellow color for pinyin (to show change to 2nd tone) didn't work and interfered with memory; perhaps could try again with a (very slightly) lighter green color but maybe better justnot to do this.
 * look at borrowing code from the "Allows numbers to match pinyin tone mark.pyc" plugin, seems much more efficient tone mark generation
 * dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp [google translate can already do this, but needs internet]
+* merge Nick's tone colorisation plugin into this plugin (lets you change the tone colors using ctrl+F1 through to Ctrl+F5 [dictionary is not perfect and chanees need to be made. Seems better to have the feature built-in.
+* [side-issue] port the code from Kanji Graph plugin into this plugin [adds a graph showing how many unique hanzi in deck over time] (can't simply change fields, uses Japanese specific functions)
 
-Future [big, non-trivial, and/or unimportant changes]
+= Future [big, non-trivial, and/or unimportant changes] =
+- Consider incorporating python library for Chinese: http://code.google.com/p/cjklib/
+    - would give Cantonese, IPA, Gwoyeu (partial Wade-Giles) and a ton of other functionality
+* support for Japanese using CEDICT (format is almost identical as EDICT is the parent of CEDICT, itself the parent of CC-CEDICT, et al)
 * selective blanking feature. Save the PREVIOUS (post-lookup) value of each field somewhere when filling the fields (perhaps in hidden html) then, When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
 * add a config tab to the Anki preferences window
 * where dictionary contains "to " automatically as "verb" to a field called "Type"
-* merge Nick's tone colorisation plugin into this plugin (lets you change the tone colors using ctrl+F1 through to Ctrl+F5 [dictionary is not perfect and chanees need to be made. Seems better to have the feature built-in.
-* [side-issue] port the code from Kanji Graph plugin into this plugin [adds a graph showing how many unique hanzi in deck over time] (can't simply change fields, uses Japanese specific functions)
+* dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp
 
 = Future Development [big, non-trivial, and/or unimportant changes] =
 * auto-submit card as entry to CC-CEDICT, HanDeDict, and CFDICT from within Anki
@@ -164,13 +175,17 @@ Future [big, non-trivial, and/or unimportant changes]
 * add a config tab to the Anki preferences window
 * consider viability of using English deck for MW lookup no matter what other settings are [planned distribution of all dicts]
 * Impliment True Pinyin
-* dictionary lookup to allow traditional / chinese reverse lookup [onfocus from field.ChineseSimp populates field.ChineseTrad and onfocus from ChineseTrad populates fieldChineseSimp
 * tone sandhi rule IN SOUND GEN ONLY, so that a (3,3) -> (2,3) but not affect (3,3,3 
-
 
 = Highly Experimental Future Development =
 [in case we ever get bored!] 
-- Consider incorporating python library for Chinese: http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/content/announcing-eclectus-han-character-dictionary
+- support for other romanisation systems:
+    - wade giles
+    - Gwoyeu Romatzyh - http://home.iprimus.com.au/richwarm/gr/gr.htm#whatisgr
+    - (bopomofo)
+    - IPA
+    - Cantonese
+* add dictionary for GR version of CEDICT (big5 only, no unicode) http://home.iprimus.com.au/richwarm/gr/gr.htm#grdict
 - Pinyin experiments
     - trial using superscript tone marks as per http://www.pinyinology.com/gr/gr2.html
     - trial Place names to have many first letter caps [incorrect in pinyin] http://www.pinyinology.com/pinyin/signs3/signs3.html and http://www.pinyinology.com/pinyin/transition.html
@@ -190,10 +205,31 @@ This section provides some notes on development methodology and explains why som
 
 1) Colorisation
 Having studied Chinese for several years, it became apparnet to me that it was extremly difficult to remember the tone for a given Hanzi.
-DEBUG
+
+It came to be that it would be very useful to colorise the pinyin and the characters in order to remember them.
+I looked on the internet to see if others had developed this idea. At the time I only came across 
 
 2) Text-to-Speech
-DEBUG
+One of the main ideas behind the Pinyin Toolkit is that it is much easier to learn a language when you can hear it.
+Mandarin is an idea language for text-to-speech conversion because there are a relatively small number of unique sounds (around a thousand)
+
+The plugin allows the user to download the Chinese-Lessons Sample audio files automatically.
+However, there are better audio fles available if you are prepared to look for them.
+To save you some time you can find a list giving this information to you below.
+
+=Mono-sylabic=
+ChineseLessons.com                  [n=1,189]   .mp3    [average quality]      http://www.chinese-lessons.com/download.htm
+ChinesePod.com free pinyin tool     [n=1,627]   .mp3    [licensing restrict]   http://chinesepod.com/resources/pronunciation
+SWAC Audio Files                    [n=1,000]   .ogg    [need renaming script] http://swac-collections.org/download.php
+WenLin Audio Files                  [n=1,675]   .wav    [commercial license]   http://www.wenlin.com/
+
+The reccommended audio files are the ChinesePod.com files. They are distributed freely at the above link but licensing prevents us from including them.
+If you want to upgrade to these files then go to the webpage, download the files (keep a copy!) and place them in your media directory, replacing any files there already. 
+
+In the future Pinyin Toolkit will support complex word packs such as "ni2hao3.ogg" but for now the information below is just for reference.
+=Complex Words=
+[add details]
+
 
 3) Pinyin Spacing
 http://www.cjkware.com/2008/po1.html
@@ -245,6 +281,12 @@ Licensing of HanDeDict is  Creative Commons Attribution-Share Alike 2.0 Germany 
 Chinese-French dictionary CFDICT, available at <http://www.chinaboard.de/cfdict.php?mode=dl>
 Licensing of CFDICT is Creative Commons Attribution-Share Alike 2.5 French <http://creativecommons.org/licenses/by-sa/2.5/fr/>
 
+Japanese-English dictionary EDICT, available at <http://www.csse.monash.edu.au/~jwb/j_edict.html>
+Licensing of EDICT is Createive Commons Attribut-Share Alike 3.0 Unported <http://www.edrdg.org/edrdg/licence.html>
+
 -Audio Files-
-Mandarin Sounds, available at: <http://www.chinese-lessons.com/download.htm
+Mandarin Sounds, available at: <http://www.chinese-lessons.com/download.htm>
 Licensing of Mandarin Sounds is Creative Commons Attribution-Noncommercial-No Derivative Works 3.0 United States <http://creativecommons.org/licenses/by-nc-nd/3.0/us/>
+
+SWAC Audio Collection, available at: <http://creativecommons.org/licenses/by/2.0/fr/deed.en_US>
+Licensing is Creative Commons Attribution 2.0 France <http://creativecommons.org/licenses/by/2.0/fr/deed.en_US>
