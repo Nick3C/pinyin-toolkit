@@ -23,7 +23,7 @@
 
 
 ###############  Version Details ###############
-pinyin_toolkit="0.05 dev"
+pinyin_toolkit="0.05 dev feature complete 0.1"
 
 CCDict_Ver="2009-05-29T05:46:28Z" # [n=84885] http://www.mdbg.net/chindict/chindict.php?page=cc-cedict
 HanDeDict_Ver="Sat May 30 00:20:38 2009" # [n=169500] http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl&w=8
@@ -99,7 +99,7 @@ candidateFieldNamesByKey = {
     'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
     'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
     'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
-    'mw'         : ["MW", "Measure Word", u"量词"]
+    'mw'         : ["MW", "Measure Word", "Classifier", u"量词"]
   }
 
 # The following line controls which model tag is used (it must match your deck).

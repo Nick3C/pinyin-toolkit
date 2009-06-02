@@ -5,6 +5,7 @@ import os
 
 import pinyin.dictionaryonline
 import pinyin.dictionary
+#import pinyin.shortcutkeys
 
 import hooks
 import updater

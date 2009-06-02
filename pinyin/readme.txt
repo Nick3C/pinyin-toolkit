@@ -135,6 +135,7 @@ you should turn them off in the settings section.
 - audio download does not worth (not the same as the audio bug)    
 
 = Mods & Tweaks =
+* memory footprint is getting a bit excessive (112mb for my deck)
 * move two options from Tools menu to Tools -> Advanced (rarely used functions, probably each only once per deck)
 * have audio downloader rename the 4 5th tone audio files
 * Change pinyin recognition to a regex expression http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108
@@ -171,6 +172,7 @@ you should turn them off in the settings section.
 
 = Future Development [big, non-trivial, and/or unimportant changes] =
 * auto-submit card as entry to CC-CEDICT, HanDeDict, and CFDICT from within Anki
+* similarity search, no entry and <5 character then suggest from dict (search for other entry that 2 or more of same characters; MDBG online does this now)
 * enhanced auto-blanking selective blanking feature. Save the PREVIOUS values of each field somewhere when filling the fields [possibly in hidden html in each filled field]. When doing a lookup check see if there is a change from the previous lookup value and the current value (i.e. if they have not been edited). If not edited then blank and replace, if edited then leve alone.
 * add a config tab to the Anki preferences window
 * consider viability of using English deck for MW lookup no matter what other settings are [planned distribution of all dicts]
