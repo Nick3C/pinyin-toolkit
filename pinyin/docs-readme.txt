@@ -152,6 +152,8 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
 
 - audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
   * I think we decided this is a capitalisation issue.  Does it work now?
+- support multiple sound packs
+- erhua needs serious overhaul
 
                                == Mods & Tweaks ==
 
