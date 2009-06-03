@@ -283,6 +283,7 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
 
                 == Future [non-trivial / unimportant changes] ==
                 
+* online dictionary indicators into dictionaryonline.py
 * Consider incorporating python library for Chinese: http://code.google.com/p/cjklib/
     - would give Cantonese, IPA, Gwoyeu (partial Wade-Giles) and a ton of other functionality
 * support for Japanese using CEDICT (format is almost identical as EDICT is the parent of CEDICT, itself the parent of CC-CEDICT, et al)

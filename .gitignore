@@ -29,3 +29,8 @@ Pinyin Toolkit.log
 
 # Allows a hardlink in pinyindir to be ignored
 pinyin/Pinyin Toolkit.py
+
+# Ignore Media any media that might be in media directory
+*.mp3
+*.wv
+*.ogg

@@ -58,6 +58,46 @@ def lookup(query, destlanguage):
         log.warn("Empty result from Google - unexpected behaviour!")
         return None
 
+################################################################################
+#Indicators
+# Future interest in having icons above the facteditor representing various dictionaries
+# Light up red/green indicators show if the entry is in the dictionary or not
+# Can click-through to access online dictionary
+
+
+
+
+
+
+################################################################################
+# Future plans to impliment entries to CC-CEDICT, HanDeDict, and CFDICT from Anki.
+
+
+def submitSelector(self, Hanzi, Pinyin, language, translation):
+    log.info("User is attempting to submit an entry for %s [%s] to the %s dictionary", Hanzi, Pinyin, language)
+
+    if language == "en":
+        submitCEDICT( Hanzi, Pinyin, translation) 
+    else:
+        log.warn("No %s dictionary available to submit entry to", language)
+
+
+    
+
+def submitCEDICT(self, Hanzi, Pinyin, English ):
+    # Add function to use google translate to lookup traditional and simplfied (this way avoid handedict / ccedict swap problems
+    # need internet to make submittion anyway
+    hanziSimp = "" 
+    HanziTrad = ""
+    
+    # run hanzi thought lookup with tonify off to get pinyin + tones (need this format for CC-CEDICT) 
+    Pinyin = ""
+    
+    URL = "http://cc-cedict.org/editor/editor.php?return=&insertqueueentry_diff=+" + hanzisimp + "[" + pinyin +"]+/&popup=1&handler=InsertQueueEntry"
+    
+    
+
+
 if __name__ == "__main__":
     import unittest
     
