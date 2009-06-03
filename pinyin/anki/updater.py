@@ -15,7 +15,7 @@ class FieldUpdater(object):
     
     def preparetokens(self, tokens):
         if self.config.colorizedpinyingeneration:
-            tokens = transformations.Colorizer().colorize(tokens)
+            tokens = transformations.Colorizer(colorlist=self.config.colorlist).colorize(tokens)
     
         return tokens.flatten(tonify=self.config.tonify)
     
@@ -70,7 +70,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictmeasurewords[0])
     
     def generatecoloredcharacters(self, expression):
-        return transformations.Colorizer().colorize(self.dictionary.tonedchars(expression)).flatten()
+        return transformations.Colorizer(self.config).colorize(self.dictionary.tonedchars(expression)).flatten()
     
     #
     # Core updater routine

@@ -61,9 +61,9 @@ colorizedcharactergeneration = True   # Should we try and fill out a field calle
 audiogeneration              = True   # Should we try and fill out a field called Audio with text-to-speech commands? True or False
 detectmeasurewords           = True   # Should we try and put measure words seperately into a field called MW? True or False
 
-# Should we give each meaning a number? Uncomment the line showing how you would like them to be numbered:
-numbermeanings = [u"㊀", u"㊁", u"㊂", u"㊃", u"㊄", u"㊅", u"㊆", u"㊇", u"㊈", u"㊉", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]
-#numbermeanings = [u"①", u"②", u"③", u"④", u"⑤", u"⑥", u"⑦", u"⑧", u"⑨", u"⑩", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]
+# Should we give each translation entry a number? Uncomment the line showing how you would like them to be numbered:
+numbermeanings = [u"㊀", u"㊁", u"㊂", u"㊃", u"㊄", u"㊅", u"㊆", u"㊇", u"㊈", u"㊉", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]  # Cute Chinese symbols for first 10, then english up to 20
+#numbermeanings = [u"①", u"②", u"③", u"④", u"⑤", u"⑥", u"⑦", u"⑧", u"⑨", u"⑩", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]      # Pretty bubble-numerals
 #numbermeanings = []           # use simple "(1)", "(2)", "(3)", "(4)", "(5)" ...
 #numbermeanings = None         # do not give each entry a number
 
@@ -88,6 +88,32 @@ mandarinsoundsurl = "http://www.chinese-lessons.com/sounds/Mandarin_sounds.zip"
 # For example "me.mp3" instead of "me5.mp3" or "me4.mp3" - need to find a way to fix this.
 
 
+### Color Settings ####
+
+# You can change the colors PyKit uses to format tones and text with.
+
+# Remember: Just because you can change something doesn't mean you should! :)
+# If you use non-standard tone colorization you may become 'weird'
+# Other applications may not let you use your non-standard colors
+# These also have the benefit of following the colors of the rainbow, awww...
+
+colorlist = {
+#   | Tone colors |
+    1 : u"#ff0000",     # 1st tone color, default is #FF0000 (red)
+    2 : u"#ffaa00",     # 2nd tone color, default is #ffaa00 (orange)
+    3 : u"#00aa00",     # 3rd tone color, default is #00aa00 (green)
+    4 : u"#0000ff",     # 4th tone color, default is #0000FF (blue)
+    5 : u"#545454",     # 5th tone color, default is #545454 (grey)
+
+#   | User colors |
+    6 : u"#00AAFF",     # default is #000000, black [not the same as 'no color']
+    7 : u"#55007F",     # default is #55007F, yellow
+    8 : u"#FF00FF",     # default is #FF00FF, pink
+    9 : u"#000000",      
+    10: u"#000000",      
+    11: u"#000000",      
+    12: u"#000000"}
+
 ### Field Settings ###
 
 # These are prioritised lists which encode what kind of field is given what name in the model.
@@ -106,6 +132,7 @@ candidateFieldNamesByKey = {
 # You should not need to change this setting.
 modelTag = "Mandarin"
 
+
 ############### End of Settings Section ###############
 
 if __name__ != "__main__":
@@ -113,7 +140,7 @@ if __name__ != "__main__":
 
     import pinyin.anki.main as main
     from ankiqt import mw
-    
+        
     # Save a reference to the toolkit onto the mw, preventing garbage collection of PyQT objects
     mw.pinyintoolkit = main.PinyinToolkit(mw, sys.modules[__name__]).installhooks()
 else:

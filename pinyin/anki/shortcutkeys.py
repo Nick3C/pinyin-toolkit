@@ -10,7 +10,10 @@ from anki.hooks import wrap,addHook
 from ankiqt import mw
 from ankiqt import ui
 import ankiqt.ui.facteditor
+from pinyin.logger import log
 
+log.info("Shortcut keys module loaded")
+"""
 def setColor(widget, color):
     w = widget.focusedEdit()
     cursor = w.textCursor()
@@ -19,36 +22,11 @@ def setColor(widget, color):
     cursor.clearSelection()
     w.setTextCursor(cursor)
 
-#define the colors you want to use here
-def ShortColor1(self):
-    setcolor(self, "#FF0000")
-# default is #FF0000, red
-def ShortColor2(self):
-    setcolor(self, "#ffaa00")
-# default is #ffaa00, orange
-def ShortColor3(self):
-    setcolor(self, "#00aa00")
-# default is #00aa00, green
-def ShortColor4(self):
-    setcolor(self, "#0000FF")
-# default is #0000FF, blue
-def ShortColor5(self):
-    setcolor(self, "##545454")
-# default is #ffff00, grey
-def ShortColor6(self):
-    setcolor(self, "#00AAFF")
-# default is #00AAFF, light blue
-def ShortColor7(self):
-    setcolor(self, "#000000")
-# default is #000000, black [note this is not the same as no color]
-def ShortColor8(self):
-    setcolor(self, "#ffff00")
-# default is #55007F, yellow
-def ShortColor9(self):
-    setcolor(self, "#FF00FF")
-# default is #FF00FF, pink
-def ShortColor0(self):
-    setcolor(self, "#00AA7F")
+
+def ShortColor(self,tone):
+    
+    setcolor(self, whichcol)
+
 
 
 def newFields(self):
@@ -129,3 +107,4 @@ def newFields(self):
 
 ankiqt.ui.facteditor.FactEditor.setupFields = wrap(ankiqt.ui.facteditor.FactEditor.setupFields,newFields,"after")
 newFields(mw.editor)
+"""
