@@ -22,10 +22,10 @@ class FieldUpdater(object):
         return tokens.flatten(tonify=self.config.tonify)
     
     #
-    # Media discovery: I used to do this
+    # Media discovery
     #
     
-    def discovermediapacks(self):
+    def discoverlegacymedia(self):
         # NB: we used to do this when initialising the toolkit, but that dosen't work,
         # for the simple reason that if you change deck the media should change, but
         # we can't hook that event
@@ -42,8 +42,8 @@ class FieldUpdater(object):
             log.info("The media directory was either not present or not accessible")
             mediadircontents = None
         
-        # Finally, list the packs
-        return media.MediaPack.discover(mediadircontents, self.mw.deck.s.all("select originalPath, filename from media"))
+        # Finally, find any legacy media in that directory. TODO: use this method for something
+        return media.discoverlegacymedia(mediadircontents, self.mw.deck.s.all("select originalPath, filename from media"))
     
     #
     # Generation
@@ -54,15 +54,26 @@ class FieldUpdater(object):
         return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
     
     def generateaudio(self, notifier, dictreading):
-        output, mediamissing = transformations.PinyinAudioReadings(self.discovermediapacks(), self.config.audioextensions).audioreading(dictreading)
-    
-        # Show a warning the first time we detect that we're missing some sounds
-        if mediamissing:
+        mediapacks = media.MediaPack.discover()
+        if len(mediapacks) == 0:
+            # Show a warning the first time we detect that we're missing a sound pack
             notifier.infoOnce("We appear to be missing some audio samples. This might be our fault, but if you haven't already done so, "
                               + "please use 'Tools' -> 'Download Mandarin text-to-speech Audio Files' to install the samples. Alternatively, "
                               + "you can disable the text-to-speech functionality in the Pinyin Toolkit settings.")
-    
-        return output
+            
+            # There is no way we can generate an audio reading with no packs - give up
+            return None
+        
+        # Get the best media pack to generate the audio, along with the string of files from that pack we need to take
+        mediapack, output, _mediamissing = transformations.PinyinAudioReadings(mediapacks, self.config.audioextensions).audioreading(dictreading)
+        
+        # Construct the string of audio tags from the optimal choice of sounds
+        output_tags = u""
+        for outputfile in output:
+            # Install required media in the deck as we go, getting the canonical string to insert into the sound field upon installation
+            output_tags += "[sound:%s]" % self.mw.deck.addMedia(os.path.join(mediapack.packpath, outputfile))
+        
+        return output_tags
     
     def generatemeanings(self, dictmeanings):
         if dictmeanings == None or len(dictmeanings) == 0:

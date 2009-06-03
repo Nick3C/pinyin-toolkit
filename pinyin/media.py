@@ -10,10 +10,13 @@ import zipfile
 from logger import log
 import utils
 
+def mediadir():
+    return os.path.join(utils.pinyindir(), "media")
+
 class MediaDownloader(object):
     def __init__(self):
         # Where shall we save downloaded files?
-        self.__cachedir = os.path.join(utils.pinyindir(), "media", "downloads")
+        self.__cachedir = os.path.join(mediadir(), "downloads")
         
         # Ensure the cache exists
         log.info("Initialising cache directory at %s", self.__cachedir)
@@ -48,57 +51,49 @@ class MediaDownloader(object):
 
 class DownloadedMedia(object):
     def __init__(self, name, ziplocation):
-        log.info("Initalizing media located at %s", ziplocation)
+        log.info("Initalizing downloaded media %s located at %s", name, ziplocation)
         self.__name = name
         self.__zip = zipfile.ZipFile(ziplocation)
     
-    def extractand(self, handler):
-        # Get a temporary path and then create a subdirectory into which to extract.
-        # The reasoning behind this is that the way we signal to the MediaPack which
-        # pack something is in, is by the directory name it was imported from!
-        baseextractdirpath = tempfile.mkdtemp()
-        extractdirpath = os.path.join(baseextractdirpath, self.__name)
-        os.mkdir(extractdirpath)
+    def installpack(self):
+        # Work out the pack directory we want to extract to
+        packpath = utils.mkdirfallback(mediadir(), self.__name)
+        log.info("Extracting downloaded media into %s", packpath)
         
         # Extract the ZIP into a new directory
-        log.info("Extracting media into %s", extractdirpath)
         for info in self.__zip.infolist():
             # Create the directory
-            extractfilepath = os.path.join(extractdirpath, info.filename)
+            extractfilepath = os.path.join(packpath, info.filename)
             utils.ensuredirexists(os.path.dirname(extractfilepath))
             
-            # Extract the file
+            # Extract the file. NB: must use binary mode - this important for for Windows!
             file = open(extractfilepath, 'wb')
             file.write(self.__zip.read(info.filename))
             file.close()
-            
-            # Give the file to the handler
-            handler(extractfilepath)
-        
-        # Blast the temporary directory and its extracted files
-        log.info("Deleting extracted files from %s", extractdirpath)
-        shutil.rmtree(extractdirpath)
 
 class MediaPack(object):
-    def __init__(self, name, media):
+    def __init__(self, packpath, media):
+        self.packpath = packpath
+        
         # Normalize capitalisation for ease of lookup
-        self.name = name
         self.media = dict([(name.lower(), filename) for name, filename in media.items()])
     
     def __str__(self):
         return self.name
     
     def __repr__(self):
-        return "MediaPack(%s, %s)" % (repr(self.name), repr(self.media))
+        return "MediaPack(%s, %s)" % (repr(self.packpath), repr(self.media))
     
     def __eq__(self, other):
         if other == None:
             return False
         
-        return self.name == other.name and self.media == other.media
+        return self.name == other.name and self.packpath == other.packpath and self.media == other.media
     
     def __ne__(self, other):
         return not(self == other)
+    
+    name = property(lambda self: os.path.basename(self.packpath))
     
     def mediafor(self, basename, audioextensions):
         # Check all possible extensions in order of priority
@@ -111,83 +106,60 @@ class MediaPack(object):
         return None
     
     @classmethod
-    def discovermanualpacks(cls, mediadircontents):
-        if not(mediadircontents):
-            return []
-        
-        # We detect membership of the pack by looking at the filename. If
-        # it is in the format foo5.extension then it is a candidate sound.
-        # (Actually, we just add all files, because it doesn't do any harm to have too many)
+    def frompath(cls, packpath):
         media = {}
-        for filename in mediadircontents:
-            log.info("Discovered %s -> %s (manual media)", filename, filename)
-            media[filename] = filename
+        for filename in os.listdir(packpath):
+            log.info("Discovered media %s in %s", filename, packpath)
+            media[filename] = os.path.join(packpath, filename)
         
-        # Return the pack, if we found any media at all
-        if len(media) > 0:
-            return [MediaPack("Manual", media)]
-        else:
-            return []
+        return MediaPack(packpath, media)
     
     @classmethod
-    def discoverimportedpacks(cls, mediadircontents, mediaindex):
-        # Normalize case from the directory listing so that the removal check works reliably
-        if mediadircontents != None:
-            mediadircontents = [os.path.normcase(mediadircontent) for mediadircontent in mediadircontents]
-        
-        # Iterate over files and pluck them out into this dictionary of dictionaries
-        known_pack_contents = {}
-        for orig_path, filename in mediaindex:
-            # Note that orig_path is a FULL path so need to call os.path.basename on it
-            orig_dir, orig_filename = os.path.split(orig_path)
-            orig_containing_dir = os.path.basename(os.path.normpath(orig_dir))
-            
-            # Remove the file from consideration for the manual media lookup stage
-            try:
-                # If we couldn't list the media directory we aren't going to add any manual
-                # packs, so it's alright not to remove it from the list of paths (and we couldn't anyway).
-                if mediadircontents != None:
-                    # NB: we can only do this reliably because we normalized the case above
-                    mediadircontents.remove(os.path.normcase(filename))
-            except:
-                # Tried to remove the file from the directory listing, but it's not actually
-                # in the list.  This means that the database entry is actually out of date and
-                # we should ignore it
-                log.info("Out of date database entry for %s -> %s", orig_filename, filename)
+    def discover(cls):
+        packs = []
+        themediadir = mediadir()
+        for packname in os.listdir(themediadir):
+            # Skip the download cache directory
+            if packname.lower() == "downloads":
                 continue
             
-            # If we can't determine a pack name, default it to Imported:
-            if orig_containing_dir == None or orig_containing_dir.strip('.') == '':
-               orig_containing_dir = "Imported"
-            
-            # Find the pack if we already have it:
-            if orig_containing_dir in known_pack_contents:
-                # An old pack: obtain the contents so far
-                pack_contents = known_pack_contents.get(orig_containing_dir)
+            # Only try and process directories as packs:
+            packpath = os.path.join(themediadir, packname)
+            if os.path.isdir(packpath):
+                log.info("Considering %s as a media pack", packname)
+                packs.append(cls.frompath(packpath))
             else:
-                # A new pack: create an empty dictionary of files to start adding to
-                pack_contents = {}
-                known_pack_contents[orig_containing_dir] = pack_contents
-            
-            # Save this bit of media
-            log.info("Discovered %s -> %s (imported media for %s)", orig_filename, filename, orig_containing_dir)
-            pack_contents[orig_filename] = filename
+                log.info("Ignoring the file %s in the media directory", packname)
         
-        # Turn the pack contents into some actual packs and return them:
-        return mediadircontents, [MediaPack(pack_name, pack_contents) for pack_name, pack_contents in known_pack_contents.items()]
+        return packs
+
+# Use to discover files in the media directory that are not referenced in the media
+# database. If this is true, the user has just copied them in - and we consider
+# such things "legacy" sounds that should be replaced with a true media pack.
+def discoverlegacymedia(mediadircontents, mediaindex):
+    # If the media directory was inacessible for any reason, just give up
+    if mediadircontents == None:
+        log.info("Couldn't discover legacy media because the media directory was not accessible")
+        return None
     
-    @classmethod
-    def discover(cls, mediadircontents, mediaindex):
-        # Media comes from two sources:
-        #  1) Media imported into the media directory by Anki. We detect this by consulting the media
-        #     database and looking for files whose original path had the foo5.extension format.
-        #     NB: we don't want include files that we can attribute to an imported pack to the Manual one,
-        #     so this method returns the REMAINING files in the contents.
-        mediadircontents, importedpacks = cls.discoverimportedpacks(mediadircontents, mediaindex)
-        
-        #  2) Media copied into the media directory by the user. All of the sounds from this
-        #     location are added to one pack, which is called Manual.
-        return cls.discovermanualpacks(mediadircontents) + importedpacks
+    # Normalize case from the directory listing so that the removal check works reliably
+    mediadircontents = [os.path.normcase(mediadircontent) for mediadircontent in mediadircontents]
+    
+    # Iterate over files and pluck them out into this dictionary of dictionaries
+    for orig_path, filename in mediaindex:
+        # Remove the file from consideration for the manual media lookup stage
+        try:
+            # NB: we can only do this reliably because we normalized the case above
+            mediadircontents.remove(os.path.normcase(filename))
+        except:
+            # Tried to remove the file from the directory listing, but it's not actually
+            # in the list.  This means that the database entry is actually out of date and
+            # we should ignore it
+            log.info("Out of date database entry for %s -> %s", orig_path, filename)
+            continue
+    
+    # Return the remaining files
+    return mediadircontents
 
 if __name__ == "__main__":
     import unittest
@@ -197,36 +169,8 @@ if __name__ == "__main__":
             self.assertEquals(MediaPack("Manual", {"A" : "b"}), MediaPack("Manual", {"a" : "b"}))
             self.assertNotEquals(MediaPack("Manual", {"A" : "b"}), MediaPack("Manual", {"A" : "B"}))
         
-        def testDiscoverNothing(self):
-            self.assertEquals(MediaPack.discover(None, []), [])
-        
-        def testDiscoverManual(self):
-            self.assertEquals(MediaPack.discover(["hello.mp3", "world.ogg"], []),
-                              [MediaPack("Manual", {"hello.mp3" : "hello.mp3", "world.ogg" : "world.ogg"})])
-        
-        def testDiscoverManualNormalizedCase(self):
-            self.assertEquals(MediaPack.discover(["hElLLo.mp3", "world.oGg"], []),
-                              [MediaPack("Manual", {"helllo.mp3" : "hElLLo.mp3", "world.ogg" : "world.oGg"})])
-    
-        def testDiscoverImported(self):
-            self.assertEquals(MediaPack.discover(["HASH1.mp3", "HASH2.ogg"], [("hello.mp3", "HASH1.mp3"), ("world.ogg", "HASH2.ogg")]),
-                              [MediaPack("Imported", {"hello.mp3" : "HASH1.mp3", "world.ogg" : "HASH2.ogg"})])
-        
-        def testDiscoverImportedFromDirectory(self):
-            self.assertEquals(MediaPack.discover(["HASH1.mp3", "HASH2.ogg"], [(os.path.join("foo", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]),
-                              [MediaPack("foo", {"hello.mp3" : "HASH1.mp3", "world.ogg" : "HASH2.ogg"})])
-        
-        def testDiscoverImportedFromSeveralDirectories(self):
-            self.assertEquals(MediaPack.discover(["HASH1.mp3", "HASH2.ogg"], [(os.path.join("bar", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]),
-                              [MediaPack("foo", {"world.ogg" : "HASH2.ogg"}), MediaPack("bar", {"hello.mp3" : "HASH1.mp3"})])
-        
-        def testDiscoverImportedFromDeepDirectory(self):
-            self.assertEquals(MediaPack.discover(["HASH1.mp3"], [(os.path.join(os.path.join("foo", "bar"), "hello.mp3"), "HASH1.mp3")]),
-                              [MediaPack("bar", {"hello.mp3" : "HASH1.mp3"})])
-        
-        def testDiscoverDiscardInvalidImportedFiles(self):
-            self.assertEquals(MediaPack.discover(["HASH1.mp3"], [(os.path.join("foo", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]),
-                              [MediaPack("foo", {"hello.mp3" : "HASH1.mp3"})])
+        def testName(self):
+            self.assertEquals(MediaPack(os.path.join("foo", "bar"), {}).name, "bar")
         
         def testMediaForCase(self):
             pack = MediaPack("Example", {"fOo.mP3" : "REsuLT"})
@@ -249,5 +193,48 @@ if __name__ == "__main__":
     
         def testMediaForMissing(self):
             self.assertEquals(MediaPack("Example", {}).mediafor("hi", [".mp3"]), None)
+        
+        def testFromPath(self):
+            def do(path):
+                # Create enclosing directory
+                packpath = os.path.join(path, "My Pack")
+                os.mkdir(packpath)
+                
+                # Fill with dummy files
+                for file in ["test.mp3", "BaZ.mP3", "nonsense"]:
+                    utils.touch(os.path.join(packpath, file))
+                
+                # Ensure that we have a sane pack
+                pack = MediaPack.frompath(packpath)
+                self.assertEquals(pack.name, "My Pack")
+                self.assertEquals(pack.packpath, packpath)
+                self.assertEquals(pack.mediafor("test", [".mp3"]), os.path.join(packpath, "test.mp3"))
+                self.assertEquals(pack.mediafor("BaZ", [".mp3"]), os.path.join(packpath, "BaZ.mP3"))
+                self.assertEquals(pack.mediafor("nonsense", [".mp3"]), None)
+            
+            # Create a temporary directory with which to do our test
+            utils.withtempdir(do)
+        
+    class LegacyMediaTest(unittest.TestCase):
+        def testDiscoverNothing(self):
+            self.assertEquals(discoverlegacymedia(None, []), None)
+        
+        def testAllLegacy(self):
+            self.assertEquals(discoverlegacymedia(["hello.mp3", "world.ogg"], []), ["hello.mp3", "world.ogg"])
+        
+        def testDontMessWithCase(self):
+            self.assertEquals(discoverlegacymedia(["hElLLo.mp3", "world.oGg"], []), ["hElLLo.mp3", "world.oGg"])
+    
+        def testNotLegacy(self):
+            self.assertEquals(discoverlegacymedia(["HASH1.mp3", "HASH2.ogg"], [("hello.mp3", "HASH1.mp3"), ("world.ogg", "HASH2.ogg")]), [])
+        
+        def testNotLegacyImportedFromDirectory(self):
+            self.assertEquals(discoverlegacymedia(["HASH1.mp3", "HASH2.ogg"], [(os.path.join("foo", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]), [])
+        
+        def testNotLegacyImportedFromSeveralDirectories(self):
+            self.assertEquals(discoverlegacymedia(["HASH1.mp3", "HASH2.ogg"], [(os.path.join("bar", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]), [])
+        
+        def testDiscardInvalidImportedFiles(self):
+            self.assertEquals(discoverlegacymedia(["HASH1.mp3"], [(os.path.join("foo", "hello.mp3"), "HASH1.mp3"), (os.path.join("foo", "world.ogg"), "HASH2.ogg")]), [])
     
     unittest.main()
