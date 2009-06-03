@@ -119,6 +119,11 @@ class MediaPack(object):
         packs = []
         themediadir = mediadir()
         for packname in os.listdir(themediadir):
+            # Skip the download cache directory
+            if packname.lower() == "downloads":
+                continue
+            
+            # Only try and process directories as packs:
             packpath = os.path.join(themediadir, packname)
             if os.path.isdir(packpath):
                 log.info("Considering %s as a media pack", packname)
