@@ -83,6 +83,9 @@ Having studied Chinese for several years, it became apparnet to me that it was e
 It came to be that it would be very useful to colorise the pinyin and the characters in order to remember them.
 I looked on the internet to see if others had developed this idea. At the time I only came across 
 
+Laowai Chinese (老外中文) have a blog article on colorization here:
+http://laowaichinese.net/color-coded-tones-on-mdbg.htm (
+
 2) Text-to-Speech
 One of the main ideas behind the PyKit is that it is much easier to learn a language when you can hear it.
 Mandarin is an idea language for text-to-speech conversion because there are a relatively small number of unique sounds (around a thousand)
