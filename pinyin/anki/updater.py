@@ -137,7 +137,7 @@ class FieldUpdater(object):
         dictreading = self.dictionary.reading(expression)
     
         # Preload the meaning, but only if we absolutely have to
-        if utils.needmeanings(self.config):
+        if self.config.needmeanings:
             hasMeasureWordField = fieldNames["mw"] != None
             if self.config.detectmeasurewords and hasMeasureWordField:
                 # Get measure words and meanings seperately

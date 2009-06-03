@@ -33,7 +33,7 @@ class PinyinToolkit(object):
         self.notifier = notifier.AnkiNotifier()
         
         # Build the updater
-        dictionary = pinyin.dictionary.PinyinDictionary.load(config.dictlanguage, needmeanings=utils.needmeanings(config))
+        dictionary = pinyin.dictionary.PinyinDictionary.load(config.dictlanguage, needmeanings=config.needmeanings)
         self.updater = updater.FieldUpdater(self.mw, self.notifier, self.config, dictionary)
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they

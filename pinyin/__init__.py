@@ -1,3 +1,4 @@
+import config
 import dictionary
 import logger
 import media

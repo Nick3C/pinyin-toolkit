@@ -13,6 +13,3 @@ def chooseField(candidateFieldNames, fact):
     # No suitable field found!
     log.warn("No field matching %s in the fact", candidateFieldNames)
     return None
-
-def needmeanings(config):
-    return config.meaninggeneration or config.detectmeasurewords
