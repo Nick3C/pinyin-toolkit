@@ -22,7 +22,7 @@ class Hook(object):
 
 class FocusHook(Hook):
     def onFocusLost(self, fact, field):
-        log.info("User moved focus from the field %s", field)
+        log.info("User moved focus from the field %s", field.name)
         
         # Have we just moved off the expression field in a Mandarin model?
         expressionField = utils.chooseField(self.config.candidateFieldNamesByKey['expression'], fact)

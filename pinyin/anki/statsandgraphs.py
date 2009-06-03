@@ -17,6 +17,7 @@ from anki.stats import KanjiStats, isKanji
 
 from PyQt4.QtGui import *
 import time
+
 from pinyin.logger import log
 
 log.info("Hanzi graphs module loaded")

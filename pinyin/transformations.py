@@ -14,7 +14,7 @@ Colorize readings according to the reading in the Pinyin.
 class Colorizer(object):
     def __init__(self, colorlist):
         self.colorlist = colorlist
-        log.info("Colorlist has: %d", self.colorlist)
+        log.info("Using color list %s", self.colorlist)
         
     def colorize(self, tokens):
         log.info("Requested colorization for %d tokens", len(tokens))
@@ -84,7 +84,9 @@ class PinyinAudioReadings(object):
         # don't want to use a mix of sounds from different packs
         bestoutput, bestmediamissingcount = None, len(tokens)
         for mediapack in self.mediapacks:
+            log.info("Checking for reading in pack %s", mediapack.name)
             output, mediamissingcount = self.audioreadingforpack(mediapack, tokens)
+            
             # We will end up choosing whatever pack minimizes the number of errors:
             if mediamissingcount < bestmediamissingcount:
                 bestoutput, bestmediamissingcount = output, mediamissingcount
@@ -105,6 +107,15 @@ if __name__=='__main__':
     
     # Shared dictionary
     englishdict = Thunk(lambda: dictionary.PinyinDictionary.load("en"))
+    
+    # Default tone color list for tests
+    colorlist = {
+        1 : u"#ff0000",
+        2 : u"#ffaa00",
+        3 : u"#00aa00",
+        4 : u"#0000ff",
+        5 : u"#545454"
+      }
     
     class PinyinColorizerTest(unittest.TestCase):
         def testRSuffix(self):
