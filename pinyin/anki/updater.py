@@ -1,23 +1,49 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+
 from pinyin import dictionary, dictionaryonline, media, meanings, pinyin, transformations
 from pinyin.logger import log
 
 import utils
 
 class FieldUpdater(object):
-    def __init__(self, config, dictionary, mediapacks, notifier):
+    def __init__(self, mw, notifier, config, dictionary):
+        self.mw = mw
+        self.notifier = notifier
         self.config = config
         self.dictionary = dictionary
-        self.mediapacks = mediapacks
-        self.notifier = notifier
     
     def preparetokens(self, tokens):
         if self.config.colorizedpinyingeneration:
-            tokens = transformations.Colorizer(colorlist=self.config.colorlist).colorize(tokens)
+            tokens = transformations.Colorizer(self.config.colorlist).colorize(tokens)
     
         return tokens.flatten(tonify=self.config.tonify)
+    
+    #
+    # Media discovery: I used to do this
+    #
+    
+    def discovermediapacks(self):
+        # NB: we used to do this when initialising the toolkit, but that dosen't work,
+        # for the simple reason that if you change deck the media should change, but
+        # we can't hook that event
+        
+        # Discover all the files in the media directory
+        mediaDir = self.mw.deck.mediaDir()
+        if mediaDir:
+            try:
+                mediadircontents = os.listdir(mediaDir)
+            except IOError:
+                log.exception("Error while listing media directory")
+                mediadircontents = None
+        else:
+            log.info("The media directory was either not present or not accessible")
+            mediadircontents = None
+        
+        # Finally, list the packs
+        return media.MediaPack.discover(mediadircontents, self.mw.deck.s.all("select originalPath, filename from media"))
     
     #
     # Generation
@@ -28,7 +54,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
     
     def generateaudio(self, notifier, dictreading):
-        output, mediamissing = transformations.PinyinAudioReadings(self.mediapacks, self.config.audioextensions).audioreading(dictreading)
+        output, mediamissing = transformations.PinyinAudioReadings(self.discovermediapacks(), self.config.audioextensions).audioreading(dictreading)
     
         # Show a warning the first time we detect that we're missing some sounds
         if mediamissing:
@@ -70,7 +96,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictmeasurewords[0])
     
     def generatecoloredcharacters(self, expression):
-        return transformations.Colorizer(self.config).colorize(self.dictionary.tonedchars(expression)).flatten()
+        return transformations.Colorizer(self.config.colorlist).colorize(self.dictionary.tonedchars(expression)).flatten()
     
     #
     # Core updater routine

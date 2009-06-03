@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-
 import pinyin.dictionaryonline
 import pinyin.dictionary
 from pinyin.logger import log
-import pinyin.media
 
 import hooks
 import notifier
@@ -37,8 +34,7 @@ class PinyinToolkit(object):
         
         # Build the updater
         dictionary = pinyin.dictionary.PinyinDictionary.load(config.dictlanguage, needmeanings=utils.needmeanings(config))
-        mediapacks = self.discovermedia()
-        self.updater = updater.FieldUpdater(self.config, dictionary, mediapacks, self.notifier)
+        self.updater = updater.FieldUpdater(self.mw, self.notifier, self.config, dictionary)
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
@@ -51,19 +47,3 @@ class PinyinToolkit(object):
     
         # Tell Anki about the plugin
         self.mw.registerPlugin("Mandarin Chinese Pinyin Toolkit", 4)
-    
-    def discovermedia(self):
-        # Discover all the files in the media directory
-        mediaDir = self.mw.deck.mediaDir()
-        if mediaDir:
-            try:
-                mediadircontents = os.listdir(mediaDir)
-            except IOError:
-                log.exception("Error while listing media directory")
-                mediadircontents = None
-        else:
-            log.info("The media directory was either not present or not accessible")
-            mediadircontents = None
-        
-        # Finally, list the packs
-        return pinyin.media.MediaPack.discover(mediadircontents, self.mw.deck.s.all("select originalPath, filename from media"))

@@ -13,7 +13,7 @@ import utils
 class MediaDownloader(object):
     def __init__(self):
         # Where shall we save downloaded files?
-        self.__cachedir = os.path.join(utils.pinyindir(), "media")
+        self.__cachedir = os.path.join(utils.pinyindir(), "media", "downloads")
         
         # Ensure the cache exists
         log.info("Initialising cache directory at %s", self.__cachedir)

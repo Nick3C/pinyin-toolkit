@@ -6,13 +6,15 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from anki.hooks import wrap,addHook
+from anki.hooks import wrap, addHook
 from ankiqt import mw
 from ankiqt import ui
 import ankiqt.ui.facteditor
+
 from pinyin.logger import log
 
 log.info("Shortcut keys module loaded")
+
 """
 def setColor(widget, color):
     w = widget.focusedEdit()
