@@ -228,10 +228,10 @@ NOTE: Version 0.01 to 0.03 had version numbers assigned retroactively.
 
                                   == Bug Fix ==
 
-- audio generation breaks if deck has space/hyphen in the filename (thus deck dir)
-  * I think we decided this is a capitalisation issue.  Does it work now?
 - erhua needs serious overhaul
 - capitalisation of pinyin in the meaning field not consistent with reading
+- if the phrase in expression appears in translation it should be replaced with ㊥ (otherwise you see the chinese and pinyin when testing so 'cheat') it is fine to keep it as ㊥ because then it there is an example you haven't broken it
+
 
                                == Mods & Tweaks ==
 

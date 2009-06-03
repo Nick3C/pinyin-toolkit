@@ -109,7 +109,7 @@ class FieldUpdater(object):
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
         if fieldNames['expression'] != None and not(fact[fieldNames['expression']]):
-            for key in ["reading", "meaning", "color", "mw"]:
+            for key in ["reading", "meaning", "color"]:
                 if fieldNames[key] != None:
                     fact[fieldNames[key]] = u""
             
@@ -120,6 +120,15 @@ class FieldUpdater(object):
             # about we check if all of the audio files referenced are files in the format pinyin<tone>.mp3?
             audioField = fieldNames['audio']
             if audioField != None and len(fact[audioField]) < 40:
+                fact[audioField] = u""
+                
+                
+            # For now this is a compromise in safety and function.
+            # longest MW should be: "张 - zhang“ (9 char)
+            # shortest possible is "个 - ge" 6 char so we will autoblank if less than 12 letters
+            # this means blanking will occur if one measure word is there but not if two (so if user added any they are safe)
+            mwField = fieldNames['mw']
+            if mwField != None and len(fact[mwField]) < 12: 
                 fact[audioField] = u""
     
         # Figure out the reading for the expression field

@@ -1,27 +1,29 @@
 ﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 ########################################################################
 ###                   Mandarin-Chinese Pinyin Toolkit                ### 
 ########################################################################
-# A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
+"""
+A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
 
-#    Mandarin-Chinese Pinyin Toolkit
-#    Copyright (C) 2009 Nicholas Cook & Max Bolingbroke
+    Mandarin-Chinese Pinyin Toolkit
+    Copyright (C) 2009 Nicholas Cook & Max Bolingbroke
 
-#   This program is free software: you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+"""
 ###############  Version Details ###############
 pinyin_toolkit="0.05 dev feature complete 0.1"
 
@@ -63,6 +65,7 @@ detectmeasurewords           = True   # Should we try and put measure words sepe
 
 # Should we give each translation entry a number? Uncomment the line showing how you would like them to be numbered:
 numbermeanings = [u"㊀", u"㊁", u"㊂", u"㊃", u"㊄", u"㊅", u"㊆", u"㊇", u"㊈", u"㊉", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]  # Cute Chinese symbols for first 10, then english up to 20
+#numbermeanings = [u"㊀", u"㊁", u"㊂", u"㊃", u"㊄", u"㊅", u"㊆", u"㊇", u"㊈", u"㊉㊀", u"㊉㊁", u"㊉㊂", u"㊉㊃", u"㊉㊄", u"㊉㊅", u"㊉㊆", u"㊉㊇", u"㊉㊈", u"㊁㊉"]  # Cute Chinese symbols for first 10, then double symbols up to 20
 #numbermeanings = [u"①", u"②", u"③", u"④", u"⑤", u"⑥", u"⑦", u"⑧", u"⑨", u"⑩", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]      # Pretty bubble-numerals
 #numbermeanings = []           # use simple "(1)", "(2)", "(3)", "(4)", "(5)" ...
 #numbermeanings = None         # do not give each entry a number
@@ -106,13 +109,13 @@ colorlist = {
     5 : u"#545454",     # 5th tone color, default is #545454 (grey)
 
 #   | User colors |
-    6 : u"#00AAFF",     # default is #000000, black [not the same as 'no color']
-    7 : u"#55007F",     # default is #55007F, yellow
-    8 : u"#FF00FF",     # default is #FF00FF, pink
-    9 : u"#000000",      
-    10: u"#000000",      
-    11: u"#000000",      
-    12: u"#000000"}
+    6 : u"#000000",     # default is #000000, black [not the same as 'no color']
+    7 : u"#00AAFF",     # default is #00AAFF, light blue    (suggested alternative text color)
+    8 : u"#55007F",     # default is #55007F, yelo          (suggested highlighting color)
+    9 : u"#32CD32",     # default is #32CD32, dark green    (candidate for future tone sandhi color) 
+    10: u"#C71585",     # default is #C71585, violet        (randomly chosen default color)
+    11: u"#FF6347",     # default is #FF6347, tomato        (random chosen default color)
+    12: u"#7FFF00"}     # default is #7FFF00, light green   (random chosen default color)
 
 ### Field Settings ###
 
