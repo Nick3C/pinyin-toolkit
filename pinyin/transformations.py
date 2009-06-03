@@ -41,7 +41,7 @@ class PinyinAudioReadings(object):
         self.audioextensions = audioextensions
     
     def audioreadingforpack(self, mediapack, tokens):
-        output = u""
+        output = []
         mediamissingcount = 0
         for token in tokens:
             # Remove any erhuas from audio before being generated.
@@ -69,7 +69,7 @@ class PinyinAudioReadings(object):
         
             if media:
                 # If we've managed to find some media, we can put it into the output:
-                output += '[sound:' + media +']'
+                output.append(media)
             else:
                 # Otherwise, increment the count of missing media we use to determine optimality
                 log.warning("Couldn't find media for %s in %s", token, mediapack)
@@ -82,20 +82,20 @@ class PinyinAudioReadings(object):
         
         # Try possible packs to format the tokens. Basically, we
         # don't want to use a mix of sounds from different packs
-        bestoutput, bestmediamissingcount = None, len(tokens)
+        bestmediapack, bestoutput, bestmediamissingcount = None, None, len(tokens) + 1
         for mediapack in self.mediapacks:
             log.info("Checking for reading in pack %s", mediapack.name)
             output, mediamissingcount = self.audioreadingforpack(mediapack, tokens)
             
             # We will end up choosing whatever pack minimizes the number of errors:
             if mediamissingcount < bestmediamissingcount:
-                bestoutput, bestmediamissingcount = output, mediamissingcount
+                bestmediapack, bestoutput, bestmediamissingcount = mediapack, output, mediamissingcount
         
         # Did we get any result at all?
-        if bestoutput:
-            return bestoutput, (bestmediamissingcount != 0)
+        if bestoutput != None:
+            return bestmediapack, bestoutput, (bestmediamissingcount != 0)
         else:
-            return "", True
+            return None, [], True
 
 
 # Testsuite
@@ -163,89 +163,95 @@ if __name__=='__main__':
                                        "a4.mp3", "nin2.mp3", "ni3.ogg", "hao3.ogg", "gen1.ogg", "gen1.mp3"]
         
         def testRSuffix(self):
-            self.assertHasReading(u"哪兒", "[sound:na3.mp3]")
+            self.assertHasReading(u"哪兒", ["na3.mp3"])
         
         def testFifthTone(self):
-            self.assertHasReading(u"的", "[sound:de5.mp3]", raw_available_media=["de5.mp3", "de.mp3", "de4.mp3"])
-            self.assertHasReading(u"了", "[sound:le.mp3]", raw_available_media=["le4.mp3", "le.mp3"])
-            self.assertHasReading(u"吗", "[sound:ma4.mp3]", raw_available_media=["ma4.mp3"])
+            self.assertHasReading(u"的", ["de5.mp3"], raw_available_media=["de5.mp3", "de.mp3", "de4.mp3"])
+            self.assertHasReading(u"了", ["le.mp3"], raw_available_media=["le4.mp3", "le.mp3"])
+            self.assertHasReading(u"吗", ["ma4.mp3"], raw_available_media=["ma4.mp3"])
         
         def testNv(self):
-            self.assertHasReading(u"女", "[sound:nu:3.mp3]", raw_available_media=["nv3.mp3", "nu:3.mp3", "nu3.mp3"])
-            self.assertHasReading(u"女", "[sound:nv3.mp3]", raw_available_media=["nu3.mp3", "nv3.mp3"])
+            self.assertHasReading(u"女", ["nu:3.mp3"], raw_available_media=["nv3.mp3", "nu:3.mp3", "nu3.mp3"])
+            self.assertHasReading(u"女", ["nv3.mp3"], raw_available_media=["nu3.mp3", "nv3.mp3"])
             self.assertMediaMissing(u"女", raw_available_media=["nu3.mp3"])
             
         def testLv(self):
-            self.assertHasReading(u"侣", "[sound:lv3.mp3]", raw_available_media=["lv3.mp3"])
+            self.assertHasReading(u"侣", ["lv3.mp3"], raw_available_media=["lv3.mp3"])
             self.assertMediaMissing(u"侣", raw_available_media=["lu3.mp3"])
-            self.assertHasReading(u"掠", "[sound:lve4.mp3]", raw_available_media=["lve4.mp3"])
+            self.assertHasReading(u"掠", ["lve4.mp3"], raw_available_media=["lve4.mp3"])
             self.assertMediaMissing(u"掠", raw_available_media=["lue4.mp3"])
         
         def testJunkSkipping(self):
-            self.assertHasPartialReading(u"Washington ! ! !", "")
+            # NB: NOT a partial reading, because none of the tokens here are Pinyin it doesn't know about
+            self.assertHasReading(u"Washington ! ! !", [])
         
         def testMultipleCharacters(self):
-            self.assertHasReading(u"小马词典", "[sound:xiao3.mp3][sound:ma3.mp3][sound:ci2.mp3][sound:dian3.mp3]")
+            self.assertHasReading(u"小马词典", ["xiao3.mp3", "ma3.mp3", "ci2.mp3","dian3.mp3"])
         
         def testMixedEnglishChinese(self):
-            self.assertHasReading(u"啊 The Small 马 Dictionary", "[sound:a4.mp3][sound:ma3.mp3]")
+            self.assertHasReading(u"啊 The Small 马 Dictionary", ["a4.mp3", "ma3.mp3"])
         
         def testPunctuation(self):
-            self.assertHasReading(u"您 (pr.)", "[sound:nin2.mp3]")
+            self.assertHasReading(u"您 (pr.)", ["nin2.mp3"])
         
         def testSecondaryExtension(self):
-            self.assertHasReading(u"你好", "[sound:ni3.ogg][sound:hao3.ogg]")
+            self.assertHasReading(u"你好", ["ni3.ogg", "hao3.ogg"])
     
         def testMixedExtensions(self):
-            self.assertHasReading(u"你马", "[sound:ni3.ogg][sound:ma3.mp3]")
+            self.assertHasReading(u"你马", ["ni3.ogg", "ma3.mp3"])
     
         def testPriority(self):
-            self.assertHasReading(u"根", "[sound:gen1.mp3]")
+            self.assertHasReading(u"根", ["gen1.mp3"])
     
         def testMediaMissing(self):
             self.assertMediaMissing(u"根", raw_available_media=[".mp3"])
     
         def testCaptializationInPinyin(self):
             # NB: 上海 is in the dictionary with capitalized pinyin (Shang4 hai3)
-            self.assertHasReading(u"上海", "[sound:shang4.mp3][sound:hai3.mp3]", raw_available_media=["shang4.mp3", "hai3.mp3"])
+            self.assertHasReading(u"上海", ["shang4.mp3", "hai3.mp3"], raw_available_media=["shang4.mp3", "hai3.mp3"])
         
         def testCapitializationInFilesystem(self):
-            self.assertHasReading(u"根", "[sound:GeN1.mP3]", available_media={"GeN1.mP3" : "GeN1.mP3" })
+            self.assertHasReading(u"根", ["GeN1.mP3"], available_media={"GeN1.mP3" : "GeN1.mP3" })
     
         def testDontMixPacks(self):
             packs = [MediaPack("Foo", {"ni3.mp3" : "ni3.mp3"}), MediaPack("Bar", {"hao3.mp3" : "hao3.mp3"})]
-            self.assertHasPartialReading(u"你好", "[sound:ni3.mp3]", mediapacks=packs)
+            self.assertHasPartialReading(u"你好", ["ni3.mp3"], bestpackshouldbe=packs[0], mediapacks=packs)
     
         def testUseBestPack(self):
             packs = [MediaPack("Foo", {"xiao3.mp3" : "xiao3.mp3", "ma3.mp3" : "ma3.mp3"}),
                      MediaPack("Bar", {"ma3.mp3" : "ma3.mp3", "ci2.mp3" : "ci2.mp3", "dian3.mp3" : "dian3.mp3"})]
-            self.assertHasPartialReading(u"小马词典", "[sound:ma3.mp3][sound:ci2.mp3][sound:dian3.mp3]", mediapacks=packs)
+            self.assertHasPartialReading(u"小马词典", ["ma3.mp3", "ci2.mp3", "dian3.mp3"], bestpackshouldbe=packs[1], mediapacks=packs)
     
         # Test helpers
         def assertHasReading(self, what, shouldbe, **kwargs):
-            output, mediamissing = self.audioreading(what, **kwargs)
-            self.assertFalse(mediamissing)
+            bestpackshouldbe, mediapack, output, mediamissing = self.audioreading(what, **kwargs)
+            self.assertEquals(bestpackshouldbe, mediapack)
             self.assertEquals(output, shouldbe)
+            self.assertFalse(mediamissing)
         
         def assertHasPartialReading(self, what, shouldbe, **kwargs):
-            output, mediamissing = self.audioreading(what, **kwargs)
-            self.assertTrue(mediamissing)
+            bestpackshouldbe, mediapack, output, mediamissing = self.audioreading(what, **kwargs)
+            self.assertEquals(bestpackshouldbe, mediapack)
             self.assertEquals(output, shouldbe)
-        
+            self.assertTrue(mediamissing)
+            
         def assertMediaMissing(self, what, **kwargs):
-            output, mediamissing = self.audioreading(what, **kwargs)
+            bestpackshouldbe, mediapack, output, mediamissing = self.audioreading(what, **kwargs)
             self.assertTrue(mediamissing)
         
         def audioreading(self, what, **kwargs):
-            mediapacks = self.expandmediapacks(**kwargs)
-            return PinyinAudioReadings(mediapacks, [".mp3", ".ogg"]).audioreading(englishdict.reading(what))
+            bestpackshouldbe, mediapacks = self.expandmediapacks(**kwargs)
+            mediapack, output, mediamissing = PinyinAudioReadings(mediapacks, [".mp3", ".ogg"]).audioreading(englishdict.reading(what))
+            return bestpackshouldbe, mediapack, output, mediamissing
         
-        def expandmediapacks(self, mediapacks=None, available_media=None, raw_available_media=default_raw_available_media):
+        def expandmediapacks(self, mediapacks=None, available_media=None, raw_available_media=default_raw_available_media, bestpackshouldbe=None):
             if mediapacks:
-                return mediapacks
+                return bestpackshouldbe, mediapacks
             elif available_media:
-                return [MediaPack("Test", available_media)]
+                pack = MediaPack("Test", available_media)
+                return pack, [pack]
             else:
-                return [MediaPack("Test", dict([(filename, filename) for filename in raw_available_media]))]
+                pack = MediaPack("Test", dict([(filename, filename) for filename in raw_available_media]))
+                return pack, [pack]
     
     unittest.main()

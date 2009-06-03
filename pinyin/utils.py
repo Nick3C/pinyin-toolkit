@@ -7,8 +7,6 @@ import string
 import getpass
 import unicodedata
 
-import pinyin
-
 """
 Is the current user a developer?
 """
@@ -84,6 +82,48 @@ def ensuredirexists(dirpath):
         os.makedirs(dirpath)
 
 """
+Create a directory in the specified path with the specified name, falling back on
+that directory name with numeric suffixes if the name is not available.
+"""
+def mkdirfallback(path, name):
+    import itertools
+    
+    # Keep trying longer names for the directory until one becomes available
+    for n in itertools.count():
+        if n == 0:
+            proposeddir = os.path.join(path, name)
+        else:
+            proposeddir = os.path.join(path, name + " " + str(n))
+        
+        if not(os.path.exists(proposeddir)):
+            # Claim this directory as the one we are after!
+            os.mkdir(proposeddir)
+            return proposeddir
+
+"""
+Given an action, creates a temporary directory and then feeds the action the full
+path of that directory. Finishes by totally deleting the directory.
+"""
+def withtempdir(do):
+    import tempfile, shutil
+    
+    # First, generate the temporary directory name
+    tempdir = tempfile.mkdtemp()
+    
+    try:
+        # Give the provided function an opportunity to use the directory
+        do(tempdir)
+    finally:        
+        # Blast the temporary directory and its contents
+        shutil.rmtree(tempdir)
+
+"""
+Create an empty file at the given location.
+"""
+def touch(where):
+    open(where, 'w').close()
+
+"""
 Find the hex-format MD5 digest of the input.
 """
 def md5(what):
@@ -102,6 +142,7 @@ def md5(what):
 Reports whethere this token is the pinyin for 'r5' which often occurs at the end of words.
 """
 def iserhuapinyintoken(token):
+    import pinyin
     return type(token) == pinyin.Pinyin and token.word == 'r' and token.tone == 5
 
 """
@@ -158,6 +199,40 @@ def regexparse(regex, text):
 if __name__=='__main__':
     import unittest
     import re
+    
+    class MkdirFallbackTest(unittest.TestCase):
+        def testDirectoryForNameThatIsFree(self):
+            def do(path):
+                self.assertEquals(mkdirfallback(path, "Hello"), os.path.join(path, "Hello"))
+    
+            withtempdir(do)
+
+        def testDirectoryForNameThatIsNotFree(self):
+            def do(path):
+                os.mkdir(os.path.join(path, "Hello"))
+                self.assertEquals(mkdirfallback(path, "Hello"), os.path.join(path, "Hello 1"))
+    
+            withtempdir(do)
+
+        def testDirectoryForNameHigherNumbers(self):
+            def do(path):
+                os.mkdir(os.path.join(path, "Hello"))
+                os.mkdir(os.path.join(path, "Hello 1"))
+                os.mkdir(os.path.join(path, "Hello 2"))
+                self.assertEquals(mkdirfallback(path, "Hello"), os.path.join(path, "Hello 3"))
+    
+            withtempdir(do)
+    
+    class TouchTest(unittest.TestCase):
+        def testTouch(self):
+            def do(path):
+                filepath = os.path.join(path, "Dumb")
+                
+                self.assertFalse(os.path.exists(filepath))
+                touch(filepath)
+                self.assertTrue(os.path.exists(filepath))
+            
+            withtempdir(do)
     
     class ThunkTest(unittest.TestCase):
         def testCall(self):

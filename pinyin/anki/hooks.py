@@ -70,7 +70,7 @@ class SampleSoundsHook(MenuHook):
                                                             lambda: self.notifier.info("Downloading the sounds - this might take a while!"))
     
         # Install each file from the ZIP into Anki
-        the_media.extractand(self.mw.deck.addMedia)
+        the_media.installpack()
     
         # Tell the user we are done
         exampleAudioField = self.config.candidateFieldNamesByKey['audio'][0]
