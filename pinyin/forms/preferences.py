@@ -4,6 +4,7 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+from pinyin.logger import log
 import pinyin.forms.generated.preferences
 
 
@@ -24,6 +25,10 @@ class Preferences(QDialog):
         
         # Necessary for Anki integration?
         # ui.dialogs.open("AddCards", self)
+    
+    #
+    # Setup
+    #
     
     def createButtonGroups(self):
         # I've actually put these in the .ui file, but the pyuic4 thing can't import that data! Sigh...
@@ -85,6 +90,13 @@ class Preferences(QDialog):
         
         self.parent.setUpdatesEnabled(True)
         return fieldsFrame
+    
+    #
+    # Interface with controller
+    #
+    
+    def pickColor(self, initcolor):
+        return QColorDialog.getColor(initcolor, self)
 
 if __name__ == "__main__":
     import sys

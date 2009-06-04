@@ -126,7 +126,7 @@ class PreferencesController(object):
         self.mappings.append(TextMapping(self.model, *args))
     
     def registerColorChooserMapping(self, *args):
-        self.mappings.append(ColorChooserMapping(self.model, *args))
+        self.mappings.append(ColorChooserMapping(self.model, lambda initcolor: self.view.pickColor(initcolor), *args))
 
 class Mapping(object):
     def __init__(self, model, key):
@@ -156,7 +156,7 @@ class CheckMapping(Mapping):
         Mapping.__init__(self, model, key)
         self.checkbox = checkbox
         
-        self.checkbox.connect(self.checkbox, SIGNAL("clicked()"), self.updateModel)
+        self.checkbox.connect(self.checkbox, SIGNAL("clicked()"), lambda: self.updateModel())
     
     def updateModel(self):
         self.updateModelValue(self, self.checkbox.checked())
@@ -169,7 +169,7 @@ class ComboMapping(Mapping):
         Mapping.__init__(self, model, key)
         self.combobox = combobox
         
-        self.combobox.connect(self.combobox, SIGNAL("currentIndexChanged(int)"), self.updateModel)
+        self.combobox.connect(self.combobox, SIGNAL("currentIndexChanged(int)"), lambda: self.updateModel())
     
     def updateModel(self, n):
         self.updateModelValue(self.combobox.itemData(n).toPyObject())
@@ -187,7 +187,7 @@ class TextMapping(Mapping):
         Mapping.__init__(self, model, key)
         self.lineedit = lineedit
         
-        self.lineedit.connect(self.lineedit, SIGNAL('textEdited()'), self.updateModel)
+        self.lineedit.connect(self.lineedit, SIGNAL('textEdited()'), lambda: self.updateModel())
     
     def updateModel(self):
         self.updateModelValue(self.lineedit.text())
@@ -196,17 +196,29 @@ class TextMapping(Mapping):
         self.lineedit.setText(value)
         
 class ColorChooserMapping(Mapping):
-    def __init__(self, model, key, button):
+    def __init__(self, model, pickcolor, key, button):
         Mapping.__init__(self, model, key)
         self.button = button
+        self.pickcolor = pickcolor
         
-        self.button.connect(self.button, SIGNAL("clicked()"), self.updateModel)
+        self.button.connect(self.button, SIGNAL("clicked()"), lambda: self.updateModel())
+    
+    def palette(self):
+        return self.button.palette()
     
     def updateModel(self):
-        pass
+        color = self.pickcolor(self.palette().color(QPalette.ButtonText))
+        
+        # The isValid flag is cleared if the user cancels the dialog
+        if color != None and color.isValid():
+            value = pinyin.utils.toHtmlColor(color.red(), color.green(), color.blue())
+            self.updateModelValue(value)
+            self.updateViewValue(value)
     
     def updateViewValue(self, value):
         r, g, b = pinyin.utils.parseHtmlColor(value)
         
-        p = self.button.palette()
-        p.setColor(QPalette.ButtonText, QColor(r, g, b))
+        self.palette().setColor(QPalette.ButtonText, QColor(r, g, b))
+        
+        # Modifying the palette seems to require an explicit repaint
+        self.button.update()

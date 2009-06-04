@@ -97,7 +97,7 @@ class Config(object):
         
         # Set all settings first using the defaults and then by coping the user settings
         for key, value in defaultsettings.items() + (usersettings or {}).items():
-            log.info("Copying %s field into settings", key)
+            #log.info("Copying %s field into settings", key)
             settings[key] = copy.deepcopy(value)
         
         log.info("Initialized configuration with settings %s", settings)
