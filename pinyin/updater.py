@@ -14,9 +14,9 @@ from logger import log
 
 
 class FieldUpdater(object):
-    def __init__(self, notifier, addmedia, config, dictionary):
+    def __init__(self, notifier, mediamanager, config, dictionary):
         self.notifier = notifier
-        self.addmedia = addmedia
+        self.mediamanager = mediamanager
         self.config = config
         self.dictionary = dictionary
     
@@ -61,7 +61,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
     
     def generateaudio(self, dictreading):
-        mediapacks = media.MediaPack.discover()
+        mediapacks = self.mediamanager.discovermediapacks()
         if len(mediapacks) == 0:
             # Show a warning the first time we detect that we're missing a sound pack
             self.notifier.infoOnce("We appear to be missing some audio samples. This might be our fault, but if you haven't already done so, "
@@ -78,7 +78,7 @@ class FieldUpdater(object):
         output_tags = u""
         for outputfile in output:
             # Install required media in the deck as we go, getting the canonical string to insert into the sound field upon installation
-            output_tags += "[sound:%s]" % self.addmedia(os.path.join(mediapack.packpath, outputfile))
+            output_tags += "[sound:%s]" % self.mediamanager.importtocurrentdeck(os.path.join(mediapack.packpath, outputfile))
         
         return output_tags
     
@@ -125,7 +125,7 @@ class FieldUpdater(object):
                 fact['audio'] = u""
             
             # For now this is a compromise in safety and function.
-            # longest MW should be: "? - zhang� (9 char)
+            # longest MW should be: "? - zhangì (9 char)
             # shortest possible is "? - ge" 6 char so we will autoblank if less than 12 letters
             # this means blanking will occur if one measure word is there but not if two (so if user added any they are safe)
             if 'mw' in fact and len(fact['mw']) < 12: 
@@ -150,7 +150,7 @@ class FieldUpdater(object):
             # This helps deal with small dictionaries (for example French)
             if dictmeanings == None and dictmeasurewords == None and self.config.fallbackongoogletranslate:
                 log.info("Falling back on Google for %s", expression)
-                dictmeanings = pinyin.TokenList([dictionaryonline.gTrans(expression, self.config.dictlanguage)])
+                dictmeanings = [pinyin.TokenList([dictionaryonline.gTrans(expression, self.config.dictlanguage)])]
     
             # DEBUG: Nick wants to do something with audio for measure words here?
             # " [sound:MW]" # DEBUG - pass to audio loop
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     import unittest
     
     import config
-    from notifier import MockNotifier
+    from mocks import *
     from utils import Thunk
     
     # Shared dictionary
@@ -191,18 +191,116 @@ if __name__ == "__main__":
                               { "reading" : "", "meaning" : "", "color" : "" })
         
         def testAutoBlankingAudioMeasureWord(self):
-            # TODO: test behaviour for audio and measure word, onec we know what it should be
+            # TODO: test behaviour for audio and measure word, once we know what it should be
             pass
         
         def testFullUpdate(self):
-            self.assertEquals(self.updatefact(u"", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" }),
-                              { "reading" : "", "meaning" : "", "color" : "" })
+            self.assertEquals(
+                self.updatefact(u"书", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                    colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
+                    tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
+                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"]), {
+                        "reading" : u'<span style="color:#ff0000">shū</span>',
+                        "meaning" : u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History',
+                        "mw" : u'本 - <span style="color:#00aa00">běn</span>, 册 - <span style="color:#0000ff">cè</span>, 部 - <span style="color:#0000ff">bù</span>, 丛 - <span style="color:#ffaa00">cóng</span>',
+                        "audio" : u"[sound:" + os.path.join("Test", "shu1.mp3") + "]",
+                        "color" : u'<span style="color:#ff0000">书</span>'
+                      })
+        
+        def testDontOverwriteFields(self):
+            self.assertEquals(
+                self.updatefact(u"书", { "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e" },
+                    colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
+                    tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
+                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"]), {
+                        "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e"
+                      })
+        
+        def testUpdateReadingOnly(self):
+            self.assertEquals(
+                self.updatefact(u"啤酒", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                    colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False,
+                    detectmeasurewords = False, audiogeneration = False, tonedisplay = "numeric"), {
+                        "reading" : u'pi2 jiu3', "meaning" : "", "mw" : "", "audio" : "", "color" : ""
+                      })
+        
+        def testUpdateReadingAndMeaning(self):
+            self.assertEquals(
+                self.updatefact(u"㝵", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                    colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
+                    tonedisplay = "numeric", meaningnumbering = "arabicParens", meaningseperator = "commas", prefersimptrad = "trad",
+                    audiogeneration = False, tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"]), {
+                        "reading" : u'<span style="color:#ffaa00">de2</span>',
+                        "meaning" : u'(1) to obtain, (2) archaic variant of 得 - <span style="color:#ffaa00">de2</span>, (3) component in 礙 - <span style="color:#0000ff">ai4</span> and 鍀 - <span style="color:#ffaa00">de2</span>',
+                        "mw" : "", "audio" : "", "color" : ""
+                      })
+        
+        def testUpdateReadingAndMeasureWord(self):
+            self.assertEquals(
+                self.updatefact(u"丈夫", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                    colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = True,
+                    tonedisplay = "numeric", prefersimptrad = "trad", audiogeneration = False), {
+                        "reading" : u'zhang4 fu', "meaning" : u'',
+                        "mw" : u"個 - ge4", "audio" : "", "color" : ""
+                      })
+        
+        def testUpdateReadingAndAudio(self):
+            self.assertEquals(
+                self.updatefact(u"三七開", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                    colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = False,
+                    tonedisplay = "tonified", audiogeneration = True, audioextensions = [".mp3", ".ogg"]), {
+                        "reading" : u'sān qī kāi', "meaning" : u'', "mw" : "",
+                        "audio" : u"[sound:" + os.path.join("Test", "san1.mp3") + "]" +
+                                  u"[sound:" + os.path.join("Test", "qi1.ogg") + "]" +
+                                  u"[sound:" + os.path.join("Test", "location/Kai1.mp3") + "]",
+                        "color" : ""
+                      })
+        
+        def testUpdateReadingAndColoredHanzi(self):
+            self.assertEquals(
+                self.updatefact(u"三峽水库", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                    colorizedpinyingeneration = False, colorizedcharactergeneration = True, meaninggeneration = False, detectmeasurewords = False,
+                    tonedisplay = "numeric", audiogeneration = False, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]), {
+                        "reading" : u'san1 xia2 shui3 ku4', "meaning" : u'', "mw" : "", "audio" : "",
+                        "color" : u'<span style="color:#111111">三</span><span style="color:#222222">峽</span><span style="color:#333333">水</span><span style="color:#444444">库</span>'
+                      })
+        
+        def testNotifiedUponAudioGenerationWithNoPacks(self):
+            infos, fact = self.updatefactwithinfos(u"三月", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                                mediapacks = [],
+                                colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = False,
+                                tonedisplay = "numeric", audiogeneration = True)
+            
+            self.assertEquals(fact, { "reading" : u'san1 yue4', "meaning" : u'', "mw" : "", "audio" : "", "color" : "" })
+            self.assertEquals(len(infos), 1)
+            self.assertTrue("missing" in infos[0])
+        
+        def testFallBackOnGoogleForPhrase(self):
+            self.assertEquals(
+                self.updatefact(u"㝵㝵㝵㝵㝵", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                    fallbackongoogletranslate = True,
+                    colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
+                    tonedisplay = "numeric", audiogeneration = False), {
+                        "reading" : u'de2 de2 de2 de2 de2',
+                        "meaning" : u'㝵㝵㝵㝵㝵<br /><span style="color:gray"><small>[Google Translate]</small></span>',
+                        "mw" : "", "audio" : "", "color" : ""
+                      })
         
         # Test helpers
-        def updatefact(self, expression, fact, **kwargs):
-            factclone = copy.copy(fact)
-            FieldUpdater(MockNotifier(), lambda m: m, config.Config(kwargs), englishdict).updatefact(factclone, expression)
+        def updatefact(self, *args, **kwargs):
+            infos, fact = self.updatefactwithinfos(*args, **kwargs)
+            return fact
+        
+        def updatefactwithinfos(self, expression, fact, mediapacks = None, **kwargs):
+            notifier = MockNotifier()
             
-            return factclone
+            if mediapacks == None:
+                mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3" })]
+            mediamanager = MockMediaManager(mediapacks)
+            
+            factclone = copy.deepcopy(fact)
+            FieldUpdater(notifier, mediamanager, config.Config(kwargs), englishdict).updatefact(factclone, expression)
+            
+            return notifier.infos, factclone
     
     unittest.main()

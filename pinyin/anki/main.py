@@ -7,6 +7,7 @@ from pinyin.logger import log
 import pinyin.updater
 
 import hooks
+import mediamanager
 import notifier
 import utils
 
@@ -29,17 +30,17 @@ class PinyinToolkit(object):
         self.mw = mw
         self.config = config
         
-        # Build notifier
+        # Build objects we use to interface with Anki
         self.notifier = notifier.AnkiNotifier()
+        self.mediamanager = mediamanager.AnkiMediaManager(self.mw)
         
         # Build the updater
-        # NB: VERY IMPORTANT to eta-expand the addMedia lambda, because otherwise we won't change the reference if the deck does!
         dictionary = pinyin.dictionary.PinyinDictionary.load(config.dictlanguage, needmeanings=config.needmeanings)
-        self.updater = pinyin.updater.FieldUpdater(self.notifier, lambda file: self.mw.deck.addMedia(file), self.config, dictionary)
+        self.updater = pinyin.updater.FieldUpdater(self.notifier, self.mediamanager, self.config, dictionary)
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
-        self.hooks = [hookbuilder(self.mw, self.notifier, self.config, self.updater) for hookbuilder in [hooks.FocusHook, hooks.SampleSoundsHook, hooks.MissingInformationHook]]
+        self.hooks = [hookbuilder(self.mw, self.notifier, self.mediamanager, self.config, self.updater) for hookbuilder in [hooks.FocusHook, hooks.SampleSoundsHook, hooks.MissingInformationHook]]
     
     def installhooks(self):
         # Install all hooks

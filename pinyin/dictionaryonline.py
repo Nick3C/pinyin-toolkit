@@ -3,6 +3,7 @@
 
 import urllib, urllib2
 
+from pinyin import TokenList
 from logger import log
 
 # This module will takes a phrase and passes it to online services for translation
@@ -18,10 +19,10 @@ def gTrans(query, destlanguage='en'):
     result = lookup(query, destlanguage)
     if result:
         # The only meaning is the result with the source of the meaning
-        return [result + '<br /><span style="color:gray"><small>[Google Translate]</small></span>']
+        return result + '<br /><span style="color:gray"><small>[Google Translate]</small></span>'
     else:
         # The only meaning should be an error
-        return ['<span style="color:gray">[Internet Error]</span>']
+        return '<span style="color:gray">[Internet Error]</span>'
 
 # This function will send a sample query to Google Translate and return true or false depending on success
 # It is used to determine connectivity for the Anki session (and thus whether Pinyin Toolkit should use online services or not)
@@ -107,10 +108,10 @@ if __name__ == "__main__":
             self.assertEquals(gTrans(""), [])
         
         def testTranslateEnglish(self):
-            self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), [u'Hello, You are my friend?<br /><span style="color:gray"><small>[Google Translate]</small></span>'])
+            self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), u'Hello, You are my friend?<br /><span style="color:gray"><small>[Google Translate]</small></span>')
         
         def testTranslateFrench(self):
-            self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), [u'Bonjour, Vous \xeates mon ami?<br /><span style="color:gray"><small>[Google Translate]</small></span>'])
+            self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), u'Bonjour, Vous \xeates mon ami?<br /><span style="color:gray"><small>[Google Translate]</small></span>')
         
         def testCheck(self):
             self.assertEquals(gCheck(), True)

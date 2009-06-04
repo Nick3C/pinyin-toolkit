@@ -13,9 +13,10 @@ import utils
 
 
 class Hook(object):
-    def __init__(self, mw, notifier, config, updater):
+    def __init__(self, mw, notifier, mediamanager, config, updater):
         self.mw = mw
         self.notifier = notifier
+        self.mediamanager = mediamanager
         self.config = config
         self.updater = updater
 
@@ -67,11 +68,11 @@ class SampleSoundsHook(MenuHook):
         log.info("User triggered sound download")
         
         # Download ZIP, using cache if necessary
-        the_media = pinyin.media.MediaDownloader().download("Mandarin Sounds", self.config.mandarinsoundsurl,
-                                                            lambda: self.notifier.info("Downloading the sounds - this might take a while!"))
+        the_media = pinyin.media.MediaDownloader(self.mediamanager.mediadir()).download("Mandarin Sounds", self.config.mandarinsoundsurl,
+                                                                                        lambda: self.notifier.info("Downloading the sounds - this might take a while!"))
     
         # Install each file from the ZIP into Anki
-        the_media.installpack()
+        the_media.installpack(self.mediamanager.mediadir())
     
         # Tell the user we are done
         exampleAudioField = self.config.candidateFieldNamesByKey['audio'][0]

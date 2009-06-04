@@ -10,13 +10,10 @@ import zipfile
 from logger import log
 import utils
 
-def mediadir():
-    return os.path.join(utils.pinyindir(), "media")
-
 class MediaDownloader(object):
-    def __init__(self):
+    def __init__(self, mediadir):
         # Where shall we save downloaded files?
-        self.__cachedir = os.path.join(mediadir(), "downloads")
+        self.__cachedir = os.path.join(mediadir, "downloads")
         
         # Ensure the cache exists
         log.info("Initialising cache directory at %s", self.__cachedir)
@@ -55,9 +52,9 @@ class DownloadedMedia(object):
         self.__name = name
         self.__zip = zipfile.ZipFile(ziplocation)
     
-    def installpack(self):
+    def installpack(self, mediadir):
         # Work out the pack directory we want to extract to
-        packpath = utils.mkdirfallback(mediadir(), self.__name)
+        packpath = utils.mkdirfallback(mediadir, self.__name)
         log.info("Extracting downloaded media into %s", packpath)
         
         # Extract the ZIP into a new directory
@@ -113,25 +110,6 @@ class MediaPack(object):
             media[filename] = os.path.join(packpath, filename)
         
         return MediaPack(packpath, media)
-    
-    @classmethod
-    def discover(cls):
-        packs = []
-        themediadir = mediadir()
-        for packname in os.listdir(themediadir):
-            # Skip the download cache directory
-            if packname.lower() == "downloads":
-                continue
-            
-            # Only try and process directories as packs:
-            packpath = os.path.join(themediadir, packname)
-            if os.path.isdir(packpath):
-                log.info("Considering %s as a media pack", packname)
-                packs.append(cls.frompath(packpath))
-            else:
-                log.info("Ignoring the file %s in the media directory", packname)
-        
-        return packs
 
 # Use to discover files in the media directory that are not referenced in the media
 # database. If this is true, the user has just copied them in - and we consider
