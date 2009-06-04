@@ -104,6 +104,8 @@ class Preferences(QDialog):
         
         # Display the fields on the actual form
         self.fieldsScroll.setWidget(fieldsFrame)
+        fieldsFrame.show()
+        self.fieldsScroll.show()
 
 if __name__ == "__main__":
     import sys

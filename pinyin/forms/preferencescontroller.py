@@ -205,7 +205,7 @@ class Mapping(object):
     def updateModelValue(self, value):
         setattr(self.model, self.key, value)
         
-        modelchanged.fire(value)
+        self.modelchanged.fire()
 
 class RadioMapping(Mapping):
     def __init__(self, model, key, radiobuttonswithvalues):
@@ -213,7 +213,8 @@ class RadioMapping(Mapping):
         self.radiobuttonswithvalues = radiobuttonswithvalues
         
         for radiobutton, correspondingvalue in self.radiobuttonswithvalues.items():
-            radiobutton.connect(radiobutton, SIGNAL("clicked()"), lambda: self.updateModelValue(correspondingvalue))
+            # NB: default-argument indirection below to solve closure capture issues
+            radiobutton.connect(radiobutton, SIGNAL("clicked()"), lambda cv=correspondingvalue: self.updateModelValue(cv))
 
     def updateViewValue(self, value):
         for radiobutton, correspondingvalue in self.radiobuttonswithvalues.items():
@@ -227,7 +228,7 @@ class CheckMapping(Mapping):
         self.checkbox.connect(self.checkbox, SIGNAL("clicked()"), lambda: self.updateModel())
     
     def updateModel(self):
-        self.updateModelValue(self, self.checkbox.checked())
+        self.updateModelValue(self.checkbox.isChecked())
     
     def updateViewValue(self, value):
         self.checkbox.setChecked(value)
@@ -237,7 +238,7 @@ class ComboMapping(Mapping):
         Mapping.__init__(self, model, key)
         self.combobox = combobox
         
-        self.combobox.connect(self.combobox, SIGNAL("currentIndexChanged(int)"), lambda: self.updateModel())
+        self.combobox.connect(self.combobox, SIGNAL("currentIndexChanged(int)"), lambda n: self.updateModel(n))
     
     def updateModel(self, n):
         self.updateModelValue(self.combobox.itemData(n).toPyObject())
