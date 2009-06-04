@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from PyQt4.QtCore import QVariant
+from PyQt4.QtCore import QVariant, SIGNAL
 from PyQt4.QtGui import QColor, QIcon, QPalette
 
 import pinyin.config
@@ -19,8 +19,8 @@ class PreferencesController(object):
         # Set up the controls - one time only
         self.mappings = []
         self.setUpText()
-        
-        # Reflect the initial setting values into the controls
+
+        # Use the mappings to reflect the initial setting values into the controls
         self.updateView()
     
     #
@@ -107,55 +107,72 @@ class PreferencesController(object):
     
     def updateView(self):
         for mapping in self.mappings:
-            mapping.updateView(self.model)
+            mapping.updateView()
     
     #
     # Mapping helpers
     #
     
     def registerRadioMapping(self, *args):
-        self.mappings.append(RadioMapping(*args))
+        self.mappings.append(RadioMapping(self.model, *args))
     
     def registerCheckMapping(self, *args):
-        self.mappings.append(CheckMapping(*args))
+        self.mappings.append(CheckMapping(self.model, *args))
     
     def registerComboMapping(self, *args):
-        self.mappings.append(ComboMapping(*args))
+        self.mappings.append(ComboMapping(self.model, *args))
     
     def registerTextMapping(self, *args):
-        self.mappings.append(TextMapping(*args))
+        self.mappings.append(TextMapping(self.model, *args))
     
     def registerColorChooserMapping(self, *args):
-        self.mappings.append(ColorChooserMapping(*args))
+        self.mappings.append(ColorChooserMapping(self.model, *args))
 
 class Mapping(object):
-    def __init__(self, key):
+    def __init__(self, model, key):
+        self.model = model
         self.key = key
 
-    def updateView(self, config):
-        self.updateViewValue(getattr(config, self.key))
+    def updateView(self):
+        self.updateViewValue(getattr(self.model, self.key))
+
+    def updateModelValue(self, value):
+        setattr(self.model, self.key, value)
 
 class RadioMapping(Mapping):
-    def __init__(self, key, radiobuttonswithvalues):
-        Mapping.__init__(self, key)
+    def __init__(self, model, key, radiobuttonswithvalues):
+        Mapping.__init__(self, model, key)
         self.radiobuttonswithvalues = radiobuttonswithvalues
+        
+        for radiobutton, correspondingvalue in self.radiobuttonswithvalues.items():
+            radiobutton.connect(radiobutton, SIGNAL("clicked()"), lambda: self.updateModelValue(correspondingvalue))
 
     def updateViewValue(self, value):
         for radiobutton, correspondingvalue in self.radiobuttonswithvalues.items():
             radiobutton.setChecked(value == correspondingvalue)
 
 class CheckMapping(Mapping):
-    def __init__(self, key, checkbox):
-        Mapping.__init__(self, key)
+    def __init__(self, model, key, checkbox):
+        Mapping.__init__(self, model, key)
         self.checkbox = checkbox
+        
+        self.checkbox.connect(self.checkbox, SIGNAL("clicked()"), self.updateModel)
+    
+    def updateModel(self):
+        self.updateModelValue(self, self.checkbox.checked())
     
     def updateViewValue(self, value):
         self.checkbox.setChecked(value)
         
 class ComboMapping(Mapping):
-    def __init__(self, key, combobox):
-        Mapping.__init__(self, key)
+    def __init__(self, model, key, combobox):
+        Mapping.__init__(self, model, key)
         self.combobox = combobox
+        
+        self.combobox.connect(self.combobox, SIGNAL("currentIndexChanged(int)"), self.updateModel)
+    
+    def updateModel(self, n):
+        self.updateModelValue(self.combobox.itemData(n).toPyObject())
     
     def updateViewValue(self, value):
         for n in range(0, self.combobox.count()):
@@ -166,17 +183,27 @@ class ComboMapping(Mapping):
         raise AssertionError("The value %s was not in the list of options" % value)
         
 class TextMapping(Mapping):
-    def __init__(self, key, lineedit):
-        Mapping.__init__(self, key)
+    def __init__(self, model, key, lineedit):
+        Mapping.__init__(self, model, key)
         self.lineedit = lineedit
+        
+        self.lineedit.connect(self.lineedit, SIGNAL('textEdited()'), self.updateModel)
+    
+    def updateModel(self):
+        self.updateModelValue(self.lineedit.text())
     
     def updateViewValue(self, value):
         self.lineedit.setText(value)
         
 class ColorChooserMapping(Mapping):
-    def __init__(self, key, button):
-        Mapping.__init__(self, key)
+    def __init__(self, model, key, button):
+        Mapping.__init__(self, model, key)
         self.button = button
+        
+        self.button.connect(self.button, SIGNAL("clicked()"), self.updateModel)
+    
+    def updateModel(self):
+        pass
     
     def updateViewValue(self, value):
         r, g, b = pinyin.utils.parseHtmlColor(value)
