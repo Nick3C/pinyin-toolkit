@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'designer/preferences.ui'
 #
-# Created: Thu Jun  4 10:12:35 2009
+# Created: Thu Jun  4 22:13:16 2009
 #      by: PyQt4 UI code generator 4.4.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -27,18 +27,30 @@ class Ui_Preferences(object):
         self.textTab.setObjectName("textTab")
         self.horizontalLayout = QtGui.QHBoxLayout(self.textTab)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.fieldsFrame = QtGui.QFrame(self.textTab)
+        self.livePreviewFrame = QtGui.QFrame(self.textTab)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.fieldsFrame.sizePolicy().hasHeightForWidth())
-        self.fieldsFrame.setSizePolicy(sizePolicy)
-        self.fieldsFrame.setMinimumSize(QtCore.QSize(250, 0))
-        self.fieldsFrame.setFrameShape(QtGui.QFrame.NoFrame)
+        sizePolicy.setHeightForWidth(self.livePreviewFrame.sizePolicy().hasHeightForWidth())
+        self.livePreviewFrame.setSizePolicy(sizePolicy)
+        self.livePreviewFrame.setMinimumSize(QtCore.QSize(300, 0))
+        self.livePreviewFrame.setFrameShape(QtGui.QFrame.NoFrame)
+        self.livePreviewFrame.setFrameShadow(QtGui.QFrame.Raised)
+        self.livePreviewFrame.setLineWidth(0)
+        self.livePreviewFrame.setObjectName("livePreviewFrame")
+        self.verticalLayout_2 = QtGui.QVBoxLayout(self.livePreviewFrame)
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.livePreviewGroupBox = QtGui.QGroupBox(self.livePreviewFrame)
+        self.livePreviewGroupBox.setObjectName("livePreviewGroupBox")
+        self.verticalLayout_8 = QtGui.QVBoxLayout(self.livePreviewGroupBox)
+        self.verticalLayout_8.setObjectName("verticalLayout_8")
+        self.fieldsFrame = QtGui.QFrame(self.livePreviewGroupBox)
+        self.fieldsFrame.setFrameShape(QtGui.QFrame.StyledPanel)
         self.fieldsFrame.setFrameShadow(QtGui.QFrame.Raised)
-        self.fieldsFrame.setLineWidth(0)
         self.fieldsFrame.setObjectName("fieldsFrame")
-        self.horizontalLayout.addWidget(self.fieldsFrame)
+        self.verticalLayout_8.addWidget(self.fieldsFrame)
+        self.verticalLayout_2.addWidget(self.livePreviewGroupBox)
+        self.horizontalLayout.addWidget(self.livePreviewFrame)
         self.textSettingsFrame = QtGui.QFrame(self.textTab)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -221,6 +233,7 @@ class Ui_Preferences(object):
 
     def retranslateUi(self, Preferences):
         Preferences.setWindowTitle(QtGui.QApplication.translate("Preferences", "Pinyin Toolkit Preferences", None, QtGui.QApplication.UnicodeUTF8))
+        self.livePreviewGroupBox.setTitle(QtGui.QApplication.translate("Preferences", "Live Preview", None, QtGui.QApplication.UnicodeUTF8))
         self.hanziPinyinSettingsFrame.setTitle(QtGui.QApplication.translate("Preferences", "Hanzi And Pinyin", None, QtGui.QApplication.UnicodeUTF8))
         self.pinyinTonesLabel.setText(QtGui.QApplication.translate("Preferences", "Pinyin tone display method:", None, QtGui.QApplication.UnicodeUTF8))
         self.numericPinyinTonesRadio.setText(QtGui.QApplication.translate("Preferences", "Numeric tones", None, QtGui.QApplication.UnicodeUTF8))
@@ -240,7 +253,7 @@ class Ui_Preferences(object):
         self.seperateMeasureWordCheck.setText(QtGui.QApplication.translate("Preferences", "Seperate measure word out into its own field", None, QtGui.QApplication.UnicodeUTF8))
         self.linesSeperatorRadio.setText(QtGui.QApplication.translate("Preferences", "Lines", None, QtGui.QApplication.UnicodeUTF8))
         self.commasSeperatorRadio.setText(QtGui.QApplication.translate("Preferences", "Commas", None, QtGui.QApplication.UnicodeUTF8))
-        self.customSeperatorRadio.setText(QtGui.QApplication.translate("Preferences", "Custom", None, QtGui.QApplication.UnicodeUTF8))
+        self.customSeperatorRadio.setText(QtGui.QApplication.translate("Preferences", "Custom:", None, QtGui.QApplication.UnicodeUTF8))
         self.toneColorsSettingsFrame.setTitle(QtGui.QApplication.translate("Preferences", "Tone Colors", None, QtGui.QApplication.UnicodeUTF8))
         self.colorizeCheck.setText(QtGui.QApplication.translate("Preferences", "Colorize Pinyin and Hanzi with tones where possible", None, QtGui.QApplication.UnicodeUTF8))
         self.tone1Button.setText(QtGui.QApplication.translate("Preferences", "ā", None, QtGui.QApplication.UnicodeUTF8))

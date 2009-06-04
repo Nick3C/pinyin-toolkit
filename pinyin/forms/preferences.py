@@ -75,15 +75,20 @@ class Preferences(QDialog):
         # Suspend repainting
         self.parent.setUpdatesEnabled(False)
         
+        # Build font for fields
+        font = QFont()
+        font.setFamily("Arial")
+        font.setPixelSize(20)
+        
         # Construct a new frame to hold all the fields
         fieldsFrame = QWidget()
         fieldsGrid = QGridLayout(fieldsFrame)
         fieldsFrame.setLayout(fieldsGrid)
         fieldsGrid.setMargin(0)
         
-        # add entries for each field
+        # Add entries for each field
         for n, (fieldname, fieldvalue) in enumerate(namedvalues):
-            # label
+            # Field label
             l = QLabel(fieldname)
             fieldsGrid.addWidget(l, n, 0)
             
@@ -91,9 +96,10 @@ class Preferences(QDialog):
             w = QTextEdit(self)
             w.setTabChangesFocus(True)
             w.setAcceptRichText(True)
-            w.setMinimumSize(20, 60)
+            w.setMinimumSize(10, 0)
             w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             w.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            w.setFont(font)
             w.setReadOnly(True)
             w.setText(fieldvalue)
             
