@@ -196,9 +196,33 @@ def regexparse(regex, text):
                 yield (False, text[i:])
             return
 
+"""
+Given a color in HTML format (#0156af), return the red, blue and green components as integers.
+"""
+def parseHtmlColor(color):
+    if len(color) != 7:
+        raise ValueError("HTML color %s has the wrong length" % color)
+    
+    if color[0:1] != '#':
+        raise ValueError("HTML color %s does not begin with a #" % color)
+    
+    return int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+
 if __name__=='__main__':
     import unittest
     import re
+    
+    class ParseHtmlColorTest(unittest.TestCase):
+        def testBadLength(self):
+            self.assertRaises(ValueError, lambda: parseHtmlColor(""))
+            self.assertRaises(ValueError, lambda: parseHtmlColor("#aabbc"))
+            self.assertRaises(ValueError, lambda: parseHtmlColor("#aabbccd"))
+        
+        def testBadStart(self):
+            self.assertRaises(ValueError, lambda: parseHtmlColor("?aabbcc"))
+        
+        def testParseCorrectly(self):
+            self.assertEquals(parseHtmlColor("#0156af"), (1, 86, 175))
     
     class MkdirFallbackTest(unittest.TestCase):
         def testDirectoryForNameThatIsFree(self):

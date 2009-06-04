@@ -20,10 +20,24 @@ class Preferences(QDialog):
         
         fieldsScroll = self.createFieldsScroll(self.controls.fieldsFrame)
         fieldsScroll.setWidget(self.createFieldsFrame(["Expression", "Reading", "Etc"]))
+        self.createButtonGroups()
         
         # Necessary for Anki integration?
         # ui.dialogs.open("AddCards", self)
+    
+    def createButtonGroups(self):
+        # I've actually put these in the .ui file, but the pyuic4 thing can't import that data! Sigh...
+        def makeButtonGroup(*buttons):
+            group = QButtonGroup(self)
+            for button in buttons:
+                group.addButton(button)
         
+        makeButtonGroup(self.controls.numericPinyinTonesRadio, self.controls.tonifiedPinyinTonesRadio)
+        makeButtonGroup(self.controls.simplifiedHanziRadio, self.controls.traditionalHanziRadio)
+        makeButtonGroup(self.controls.circledChineseNumberingRadio, self.controls.circledArabicNumberingRadio,
+                        self.controls.plainNumberingRadio, self.controls.noNumberingRadio)
+        makeButtonGroup(self.controls.linesSeperatorRadio, self.controls.commasSeperatorRadio, self.controls.customSeperatorRadio)
+    
     def createFieldsScroll(self, widget):
         # scrollarea
         fieldsScroll = QScrollArea()
@@ -69,21 +83,8 @@ class Preferences(QDialog):
             w.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             fieldsGrid.addWidget(w, n, 1)
         
-        #self.parent.setUpdatesEnabled(True)
+        self.parent.setUpdatesEnabled(True)
         return fieldsFrame
-
-    #
-    # Interface to the view
-    #
-    
-    def addComboItem(self, combo, icon, name, data):
-        if icon:
-            combo.addItem(QIcon(icon), name, QVariant(data))
-        else:
-            combo.addItem(name, QVariant(data))
-
-    def addComboSeparator(self, combo):
-        combo.insertSeparator(combo.count())
 
 if __name__ == "__main__":
     import sys
