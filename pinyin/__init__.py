@@ -1,4 +1,6 @@
+import config
 import dictionary
+import languages
 import logger
 import media
 import meanings
