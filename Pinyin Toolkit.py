@@ -24,143 +24,20 @@ A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-###############  Version Details ###############
+
 pinyin_toolkit="0.05 dev feature complete 0.1"
 
 CCDict_Ver="2009-05-29T05:46:28Z" # [n=84885] http://www.mdbg.net/chindict/chindict.php?page=cc-cedict
 HanDeDict_Ver="Sat May 30 00:20:38 2009" # [n=169500] http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl&w=8
 CFDICT_Ver="Wed Jan 21 01:49:53 2009" # [n=593] http://www.chinaboard.de/fr/cfdict.php?mode=dl&w=8
-# Note that these dictionaries are not identical and have important formatting differences and field order variation
 
-############  Language Masterswitch  ############
-# The following option controls the language used for translation and dictionary lookup.
-# uncomment your preference or add a new entry
-dictlanguage="en"    # English (en):         Full support (online and offline)
-#dictlanguage="de"   # German (de):          Full support (online and offline)
-#dictlanguage="fr"   # French (fr):          Hybrid support (online and partial offline)
-
-                     # ALL OTHER LANGUAGES:  Online Support only
-#dictlanguage="es"   # Spanish  (es)
-#dictlanguage="hi"   # Hindi (hi)
-#dictlanguage="pt"   # Portugese  (pt)
-#dictlanguage="ar"   # Arabic (ar)
-#dictlanguage="bn"   # Bengali (bn)
-#dictlanguage="ru"   # Russian (ru)
-#dictlanguage="ja"   # Japanese (ja)
-
-# To find the language code for your language go here: http://www.loc.gov/standards/iso639-2/php/code_list
-# Note that languages with Full (and partial) support can access additional features and benefits.
-
-############### Settings Section ###############
-
-### Options ###
-
-colorizedpinyingeneration    = True   # Should we try and write readings and measure words that include colorized pinyin? True or False
-meaninggeneration            = True   # Should we try and fill out a field called Meaning with the definition? True or False
-fallbackongoogletranslate    = True   # Should we use Google to fill out the Meaning field if needs be? True or False
-colorizedcharactergeneration = True   # Should we try and fill out a field called Color with a colored version of the character? True or False
-audiogeneration              = True   # Should we try and fill out a field called Audio with text-to-speech commands? True or False
-detectmeasurewords           = True   # Should we try and put measure words seperately into a field called MW? True or False
-
-# Tone display mode
-tonedisplay = "tonified"
-#tonedisplay = "numeric"
-
-# Should we give each translation entry a number? Uncomment the line showing how you would like them to be numbered:
-meaningnumbering = "circledChinese"
-#meaningnumbering = "circledArabic"
-#meaningnumbering = "arabicParens"
-#meaningnumbering = "none"
-
-# Seperator for meaning dictionary entries. Uncomment the one you want or add your own:
-meaningseperator = "lines"
-#meaningseperator = "commas"
-#meaningseperator = "custom"
-
-# The seperator to use if you choose custom above:
-custommeaningseperator = " | "
-
-# Prefer simplified or traditional characters? This will be used when formatting meanings with embedded Hanzi and measure words.
-prefersimptrad = "simp"
-#prefersimptrad = "trad"
-
-# What type of audio files are you using? List in descending order of priority (default is prefer ".ogg" and dislike ".wav"]
-audioextensions = [".ogg", ".mp3", ".wav"]
-
-# Source location for Mandarin auidio files download
-# You should not have to change this setting as it defaults to a free and usable sound-set.
-# Be aware that you may be able to find higher quality audio files from other sources.
-mandarinsoundsurl = "http://www.chinese-lessons.com/sounds/Mandarin_sounds.zip"
-# TODO: these files contain some problem file names that do not match the pinyin standard.
-# For example "me.mp3" instead of "me5.mp3" or "me4.mp3" - need to find a way to fix this.
-
-
-### Color Settings ####
-
-# You can change the colors PyKit uses to format tones and text with.
-
-# Remember: Just because you can change something doesn't mean you should! :)
-# If you use non-standard tone colorization you may become 'weird'
-# Other applications may not let you use your non-standard colors
-# These also have the benefit of following the colors of the rainbow, awww...
-
-tonecolors = [
-#   | Tone colors |
-    u"#ff0000",     # 1st tone color, default is #FF0000 (red)
-    u"#ffaa00",     # 2nd tone color, default is #ffaa00 (orange)
-    u"#00aa00",     # 3rd tone color, default is #00aa00 (green)
-    u"#0000ff",     # 4th tone color, default is #0000FF (blue)
-    u"#545454"      # 5th tone color, default is #545454 (grey)
-  ]
-
-usercolors = [
-#   | User colors |
-    u"#000000",     # default is #000000, black [not the same as 'no color']
-    u"#00AAFF",     # default is #00AAFF, light blue    (suggested alternative text color)
-    u"#55007F",     # default is #55007F, yelo          (suggested highlighting color)
-    u"#32CD32",     # default is #32CD32, dark green    (candidate for future tone sandhi color) 
-    u"#C71585",     # default is #C71585, violet        (randomly chosen default color)
-    u"#FF6347",     # default is #FF6347, tomato        (random chosen default color)
-    u"#7FFF00"      # default is #7FFF00, light green   (random chosen default color)
-  ]
-
-### Field Settings ###
-
-# These are prioritised lists which encode what kind of field is given what name in the model.
-# Leftmost field names are given priority over any others later in the list.
-# You should not have to remove or replace any entry, simply add your entry on the right hand side.
-candidateFieldNamesByKey = {
-    'expression' : ["Expression", "Hanzi", "Chinese", u"汉字", u"中文"],
-    'reading'    : ["Reading", "Pinyin", "PY", u"拼音"],
-    'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
-    'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
-    'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
-    'mw'         : ["MW", "Measure Word", "Classifier", u"量词"]
-  }
-
-# The following line controls which model tag is used (it must match your deck).
-# You should not need to change this setting.
-modelTag = "Mandarin"
-
-
-############### End of Settings Section ###############
 
 if __name__ != "__main__":
-    import sys
-
-    import pinyin.config
-    import pinyin.anki
     import pinyin.anki.main as main
     from ankiqt import mw
     
-    # Extract the settings from the module dictionary - must exclude most stuff because we can't deep copy it
-    settings = {}
-    for key, value in globals().items():
-        if key in pinyin.config.defaultsettings:
-            settings[key] = value
-    
     # Save a reference to the toolkit onto the mw, preventing garbage collection of PyQT objects
-    mw.pinyintoolkit = main.PinyinToolkit(mw, pinyin.config.Config(settings)).installhooks()
+    mw.pinyintoolkit = main.PinyinToolkit(mw).installhooks()
 else:
     print "This is a plugin for the Anki Spaced Repition learning system and cannot be run directly."
     print "Please download Anki from <http://ichi2.net/anki/>"

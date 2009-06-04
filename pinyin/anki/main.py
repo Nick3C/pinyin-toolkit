@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import pinyin.config
 import pinyin.dictionaryonline
 import pinyin.dictionary
 from pinyin.logger import log
@@ -16,15 +17,18 @@ import shortcutkeys
 
 
 class PinyinToolkit(object):
-    def __init__(self, mw, config):
+    def __init__(self, mw):
         log.info("Pinyin Toolkit is initializing")
         
-        # Test internet connectivity by performing a gTrans call.
-        # If this call fails then translations are disabled until Anki is restarted.
-        # This prevents a several second delay from occuring when changing a field with no internet
-        if (config.fallbackongoogletranslate):
-            config.fallbackongoogletranslate = pinyin.dictionaryonline.gCheck(config.dictlanguage)
-            log.info("Google Translate has tested internet access and reports status %s", config.fallbackongoogletranslate)
+        # Try and load the settings from the Anki config database
+        settings = mw.config.get("pinyintoolkit")
+        if settings is None:
+            # Initialize the configuration with default settings
+            config = pinyin.config.Config()
+            utils.persistconfig(mw, config)
+        else:
+            # Initialize the configuration with the stored settings
+            config = pinyin.config.Config(settings)
         
         # Store the main window
         self.mw = mw
@@ -38,7 +42,7 @@ class PinyinToolkit(object):
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
-        self.hooks = [hookbuilder(self.mw, thenotifier, themediamanager, config, updater) for hookbuilder in [hooks.FocusHook, hooks.SampleSoundsHook, hooks.MissingInformationHook]]
+        self.hooks = [hookbuilder(self.mw, thenotifier, themediamanager, config, updater) for hookbuilder in [hooks.PreferencesHook, hooks.FocusHook, hooks.SampleSoundsHook, hooks.MissingInformationHook]]
     
     def installhooks(self):
         # Install all hooks

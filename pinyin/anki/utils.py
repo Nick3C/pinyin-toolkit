@@ -32,3 +32,13 @@ def chooseField(candidateFieldNames, fact):
     # No suitable field found!
     log.warn("No field matching %s in the fact", candidateFieldNames)
     return None
+
+def persistconfig(mw, config):
+    # NB: MUST store a dict into settings, not a Config object. The
+    # reason is that the pickler needs to see the class definition
+    # before it can unpickle, and Anki does the unpickling before
+    # plugins get a chance to run :-(
+    #
+    # However, because we can't pickle the Config directly we need to make sure the Anki
+    # configuration is updated with the new value whenever we modify the config.
+    mw.config["pinyintoolkit"] = config.settings

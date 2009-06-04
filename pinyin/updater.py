@@ -152,8 +152,8 @@ class FieldUpdater(object):
             # If there is a long word followed by another word then this will be treated as a phrase.
             # Phrases are also queried using googletranslate rather than the local dictionary.
             # This helps deal with small dictionaries (for example French)
-            if dictmeanings == None and dictmeasurewords == None and self.config.fallbackongoogletranslate:
-                log.info("Falling back on Google for %s", expression)
+            if dictmeanings == None and dictmeasurewords == None and self.config.shouldusegoogletranslate:
+                log.info("Using Google translate to determine the unknown meaning of %s", expression)
                 translation = dictionaryonline.gTrans(expression, self.config.dictlanguage)
                 
                 # Only fill out the meanings field if we get something useful back

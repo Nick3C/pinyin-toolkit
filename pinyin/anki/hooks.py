@@ -5,6 +5,8 @@ from PyQt4 import QtGui, QtCore
 
 import anki.utils
 
+import pinyin.forms.preferences
+import pinyin.forms.preferencescontroller
 from pinyin.logger import log
 import pinyin.media
 import pinyin.utils
@@ -55,16 +57,49 @@ class MenuHook(Hook):
         self.action = QtGui.QAction(text, self.mw)
         self.action.setStatusTip(tooltip)
         self.action.setEnabled(True)
+    
+    def install(self):
+        # Install menu item
+        log.info("Installing a menu hook (%s)", type(self))
+        
+        # HACK ALERT: must use lambda here, or the signal never gets raised! I think this is due to garbage collection...
+        self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: self.triggered())
+        self.mw.mainWin.menuTools.addAction(self.action)
 
+class PreferencesHook(MenuHook):
+    def __init__(self, *args, **kwargs):
+        MenuHook.__init__(self,
+                          "Pinyin Toolkit Preferences",
+                          "Configure the Pinyin Toolkit",
+                          *args,
+                          **kwargs)
+    
+    def triggered(self):
+        log.info("User opened preferences dialog")
+        
+        # Instantiate and show the preferences dialog modally
+        preferences = pinyin.forms.preferences.Preferences(self.mw)
+        controller = pinyin.forms.preferencescontroller.PreferencesController(preferences, self.config)
+        result = preferences.exec_()
+        
+        # We only need to change the configuration if the user accepted the dialog
+        if result == QtGui.QDialog.Accepted:
+            # Update by the simple method of replacing the settings dictionaries: better make sure that no
+            # other part of the code has cached parts of the configuration
+            self.config.settings = controller.model.settings
+            
+            # Ensure this is saved in Anki's configuration
+            utils.persistconfig(self.mw, self.config)
+        
 class SampleSoundsHook(MenuHook):
     def __init__(self, *args, **kwargs):
         MenuHook.__init__(self,
-                          'Download Mandarin text-to-speech Audio Files',
-                          'Download and install a sample set of Mandarin audio files into this deck. This will enable automatic text-to-speech.',
+                          'Download Mandarin Sounds Text-To-Speech Pack',
+                          'Download and install a sample set of Mandarin audio files. This will enable automatic text-to-speech.',
                            *args,
                            **kwargs)
 
-    def downloadAndInstallSounds(self):
+    def triggered(self):
         log.info("User triggered sound download")
         
         # Download ZIP, using cache if necessary
@@ -78,13 +113,6 @@ class SampleSoundsHook(MenuHook):
         exampleAudioField = self.config.candidateFieldNamesByKey['audio'][0]
         self.notifier.info("Finished installing Mandarin sounds! These sound files will be used automatically as long as you have "
                            + " the: <b>" + exampleAudioField + "</b> field in your deck, and the text: <b>%(" + exampleAudioField + ")s</b> in your card template")
-
-    def install(self):
-        # Install menu item that will allow downloading of the sounds
-        log.info("Installing sample sounds hook")
-        # HACK ALERT: must use lambda here, or the signal never gets raised! I think this is due to garbage collection...
-        self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: self.downloadAndInstallSounds())
-        self.mw.mainWin.menuTools.addAction(self.action)
 
 
 class MissingInformationHook(MenuHook):
@@ -102,7 +130,7 @@ class MissingInformationHook(MenuHook):
                 for card in deck.s.query(anki.cards.Card).filter('cardModelId = %s' % card_model):
                     yield card
 
-    def fillMissingInformation(self):
+    def triggered(self):
         log.info("User triggered missing information fill")
         
         for card in self.suitableCards(self.mw.deck):
@@ -112,10 +140,3 @@ class MissingInformationHook(MenuHook):
     
         # DEBUG consider future feature to add missing measure words cards after doing so (not now)
         self.notifier.info("All missing information has been successfully added to your deck.")
-
-    def install(self):
-        # Install menu item that will allow filling of missing information
-        log.info("Installing missing information hook")
-        # HACK ALERT: must use lambda here, or the signal never gets raised! I think this is due to garbage collection...
-        self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: self.fillMissingInformation())
-        self.mw.mainWin.menuTools.addAction(self.action)

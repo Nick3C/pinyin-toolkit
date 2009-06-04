@@ -4,17 +4,18 @@
 import copy
 
 import dictionary
+import dictionaryonline
 from logger import log
 
 defaultsettings = {
     "dictlanguage" : "en",
 
-    "colorizedpinyingeneration"    : True,
-    "meaninggeneration"            : True,
-    "fallbackongoogletranslate"    : True,
-    "colorizedcharactergeneration" : True,
-    "audiogeneration"              : True,
-    "detectmeasurewords"           : True,
+    "colorizedpinyingeneration"    : True, # Should we try and write readings and measure words that include colorized pinyin?
+    "meaninggeneration"            : True, # Should we try and fill out a field called Meaning with the definition? 
+    "fallbackongoogletranslate"    : True, # Should we use Google to fill out the Meaning field if needs be? 
+    "colorizedcharactergeneration" : True, # Should we try and fill out a field called Color with a colored version of the character?
+    "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
+    "detectmeasurewords"           : True, # Should we try and put measure words seperately into a field called MW?
 
     # "numeric" or "tonified"
     "tonedisplay" : "tonified",
@@ -32,6 +33,8 @@ defaultsettings = {
     # Descending order of priority (default is prefer ".ogg" and dislike ".wav"]
     "audioextensions" : [".ogg", ".mp3", ".wav"],
 
+    # You should not have to change this setting as it defaults to a free and usable sound-set.
+    # Be aware that you may be able to find higher quality audio files from other sources.
     "mandarinsoundsurl" : "http://www.chinese-lessons.com/sounds/Mandarin_sounds.zip",
 
     "tonecolors" : [
@@ -45,7 +48,7 @@ defaultsettings = {
     "usercolors" : [
         u"#000000",  # black         (not the same as 'no color')
         u"#00AAFF",  # light blue    (suggested alternative text color)
-        u"#55007F",  # yelo          (suggested highlighting color)
+        u"#55007F",  # yellow        (suggested highlighting color)
         u"#32CD32",  # dark green    (candidate for future tone sandhi color) 
         u"#C71585",  # violet        (randomly chosen default color)
         u"#FF6347",  # tomato        (random chosen default color)
@@ -62,6 +65,7 @@ defaultsettings = {
         'mw'         : ["MW", "Measure Word", "Classifier", u"量词"]
       },
     
+    # Only decks with this tag are processed
     "modelTag" : "Mandarin"
   }
 
@@ -92,6 +96,9 @@ extension of this class in the future, I only pickle up the
 key/value pairs stored in the user data field.
 """
 class Config(object):
+    # NB: DO NOT store anything of importance into this class other than the settings dictionary.
+    # Any such data won't be saved between sessions!
+    
     # In general, this object should be created using unpickling rather than just constructed
     def __init__(self, usersettings=None):
         settings = {}
@@ -103,6 +110,10 @@ class Config(object):
         
         log.info("Initialized configuration with settings %s", settings)
         self.settings = settings
+        
+        # /Transient/ flag recording whether Google translate appears to be up. To begin
+        # with, we aren't sure
+        self.__googletranslateworking = None
     
     #
     # The pickle protocol (http://docs.python.org/library/pickle.html#pickle.Pickler)
@@ -166,6 +177,25 @@ class Config(object):
         
         # Use the seperator to join the meanings together
         return self.meaningseperatorstring.join(meanings)
+    
+    shouldusegoogletranslate = property(lambda self: self.getshouldusegoogletranslate)
+    
+    def getshouldusegoogletranslate(self):
+        # Fail fast if the user has turned Google off:
+        if not config.fallbackongoogletranslate:
+            return False
+        
+        # Determine the status of Google Translate if we haven't already done so.
+        # TODO: should try every 5 minutes or something rather than giving up on first failure.
+        if self.__googletranslateworking == None:
+            # Test internet connectivity by performing a gTrans call.
+            # If this call fails then translations are disabled until Anki is restarted.
+            # This prevents a several second delay from occuring when changing a field with no internet
+            self.__googletranslateworking = dictionaryonline.gCheck(config.dictlanguage)
+            log.info("Google Translate has tested internet access and reports status %s", self.__googletranslateworking)
+        
+        # Only use it if it appears to be working
+        return self.__googletranslateworking
     
     #
     # Tone accessors

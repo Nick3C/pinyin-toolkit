@@ -121,7 +121,7 @@ if __name__ == "__main__":
     parent.setWindowTitle('simple')
     
     preferences = Preferences(parent)
-    pinyin.forms.preferencescontroller.PreferencesController(preferences, pinyin.config.Config({}), pinyin.dictionary.PinyinDictionary.load("en"))
+    pinyin.forms.preferencescontroller.PreferencesController(preferences, pinyin.config.Config({}))
     
     preferences.show()
     

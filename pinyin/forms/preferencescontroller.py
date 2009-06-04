@@ -18,7 +18,7 @@ previewexpression = u"书"
 previewmedia = [pinyin.media.MediaPack("Example", {"shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg"})]
 
 class PreferencesController(object):
-    def __init__(self, view, initialconfig, dictionary):
+    def __init__(self, view, initialconfig):
         # Clone the configuration so we can change it at will
         self.model = pinyin.config.Config(initialconfig.settings)
     
