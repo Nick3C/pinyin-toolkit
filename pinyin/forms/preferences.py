@@ -119,6 +119,7 @@ if __name__ == "__main__":
     import pinyin.config
     import pinyin.dictionary
     import pinyin.forms.preferencescontroller
+    import pinyin.mocks
     
     app = QApplication(sys.argv)
 
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     parent.setWindowTitle('simple')
     
     preferences = Preferences(parent)
-    pinyin.forms.preferencescontroller.PreferencesController(preferences, pinyin.config.Config({}))
+    pinyin.forms.preferencescontroller.PreferencesController(preferences, pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager([]), pinyin.config.Config({}))
     
     preferences.show()
     

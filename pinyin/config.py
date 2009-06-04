@@ -7,6 +7,12 @@ import dictionary
 import dictionaryonline
 from logger import log
 
+# TODO: expose these things in the UI
+#  * Audio file extension list
+#  * User colors
+#  * Candidate field names
+#  * Deck tag
+
 defaultsettings = {
     "dictlanguage" : "en",
 

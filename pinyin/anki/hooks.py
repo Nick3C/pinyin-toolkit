@@ -79,7 +79,7 @@ class PreferencesHook(MenuHook):
         
         # Instantiate and show the preferences dialog modally
         preferences = pinyin.forms.preferences.Preferences(self.mw)
-        controller = pinyin.forms.preferencescontroller.PreferencesController(preferences, self.config)
+        controller = pinyin.forms.preferencescontroller.PreferencesController(preferences, self.notifier, self.mediamanager, self.config)
         result = preferences.exec_()
         
         # We only need to change the configuration if the user accepted the dialog
@@ -100,19 +100,7 @@ class SampleSoundsHook(MenuHook):
                            **kwargs)
 
     def triggered(self):
-        log.info("User triggered sound download")
-        
-        # Download ZIP, using cache if necessary
-        the_media = pinyin.media.MediaDownloader(self.mediamanager.mediadir()).download("Mandarin Sounds", self.config.mandarinsoundsurl,
-                                                                                        lambda: self.notifier.info("Downloading the sounds - this might take a while!"))
-    
-        # Install each file from the ZIP into Anki
-        the_media.installpack(self.mediamanager.mediadir())
-    
-        # Tell the user we are done
-        exampleAudioField = self.config.candidateFieldNamesByKey['audio'][0]
-        self.notifier.info("Finished installing Mandarin sounds! These sound files will be used automatically as long as you have "
-                           + " the: <b>" + exampleAudioField + "</b> field in your deck, and the text: <b>%(" + exampleAudioField + ")s</b> in your card template")
+        pinyin.media.downloadAndInstallMandarinSounds(self.notifier, self.mediamanager, self.config)
 
 
 class MissingInformationHook(MenuHook):

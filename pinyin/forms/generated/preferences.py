@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'designer/preferences.ui'
 #
-# Created: Thu Jun  4 22:13:16 2009
+# Created: Thu Jun  4 23:59:37 2009
 #      by: PyQt4 UI code generator 4.4.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -217,6 +217,30 @@ class Ui_Preferences(object):
         self.tabWidget.addTab(self.textTab, "")
         self.audioTab = QtGui.QWidget()
         self.audioTab.setObjectName("audioTab")
+        self.verticalLayout_9 = QtGui.QVBoxLayout(self.audioTab)
+        self.verticalLayout_9.setObjectName("verticalLayout_9")
+        self.groupBox = QtGui.QGroupBox(self.audioTab)
+        self.groupBox.setObjectName("groupBox")
+        self.verticalLayout_10 = QtGui.QVBoxLayout(self.groupBox)
+        self.verticalLayout_10.setObjectName("verticalLayout_10")
+        self.installedAudioPacksLabel = QtGui.QLabel(self.groupBox)
+        self.installedAudioPacksLabel.setObjectName("installedAudioPacksLabel")
+        self.verticalLayout_10.addWidget(self.installedAudioPacksLabel)
+        self.audioPacksList = QtGui.QListWidget(self.groupBox)
+        self.audioPacksList.setObjectName("audioPacksList")
+        self.verticalLayout_10.addWidget(self.audioPacksList)
+        self.horizontalLayout_3 = QtGui.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        spacerItem1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout_3.addItem(spacerItem1)
+        self.installMandarinSoundsButton = QtGui.QPushButton(self.groupBox)
+        self.installMandarinSoundsButton.setObjectName("installMandarinSoundsButton")
+        self.horizontalLayout_3.addWidget(self.installMandarinSoundsButton)
+        self.openAudioPackDirectoryButton = QtGui.QPushButton(self.groupBox)
+        self.openAudioPackDirectoryButton.setObjectName("openAudioPackDirectoryButton")
+        self.horizontalLayout_3.addWidget(self.openAudioPackDirectoryButton)
+        self.verticalLayout_10.addLayout(self.horizontalLayout_3)
+        self.verticalLayout_9.addWidget(self.groupBox)
         self.tabWidget.addTab(self.audioTab, "")
         self.gridLayout.addWidget(self.tabWidget, 0, 0, 1, 1)
         self.buttonBox = QtGui.QDialogButtonBox(Preferences)
@@ -262,5 +286,9 @@ class Ui_Preferences(object):
         self.tone4Button.setText(QtGui.QApplication.translate("Preferences", "à", None, QtGui.QApplication.UnicodeUTF8))
         self.tone5Button.setText(QtGui.QApplication.translate("Preferences", "a", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.textTab), QtGui.QApplication.translate("Preferences", "Text", None, QtGui.QApplication.UnicodeUTF8))
+        self.groupBox.setTitle(QtGui.QApplication.translate("Preferences", "Audio Packs", None, QtGui.QApplication.UnicodeUTF8))
+        self.installedAudioPacksLabel.setText(QtGui.QApplication.translate("Preferences", "Installed text-to-speech audio packs:", None, QtGui.QApplication.UnicodeUTF8))
+        self.installMandarinSoundsButton.setText(QtGui.QApplication.translate("Preferences", "Install Free Mandarin Sounds Pack", None, QtGui.QApplication.UnicodeUTF8))
+        self.openAudioPackDirectoryButton.setText(QtGui.QApplication.translate("Preferences", "Open Audio Pack Directory", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.audioTab), QtGui.QApplication.translate("Preferences", "Audio", None, QtGui.QApplication.UnicodeUTF8))
 

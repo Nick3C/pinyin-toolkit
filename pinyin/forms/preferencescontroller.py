@@ -6,6 +6,7 @@ from PyQt4.QtGui import QColor, QIcon, QPalette
 
 import pinyin.config
 from pinyin.languages import languages
+import pinyin.media
 import pinyin.mocks
 import pinyin.updater
 import pinyin.utils
@@ -18,19 +19,24 @@ previewexpression = u"书"
 previewmedia = [pinyin.media.MediaPack("Example", {"shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg"})]
 
 class PreferencesController(object):
-    def __init__(self, view, initialconfig):
+    def __init__(self, view, notifier, mediamanager, initialconfig):
         # Clone the configuration so we can change it at will
         self.model = pinyin.config.Config(initialconfig.settings)
     
-        # Save the view (typically a Preferences instance) for later reference
+        # Save the view (typically a Preferences instance) for later reference, along with other data
         self.view = view
+        self.notifier = notifier
+        self.mediamanager = mediamanager
         
         # Set up an updater we will use to deal with the live preview, based off the current model
+        # NB: use NullNotifier instead of the one we are passed because we don't want e.g. popups about
+        # installing sound packs if we are just doing the live preview!
         self.updater = pinyin.updater.FieldUpdater(pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager(previewmedia), self.model)
         
         # Set up the controls - one time only
         self.mappings = []
         self.setUpText()
+        self.setUpAudio()
 
         # Use the mappings to reflect the initial setting values into the controls and preview pane
         self.updateView()
@@ -105,6 +111,13 @@ class PreferencesController(object):
         setUpMeanings()
         setUpToneColors()
     
+    def setUpAudio(self):
+        self.updateAudioPacksList()
+        
+        # Connect up the two buttons to the event handlers
+        self.view.connect(self.view.controls.installMandarinSoundsButton, SIGNAL("clicked()"), lambda: self.installMandarinSounds())
+        self.view.connect(self.view.controls.openAudioPackDirectoryButton, SIGNAL("clicked()"), lambda: self.openAudioPackDirectory())
+    
     def addComboItem(self, combo, icon, name, data):
         if icon:
             combo.addItem(QIcon(icon), name, QVariant(data))
@@ -120,6 +133,22 @@ class PreferencesController(object):
     
     def __del__(self):
         self.unregisterMappings()
+    
+    #
+    # Audio related functionality
+    #
+    
+    def updateAudioPacksList(self):
+        self.view.controls.audioPacksList.clear()
+        for mediapack in self.mediamanager.discovermediapacks():
+            self.view.controls.audioPacksList.addItem(mediapack.summarize(self.model.audioextensions))
+    
+    def installMandarinSounds(self):
+        pinyin.media.downloadAndInstallMandarinSounds(self.notifier, self.mediamanager, self.model)
+        self.updateAudioPacksList()
+    
+    def openAudioPackDirectory(self):
+        utils.openFolder(self.mediamanager.mediadir())
     
     #
     # View manipulation

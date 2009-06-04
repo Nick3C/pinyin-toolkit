@@ -197,6 +197,16 @@ def regexparse(regex, text):
             return
 
 """
+Returns the contents of a file: no muss, no fuss
+"""
+def filecontents(filepath):
+    file = open(filepath, 'r')
+    contents = file.read(-1)
+    file.close()
+    
+    return contents
+
+"""
 Return the first item from the list or the other argument.
 """
 def heador(list, orelse):
@@ -211,6 +221,15 @@ Returns the left dictionary updated by the right one.
 def updated(leftdict, rightdict):
     leftdict.update(rightdict)
     return leftdict
+
+"""
+Pluralize the first noun with respect to the second count.
+"""
+def pluralize(what, count):
+    if count == 1:
+        return what
+    else:
+        return what + "s"
 
 """
 Given a red, green and blue component of a color, return the corresponding HTML color.

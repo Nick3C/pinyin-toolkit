@@ -1,7 +1,16 @@
+from PyQt4.QtCore import QUrl
+from PyQt4.QtGui import QBrush, QDesktopServices, QFont, QImage, QPalette, QPixmap
+
+# Substantially cribbed from Anki (main.py, onOpenPluginFolder):
+def openFolder(path):
+    import sys
+    
+    if sys.platform == "win32":
+        subprocess.Popen("explorer", path.encode(sys.getfilesystemencoding()))
+    else:
+        QDesktopServices.openUrl(QUrl("file://" + path))
+
 # Code to convert from QVariant taken from <http://www.opensubscriber.com/message/pyqt@riverbankcomputing.com/9900124.html>
-
-from PyQt4.QtGui import QBrush, QFont, QPalette, QPixmap, QImage
-
 variant_converter = {
   "QVariantList": lambda v: fromQVariantList(v),
   "QList<QVariant>": lambda v: fromQVariantList(v),
