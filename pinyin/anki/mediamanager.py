@@ -9,7 +9,11 @@ class AnkiMediaManager(object):
         self.mw = mw
     
     def mediadir(self):
-        return os.path.join(pinyin.utils.pinyindir(), "media")
+        # Create the plugin media directory, or later code that tries to
+        # e.g. enumerate the contents will get a nasty shock (see bug #31).
+        themediadir = os.path.join(pinyin.utils.pinyindir(), "media")
+        pinyin.utils.ensuredirexists(themediadir)
+        return themediadir
 
     def discovermediapacks(self):
         packs = []
