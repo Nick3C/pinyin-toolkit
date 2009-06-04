@@ -96,7 +96,7 @@ class Config(object):
         settings = {}
         
         # Set all settings first using the defaults and then by coping the user settings
-        for key, value in defaultsettings.items() + usersettings.items():
+        for key, value in defaultsettings.items() + (usersettings or {}).items():
             log.info("Copying %s field into settings", key)
             settings[key] = copy.deepcopy(value)
         
@@ -213,6 +213,9 @@ if __name__=='__main__':
             
             self.assertEquals(inputSettings, { "dictlanguage" : [["deep!"]] })
     
+        def testNoUserSettings(self):
+            self.assertNotEquals(Config(None).dictlanguage, None)
+        
         def testSupplyDefaultSettings(self):
             self.assertNotEquals(Config({}).dictlanguage, None)
         

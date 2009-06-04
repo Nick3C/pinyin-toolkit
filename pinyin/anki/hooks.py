@@ -9,7 +9,6 @@ from pinyin.logger import log
 import pinyin.media
 import pinyin.utils
 
-import updater
 import utils
 
 
@@ -32,7 +31,7 @@ class FocusHook(Hook):
             return
 
         # Update the card, ignoring any errors
-        pinyin.utils.suppressexceptions(lambda: self.updater.updatefact(self.notifier, factproxy, field.value))
+        pinyin.utils.suppressexceptions(lambda: self.updater.updatefact(factproxy, field.value))
     
     def install(self):
         from anki.hooks import addHook, removeHook
@@ -108,7 +107,7 @@ class MissingInformationHook(MenuHook):
         for card in self.suitableCards(self.mw.deck):
             # Need a fact proxy because the updater works on dictionary-like objects
             factproxy = utils.AnkiFactProxy(self.config.candidateFieldNamesByKey, card.fact)
-            self.updater.updatefact(self.notifier, factproxy, factproxy["expression"])
+            self.updater.updatefact(factproxy, factproxy["expression"])
     
         # DEBUG consider future feature to add missing measure words cards after doing so (not now)
         self.notifier.info("All missing information has been successfully added to your deck.")

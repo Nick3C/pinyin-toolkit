@@ -3,14 +3,20 @@
 
 import os
 
-from pinyin import dictionary, dictionaryonline, media, meanings, pinyin, transformations
-from pinyin.logger import log
+import dictionary
+import dictionaryonline
+import media
+import meanings
+import pinyin
+import transformations
+
+from logger import log
 
 
 class FieldUpdater(object):
-    def __init__(self, mw, notifier, config, dictionary):
-        self.mw = mw
+    def __init__(self, notifier, addmedia, config, dictionary):
         self.notifier = notifier
+        self.addmedia = addmedia
         self.config = config
         self.dictionary = dictionary
     
@@ -24,27 +30,27 @@ class FieldUpdater(object):
     # Media discovery
     #
     
-    def discoverlegacymedia(self):
-        # NB: we used to do this when initialising the toolkit, but that dosen't work,
-        # for the simple reason that if you change deck the media should change, but
-        # we can't hook that event
-        
-        # I can ask Damien for a hook if you like. He has been very good with these sort of things in the past.
-        
-        # Discover all the files in the media directory
-        mediaDir = self.mw.deck.mediaDir()
-        if mediaDir:
-            try:
-                mediadircontents = os.listdir(mediaDir)
-            except IOError:
-                log.exception("Error while listing media directory")
-                mediadircontents = None
-        else:
-            log.info("The media directory was either not present or not accessible")
-            mediadircontents = None
-        
-        # Finally, find any legacy media in that directory. TODO: use this method for something
-        return media.discoverlegacymedia(mediadircontents, self.mw.deck.s.all("select originalPath, filename from media"))
+    # def discoverlegacymedia(self):
+    #         # NB: we used to do this when initialising the toolkit, but that dosen't work,
+    #         # for the simple reason that if you change deck the media should change, but
+    #         # we can't hook that event
+    #         
+    #         # I can ask Damien for a hook if you like. He has been very good with these sort of things in the past.
+    #         
+    #         # Discover all the files in the media directory
+    #         mediaDir = self.mw.deck.mediaDir()
+    #         if mediaDir:
+    #             try:
+    #                 mediadircontents = os.listdir(mediaDir)
+    #             except IOError:
+    #                 log.exception("Error while listing media directory")
+    #                 mediadircontents = None
+    #         else:
+    #             log.info("The media directory was either not present or not accessible")
+    #             mediadircontents = None
+    #         
+    #         # Finally, find any legacy media in that directory. TODO: use this method for something
+    #         return media.discoverlegacymedia(mediadircontents, self.mw.deck.s.all("select originalPath, filename from media"))
     
     #
     # Generation
@@ -54,13 +60,13 @@ class FieldUpdater(object):
         # TODO: do we really want lower case here? If so, we should do it for colorized pinyin as well.
         return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
     
-    def generateaudio(self, notifier, dictreading):
+    def generateaudio(self, dictreading):
         mediapacks = media.MediaPack.discover()
         if len(mediapacks) == 0:
             # Show a warning the first time we detect that we're missing a sound pack
-            notifier.infoOnce("We appear to be missing some audio samples. This might be our fault, but if you haven't already done so, "
-                              + "please use 'Tools' -> 'Download Mandarin text-to-speech Audio Files' to install the samples. Alternatively, "
-                              + "you can disable the text-to-speech functionality in the Pinyin Toolkit settings.")
+            self.notifier.infoOnce("We appear to be missing some audio samples. This might be our fault, but if you haven't already done so, "
+                                   + "please use 'Tools' -> 'Download Mandarin text-to-speech Audio Files' to install the samples. Alternatively, "
+                                   + "you can disable the text-to-speech functionality in the Pinyin Toolkit settings.")
             
             # There is no way we can generate an audio reading with no packs - give up
             return None
@@ -72,7 +78,7 @@ class FieldUpdater(object):
         output_tags = u""
         for outputfile in output:
             # Install required media in the deck as we go, getting the canonical string to insert into the sound field upon installation
-            output_tags += "[sound:%s]" % self.mw.deck.addMedia(os.path.join(mediapack.packpath, outputfile))
+            output_tags += "[sound:%s]" % self.addmedia(os.path.join(mediapack.packpath, outputfile))
         
         return output_tags
     
@@ -102,10 +108,10 @@ class FieldUpdater(object):
     # Core updater routine
     #
     
-    def updatefact(self, notifier, fact, expression):
+    def updatefact(self, fact, expression):
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
-        if 'expression' in fact and not(fact['expression']):
+        if expression == None or expression.strip() == u"":
             for key in ["reading", "meaning", "color"]:
                 if key in fact:
                     fact[key] = u""
@@ -154,7 +160,7 @@ class FieldUpdater(object):
                 'reading' : (True,                                     lambda: self.generatereading(dictreading)),
                 'meaning' : (self.config.meaninggeneration,            lambda: self.generatemeanings(dictmeanings)),
                 'mw'      : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
-                'audio'   : (self.config.audiogeneration,              lambda: self.generateaudio(notifier, dictreading)),
+                'audio'   : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
                 'color'   : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression))
             }
     
@@ -167,3 +173,36 @@ class FieldUpdater(object):
             value = updater()
             if value != None and value != fact[key]:
                 fact[key] = value
+
+if __name__ == "__main__":
+    import copy
+    import unittest
+    
+    import config
+    from notifier import MockNotifier
+    from utils import Thunk
+    
+    # Shared dictionary
+    englishdict = Thunk(lambda: dictionary.PinyinDictionary.load("en"))
+    
+    class FieldUpdaterTest(unittest.TestCase):
+        def testAutoBlanking(self):
+            self.assertEquals(self.updatefact(u"", { "reading" : "blather", "meaning" : "junk", "color" : "yes!" }),
+                              { "reading" : "", "meaning" : "", "color" : "" })
+        
+        def testAutoBlankingAudioMeasureWord(self):
+            # TODO: test behaviour for audio and measure word, onec we know what it should be
+            pass
+        
+        def testFullUpdate(self):
+            self.assertEquals(self.updatefact(u"", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" }),
+                              { "reading" : "", "meaning" : "", "color" : "" })
+        
+        # Test helpers
+        def updatefact(self, expression, fact, **kwargs):
+            factclone = copy.copy(fact)
+            FieldUpdater(MockNotifier(), lambda m: m, config.Config(kwargs), englishdict).updatefact(factclone, expression)
+            
+            return factclone
+    
+    unittest.main()
