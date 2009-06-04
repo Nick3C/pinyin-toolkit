@@ -21,7 +21,9 @@ pinyin/media
 dict-userdict.txt
 
 # Generated UI stuff
-pinyin/forms/generated/
+# NB: DON'T UNCOMMENT THIS LINE.
+# Generated data really must be checked in :-)
+#pinyin/forms/generated/
 
 # Logs
 Pinyin Toolkit.log
