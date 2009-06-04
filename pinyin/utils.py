@@ -197,6 +197,16 @@ def regexparse(regex, text):
             return
 
 """
+Return the first item from the list or the other argument.
+"""
+def heador(list, orelse):
+    if len(list) == 0:
+        return orelse
+    else:
+        return list[0]
+        
+
+"""
 Given a red, green and blue component of a color, return the corresponding HTML color.
 """
 def toHtmlColor(r, g, b):
@@ -218,6 +228,14 @@ def parseHtmlColor(color):
 if __name__=='__main__':
     import unittest
     import re
+    
+    class HeadOrTest(unittest.TestCase):
+        def testHeadOrNonEmpty(self):
+            self.assertEquals(heador([1], "Another"), 1)
+            self.assertEquals(heador([1, 2], "Another"), 1)
+
+        def testHeadOrEmpty(self):
+            self.assertEquals(heador([], "Another"), "Another")
     
     class HtmlColorTest(unittest.TestCase):
         def testParseBadLength(self):

@@ -19,8 +19,7 @@ class Preferences(QDialog):
         self.controls = pinyin.forms.generated.preferences.Ui_Preferences()
         self.controls.setupUi(self)
         
-        fieldsScroll = self.createFieldsScroll(self.controls.fieldsFrame)
-        fieldsScroll.setWidget(self.createFieldsFrame(["Expression", "Reading", "Etc"]))
+        self.fieldsScroll = self.createFieldsScroll(self.controls.fieldsFrame)
         self.createButtonGroups()
         
         # Necessary for Anki integration?
@@ -65,42 +64,51 @@ class Preferences(QDialog):
         
         return fieldsScroll
 
-    def createFieldsFrame(self, fieldnames):
-        #self.parent.setUpdatesEnabled(False)
-        
-        fieldsFrame = QWidget()
-        fieldsGrid = QGridLayout(fieldsFrame)
-        fieldsFrame.setLayout(fieldsGrid)
-        fieldsGrid.setMargin(0)
-        
-        # add entries for each field
-        for n, fieldname in enumerate(fieldnames):
-            # label
-            l = QLabel(fieldname)
-            fieldsGrid.addWidget(l, n, 0)
-            
-            # edit widget
-            w = QTextEdit(self)
-            w.setTabChangesFocus(True)
-            w.setAcceptRichText(True)
-            w.setMinimumSize(20, 60)
-            w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            w.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            fieldsGrid.addWidget(w, n, 1)
-        
-        self.parent.setUpdatesEnabled(True)
-        return fieldsFrame
-    
     #
     # Interface with controller
     #
     
     def pickColor(self, initcolor):
         return QColorDialog.getColor(initcolor, self)
+    
+    def updateFields(self, namedvalues):
+        # Suspend repainting
+        self.parent.setUpdatesEnabled(False)
+        
+        # Construct a new frame to hold all the fields
+        fieldsFrame = QWidget()
+        fieldsGrid = QGridLayout(fieldsFrame)
+        fieldsFrame.setLayout(fieldsGrid)
+        fieldsGrid.setMargin(0)
+        
+        # add entries for each field
+        for n, (fieldname, fieldvalue) in enumerate(namedvalues):
+            # label
+            l = QLabel(fieldname)
+            fieldsGrid.addWidget(l, n, 0)
+            
+            # Edit widget
+            w = QTextEdit(self)
+            w.setTabChangesFocus(True)
+            w.setAcceptRichText(True)
+            w.setMinimumSize(20, 60)
+            w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            w.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            w.setText(fieldvalue)
+            
+            # Add the widget to the grid
+            fieldsGrid.addWidget(w, n, 1)
+        
+        # Resume repainting
+        self.parent.setUpdatesEnabled(True)
+        
+        # Display the fields on the actual form
+        self.fieldsScroll.setWidget(fieldsFrame)
 
 if __name__ == "__main__":
     import sys
     import pinyin.config
+    import pinyin.dictionary
     import pinyin.forms.preferencescontroller
     
     app = QApplication(sys.argv)
@@ -110,7 +118,7 @@ if __name__ == "__main__":
     parent.setWindowTitle('simple')
     
     preferences = Preferences(parent)
-    pinyin.forms.preferencescontroller.PreferencesController(preferences, pinyin.config.Config({}))
+    pinyin.forms.preferencescontroller.PreferencesController(preferences, pinyin.config.Config({}), pinyin.dictionary.PinyinDictionary.load("en"))
     
     preferences.show()
     

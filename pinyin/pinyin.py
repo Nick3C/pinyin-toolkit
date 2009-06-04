@@ -42,6 +42,9 @@ class Pinyin(object):
     def __unicode__(self):
         return self.numericformat(hideneutraltone=self.hideneutraltone)
     
+    def __repr__(self):
+        return "Pinyin(%s)" % repr(self.numericformat())
+    
     def __eq__(self, other):
         if other == None:
             return False
@@ -218,6 +221,9 @@ if __name__ == "__main__":
         
         def testStr(self):
             self.assertEquals(str(Pinyin(u"hen3")), u"hen3")
+        
+        def testRepr(self):
+            self.assertEquals(repr(Pinyin(u"hen3")), u"Pinyin(u'hen3')")
         
         def testStrNeutralTone(self):
             py = Pinyin(u"ma5")

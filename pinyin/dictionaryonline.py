@@ -14,7 +14,7 @@ from logger import log
 def gTrans(query, destlanguage='en'):
     if query == None or query.strip() == u"":
         # No meanings if we don't have a query
-        return []
+        return None
 
     result = lookup(query, destlanguage)
     if result:
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     
     class GoogleTranslateTest(unittest.TestCase):
         def testTranslateNothing(self):
-            self.assertEquals(gTrans(""), [])
+            self.assertEquals(gTrans(""), None)
         
         def testTranslateEnglish(self):
             self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), u'Hello, You are my friend?<br /><span style="color:gray"><small>[Google Translate]</small></span>')

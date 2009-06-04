@@ -6,22 +6,33 @@ from PyQt4.QtGui import QColor, QIcon, QPalette
 
 import pinyin.config
 from pinyin.languages import languages
+import pinyin.mocks
+import pinyin.updater
 import pinyin.utils
 
+
+previewexpression = u"书"
+# TODO: set media pack up up according to user extensions
+previewmedia = [pinyin.media.MediaPack("Example", {"shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg"})]
+
 class PreferencesController(object):
-    def __init__(self, view, initialconfig):
+    def __init__(self, view, initialconfig, dictionary):
         # Clone the configuration so we can change it at will
         self.model = pinyin.config.Config(initialconfig.settings)
     
         # Save the view (typically a Preferences instance) for later reference
         self.view = view
         
+        # Set up an updater we will use to deal with the live preview, based off the current model
+        self.updater = pinyin.updater.FieldUpdater(pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager(previewmedia), self.model, dictionary)
+        
         # Set up the controls - one time only
         self.mappings = []
         self.setUpText()
 
-        # Use the mappings to reflect the initial setting values into the controls
+        # Use the mappings to reflect the initial setting values into the controls and preview pane
         self.updateView()
+        self.updateViewPreview()
     
     #
     # Setup
@@ -102,6 +113,13 @@ class PreferencesController(object):
         combo.insertSeparator(combo.count())
     
     #
+    # Tear down
+    #
+    
+    def __del__(self):
+        self.unregisterMappings()
+    
+    #
     # View manipulation
     #
     
@@ -109,35 +127,85 @@ class PreferencesController(object):
         for mapping in self.mappings:
             mapping.updateView()
     
+    def updateViewPreview(self):
+        # Create a model fact that we will fill with information, as well
+        # as a list of fields to put that information into
+        fact = {}
+        fieldnamesbykey = {}
+        for key, candidatefieldnames in self.model.candidateFieldNamesByKey.items():
+            fact[key] = u""
+            fieldnamesbykey[key] = pinyin.utils.heador(candidatefieldnames, key.capitalize())
+        
+        # Update the fact using the current model configuration
+        self.updater.updatefact(fact, previewexpression)
+        
+        # Pull together the name of the field and the contents it should have
+        namedvalues = []
+        for key, value in fact.items():
+            namedvalues.append((fieldnamesbykey[key], value))
+        
+        # Done: give the named values to the view, sorted by the field name
+        self.view.updateFields(sorted(namedvalues, lambda x, y: cmp(x[0], y[0])))
+
     #
     # Mapping helpers
     #
     
     def registerRadioMapping(self, *args):
-        self.mappings.append(RadioMapping(self.model, *args))
+        self.registerMapping(RadioMapping(self.model, *args))
     
     def registerCheckMapping(self, *args):
-        self.mappings.append(CheckMapping(self.model, *args))
+        self.registerMapping(CheckMapping(self.model, *args))
     
     def registerComboMapping(self, *args):
-        self.mappings.append(ComboMapping(self.model, *args))
+        self.registerMapping(ComboMapping(self.model, *args))
     
     def registerTextMapping(self, *args):
-        self.mappings.append(TextMapping(self.model, *args))
+        self.registerMapping(TextMapping(self.model, *args))
     
     def registerColorChooserMapping(self, *args):
-        self.mappings.append(ColorChooserMapping(self.model, lambda initcolor: self.view.pickColor(initcolor), *args))
+        self.registerMapping(ColorChooserMapping(self.model, lambda initcolor: self.view.pickColor(initcolor), *args))
+
+    def registerMapping(self, mapping):
+        # Ensure that we update the view whenever any of the mappings changes the model
+        mapping.modelchanged.subscribe(self.updateViewPreview)
+        
+        self.mappings.append(mapping)
+
+    def unregisterMappings(self):
+        # Ensure that we remove the event handlers we install during registration,
+        # to avoid memory leaks and other nasty stuff
+        for mapping in self.mappings:
+            mapping.modelchanged.unsubscribe(self.updateViewPreview)
+
+class Event(object):
+    def __init__(self):
+        self.subscribers = []
+    
+    def subscribe(self, function):
+        self.subscribers.append(function)
+    
+    def unsubscribe(self, function):
+        self.subscribers.delete(function)
+    
+    def fire(self, *args, **kwargs):
+        for subscriber in self.subscribers:
+            subscriber(*args, **kwargs)
 
 class Mapping(object):
     def __init__(self, model, key):
         self.model = model
         self.key = key
+        
+        self.modelchanged = Event()
 
     def updateView(self):
         self.updateViewValue(getattr(self.model, self.key))
 
     def updateModelValue(self, value):
         setattr(self.model, self.key, value)
+        
+        modelchanged.fire(value)
 
 class RadioMapping(Mapping):
     def __init__(self, model, key, radiobuttonswithvalues):

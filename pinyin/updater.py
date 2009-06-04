@@ -83,12 +83,16 @@ class FieldUpdater(object):
         return output_tags
     
     def generatemeanings(self, dictmeanings):
-        if dictmeanings == None or len(dictmeanings) == 0:
+        if dictmeanings == None:
             # We didn't get any meanings, don't update the field
             return None
         
         # Prepare all the meanings by flattening them and removing empty entries
         meanings = [meaning for meaning in [self.preparetokens(dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
+        
+        if len(meanings) == 0:
+            # After flattening and stripping, we didn't get any meanings: don't update the field
+            return None
         
         # Use the configuration to insert numbering etc
         return self.config.formatmeanings(meanings)
@@ -150,18 +154,24 @@ class FieldUpdater(object):
             # This helps deal with small dictionaries (for example French)
             if dictmeanings == None and dictmeasurewords == None and self.config.fallbackongoogletranslate:
                 log.info("Falling back on Google for %s", expression)
-                dictmeanings = [pinyin.TokenList([dictionaryonline.gTrans(expression, self.config.dictlanguage)])]
+                translation = dictionaryonline.gTrans(expression, self.config.dictlanguage)
+                
+                # Only fill out the meanings field if we get something useful back
+                if translation != None:
+                    dictmeanings = [pinyin.TokenList([translation])]
+
     
             # DEBUG: Nick wants to do something with audio for measure words here?
             # " [sound:MW]" # DEBUG - pass to audio loop
     
         # Do the updates on the fields the user has requested:
         updaters = {
-                'reading' : (True,                                     lambda: self.generatereading(dictreading)),
-                'meaning' : (self.config.meaninggeneration,            lambda: self.generatemeanings(dictmeanings)),
-                'mw'      : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
-                'audio'   : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
-                'color'   : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression))
+                'expression' : (True,                                     lambda: expression),
+                'reading'    : (True,                                     lambda: self.generatereading(dictreading)),
+                'meaning'    : (self.config.meaninggeneration,            lambda: self.generatemeanings(dictmeanings)),
+                'mw'         : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
+                'audio'      : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
+                'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression))
             }
     
         for key, (enabled, updater) in updaters.items():
@@ -215,6 +225,12 @@ if __name__ == "__main__":
                     audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"]), {
                         "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e"
                       })
+        
+        def testUpdateExpressionItself(self):
+            self.assertEquals(
+                self.updatefact(u"啤酒", { "expression" : "" },
+                    colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False,
+                    detectmeasurewords = False, audiogeneration = False), { "expression" : u"啤酒" })
         
         def testUpdateReadingOnly(self):
             self.assertEquals(
