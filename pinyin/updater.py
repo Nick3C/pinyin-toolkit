@@ -6,7 +6,6 @@ import os
 from pinyin import dictionary, dictionaryonline, media, meanings, pinyin, transformations
 from pinyin.logger import log
 
-import utils
 
 class FieldUpdater(object):
     def __init__(self, mw, notifier, config, dictionary):
@@ -104,40 +103,34 @@ class FieldUpdater(object):
     #
     
     def updatefact(self, notifier, fact, expression):
-        # Discover the final field names
-        fieldNames = dict([(key, utils.chooseField(candidateFieldNames, fact)) for key, candidateFieldNames in self.config.candidateFieldNamesByKey.items()])
-    
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
-        if fieldNames['expression'] != None and not(fact[fieldNames['expression']]):
+        if 'expression' in fact and not(fact['expression']):
             for key in ["reading", "meaning", "color"]:
-                if fieldNames[key] != None:
-                    fact[fieldNames[key]] = u""
+                if key in fact:
+                    fact[key] = u""
             
             # DEBUG Me - Auto generated pinyin should be at least "[sound:" + ".xxx]" (12 characters) plus pinyin (max 6). i.e. 18
             # DEBUG - Split string around "][" to get the audio of each sound in an array. Blank the field unless any one string is longer than 20 characters
             # Exploit the fact that pinyin text-to-speech pinyin should be no longer than 18 characters to guess that anything longer is user generated
             # MaxB comment: I don't think that will work, because we import the Mandarin Sounds into anki and it gives them /long/ names.  Instead, how
             # about we check if all of the audio files referenced are files in the format pinyin<tone>.mp3?
-            audioField = fieldNames['audio']
-            if audioField != None and len(fact[audioField]) < 40:
-                fact[audioField] = u""
+            if 'audio' in fact and len(fact['audio']) < 40:
+                fact['audio'] = u""
             
             # For now this is a compromise in safety and function.
             # longest MW should be: "? - zhang“ (9 char)
             # shortest possible is "? - ge" 6 char so we will autoblank if less than 12 letters
             # this means blanking will occur if one measure word is there but not if two (so if user added any they are safe)
-            mwField = fieldNames['mw']
-            if mwField != None and len(fact[mwField]) < 12: 
-                fact[mwField] = u""
+            if 'mw' in fact and len(fact['mw']) < 12: 
+                fact['mw'] = u""
     
         # Figure out the reading for the expression field
         dictreading = self.dictionary.reading(expression)
     
         # Preload the meaning, but only if we absolutely have to
         if self.config.needmeanings:
-            hasMeasureWordField = fieldNames["mw"] != None
-            if self.config.detectmeasurewords and hasMeasureWordField:
+            if self.config.detectmeasurewords and "mw" in fact:
                 # Get measure words and meanings seperately
                 dictmeanings, dictmeasurewords = self.dictionary.meanings(expression, self.config.prefersimptrad)
             else:
@@ -167,11 +160,10 @@ class FieldUpdater(object):
     
         for key, (enabled, updater) in updaters.items():
             # Skip updating if no suitable field, we are disabled, or the field has text
-            fieldName = fieldNames[key]
-            if fieldName == None or not(enabled) or fact[fieldName].strip() != u"":
+            if not(key in fact) or not(enabled) or fact[key].strip() != u"":
                 continue
         
             # Update the value in that field
             value = updater()
-            if value != None and value != fact[fieldName]:
-                fact[fieldName] = value
+            if value != None and value != fact[key]:
+                fact[key] = value

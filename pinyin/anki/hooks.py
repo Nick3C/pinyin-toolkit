@@ -24,13 +24,15 @@ class FocusHook(Hook):
     def onFocusLost(self, fact, field):
         log.info("User moved focus from the field %s", field.name)
         
+        # Need a fact proxy because the updater works on dictionary-like objects
+        factproxy = utils.AnkiFactProxy(self.config.candidateFieldNamesByKey, fact)
+        
         # Have we just moved off the expression field in a Mandarin model?
-        expressionField = utils.chooseField(self.config.candidateFieldNamesByKey['expression'], fact)
-        if field.name != expressionField or not(anki.utils.findTag(self.config.modelTag, fact.model.tags)):
+        if field.name != factproxy.fieldnames.get("expression") or not(anki.utils.findTag(self.config.modelTag, fact.model.tags)):
             return
 
         # Update the card, ignoring any errors
-        pinyin.utils.suppressexceptions(lambda: self.updater.updatefact(self.notifier, fact, field.value))
+        pinyin.utils.suppressexceptions(lambda: self.updater.updatefact(self.notifier, factproxy, field.value))
     
     def install(self):
         from anki.hooks import addHook, removeHook
@@ -104,8 +106,9 @@ class MissingInformationHook(MenuHook):
         log.info("User triggered missing information fill")
         
         for card in self.suitableCards(self.mw.deck):
-            expressionField = utils.chooseField(self.config.candidateFieldNamesByKey['expression'], card.fact)
-            self.updater.updatefact(self.notifier, card.fact, card.fact[expressionField])
+            # Need a fact proxy because the updater works on dictionary-like objects
+            factproxy = utils.AnkiFactProxy(self.config.candidateFieldNamesByKey, card.fact)
+            self.updater.updatefact(self.notifier, factproxy, factproxy["expression"])
     
         # DEBUG consider future feature to add missing measure words cards after doing so (not now)
         self.notifier.info("All missing information has been successfully added to your deck.")
