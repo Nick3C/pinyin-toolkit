@@ -197,6 +197,13 @@ def regexparse(regex, text):
             return
 
 """
+Given a red, green and blue component of a color, return the corresponding HTML color.
+"""
+def toHtmlColor(r, g, b):
+    toHex = lambda thing: ("%x" % thing).rjust(2, '0')
+    return "#" + toHex(r) + toHex(g) + toHex(b) 
+
+"""
 Given a color in HTML format (#0156af), return the red, blue and green components as integers.
 """
 def parseHtmlColor(color):
@@ -212,17 +219,21 @@ if __name__=='__main__':
     import unittest
     import re
     
-    class ParseHtmlColorTest(unittest.TestCase):
-        def testBadLength(self):
+    class HtmlColorTest(unittest.TestCase):
+        def testParseBadLength(self):
             self.assertRaises(ValueError, lambda: parseHtmlColor(""))
             self.assertRaises(ValueError, lambda: parseHtmlColor("#aabbc"))
             self.assertRaises(ValueError, lambda: parseHtmlColor("#aabbccd"))
         
-        def testBadStart(self):
+        def testParseBadStart(self):
             self.assertRaises(ValueError, lambda: parseHtmlColor("?aabbcc"))
         
         def testParseCorrectly(self):
             self.assertEquals(parseHtmlColor("#0156af"), (1, 86, 175))
+    
+        def testToHtmlColor(self):
+            self.assertEquals(toHtmlColor(1, 2, 3), "#010203")
+            self.assertEquals(toHtmlColor(1, 86, 175), "#0156af")
     
     class MkdirFallbackTest(unittest.TestCase):
         def testDirectoryForNameThatIsFree(self):
