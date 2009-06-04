@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import pinyin.config
 from pinyin.languages import languages
 
@@ -15,52 +18,60 @@ class PreferencesController(object):
         # The Hanzi and Pinyin panel
         def setUpHanziPinyin():
             self.registerRadioMapping("tonedisplay", {
-                self.view.numericPinyinTonesRadio : "numeric",
-                self.view.tonifiedPinyinTonesRadio : "tonified"
+                self.view.controls.numericPinyinTonesRadio : "numeric",
+                self.view.controls.tonifiedPinyinTonesRadio : "tonified"
               })
             
             self.registerRadioMapping("prefersimptrad", {
-                self.view.simplifiedHanziRadio : "simp",
-                self.view.traditionalHanziRadio : "trad"
+                self.view.controls.simplifiedHanziRadio : "simp",
+                self.view.controls.traditionalHanziRadio : "trad"
               })
         
         # The Meanings panel
         def setUpMeanings():
-            for support, langcode, countrycode, name in languages:
+            # Add languages to the combo box lexically sorted by support level, then by friendly name
+            lastsupportlevel = None
+            for supportlevel, langcode, countrycode, name in sorted(languages, lambda x, y: cmp((y[0], x[3]), (x[0], y[3]))):
+                # Add a seperator if we have moved to a new support level
+                if lastsupportlevel != None and supportlevel != lastsupportlevel:
+                    self.view.addComboSeparator(self.view.controls.languageCombo)
+                lastsupportlevel = supportlevel
+            
+                # Decide on the icon to use, if any
                 if countrycode:
-                    icon = QIcon(":/flags/%s.png" % countrycode)
+                    icon = ":/flags/%s.png" % countrycode
                 else:
                     icon = None
-                
+            
                 # Set the langcode as the user data for the combo item - this
                 # will be picked up by the ComboMapping stuff
-                self.view.languageCombo.addItem(icon, name, langcode)
+                self.view.addComboItem(self.view.controls.languageCombo, icon, name, langcode)
             
-            self.registerCheckMapping("detectmeasurewords", self.view.seperateMeasureWordCheck)
+            self.registerCheckMapping("detectmeasurewords", self.view.controls.seperateMeasureWordCheck)
             
-            self.registerComboMapping("dictlanguage", self.view.languageCombo)
+            self.registerComboMapping("dictlanguage", self.view.controls.languageCombo)
             
             self.registerRadioMapping("meaningnumbering", {
-                self.view.circledChineseNumberingRadio : "circledChinese",
-                self.view.circledArabicNumberingRadio : "circledArabic",
-                self.view.plainNumberingRadio : "arabicParens",
-                self.view.noNumberingRadio : "none",
+                self.view.controls.circledChineseNumberingRadio : "circledChinese",
+                self.view.controls.circledArabicNumberingRadio : "circledArabic",
+                self.view.controls.plainNumberingRadio : "arabicParens",
+                self.view.controls.noNumberingRadio : "none",
               })
             
             self.registerRadioMapping("meaningseperator", {
-                self.view.linesSeperatorRadio : "lines",
-                self.view.commasSeperatorRadio : "commas",
-                self.view.customSeperatorRadio : "custom"
+                self.view.controls.linesSeperatorRadio : "lines",
+                self.view.controls.commasSeperatorRadio : "commas",
+                self.view.controls.customSeperatorRadio : "custom"
               })
             
-            self.registerTextMapping("custommeaningseperator", self.view.customSeperatorLineEdit)
+            self.registerTextMapping("custommeaningseperator", self.view.controls.customSeperatorLineEdit)
         
         # The Tone Colors panel
-        def testSetUpToneColors():
-            self.registerCheckMapping("colorizedpinyingeneration", self.view.colorizeCheck)
+        def setUpToneColors():
+            self.registerCheckMapping("colorizedpinyingeneration", self.view.controls.colorizeCheck)
             
             for tone in range(1, 6):
-                self.registerColorChooserMapping("tone%dcolor" % tone, getattr(self.view, "tone%dButton" % tone))
+                self.registerColorChooserMapping("tone%dcolor" % tone, getattr(self.view.controls, "tone%dButton" % tone))
         
         setUpHanziPinyin()
         setUpMeanings()

@@ -1,35 +1,29 @@
-# Copyright: Damien Elmes <anki@ichi2.net>
-# License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
-import generated
+import pinyin.forms.generated.preferences
 
 
+# Based on AddCards dialog from Anki.  AddCards was:
+#   Copyright: Damien Elmes <anki@ichi2.net>
+#   License: GNU GPL, version 3 or later; http://www.gnu.org/copyleft/gpl.html
 class Preferences(QDialog):
     def __init__(self, parent):
         QDialog.__init__(self, parent, Qt.Window)
         self.parent = parent
         
-        dialog = generated.preferences.Ui_Preferences()
-        self.setupDialog(dialog)
+        self.controls = pinyin.forms.generated.preferences.Ui_Preferences()
+        self.controls.setupUi(self)
         
-        fieldsScroll = self.createFieldsScroll(dialog.fieldsFrame)
+        fieldsScroll = self.createFieldsScroll(self.controls.fieldsFrame)
         fieldsScroll.setWidget(self.createFieldsFrame(["Expression", "Reading", "Etc"]))
         
         # Necessary for Anki integration?
         # ui.dialogs.open("AddCards", self)
         
-    def setupDialog(self, dialog):
-        # Initialize
-        dialog.setupUi(self)
-        
-        # Make the status background the same colour as the frame.
-        # palette = dialog.status.palette()
-        #         c = unicode(palette.color(QPalette.Window).name())
-        #         dialog.status.setStyleSheet("* { background: %s; color: #000000; }" % c)
-
     def createFieldsScroll(self, widget):
         # scrollarea
         fieldsScroll = QScrollArea()
@@ -78,14 +72,33 @@ class Preferences(QDialog):
         #self.parent.setUpdatesEnabled(True)
         return fieldsFrame
 
+    #
+    # Interface to the view
+    #
+    
+    def addComboItem(self, combo, icon, name, data):
+        if icon:
+            combo.addItem(QIcon(icon), name, QVariant(data))
+        else:
+            combo.addItem(name, QVariant(data))
+
+    def addComboSeparator(self, combo):
+        combo.insertSeparator(combo.count())
+
 if __name__ == "__main__":
     import sys
+    import pinyin.config
+    import pinyin.forms.preferencescontroller
+    
     app = QApplication(sys.argv)
 
-    window = QWidget()
-    window.resize(250, 150)
-    window.setWindowTitle('simple')
+    parent = QWidget()
+    parent.resize(250, 150)
+    parent.setWindowTitle('simple')
     
-    Preferences(window).show()
+    preferences = Preferences(parent)
+    pinyin.forms.preferencescontroller.PreferencesController(preferences, pinyin.config.Config({}))
+    
+    preferences.show()
     
     sys.exit(app.exec_())

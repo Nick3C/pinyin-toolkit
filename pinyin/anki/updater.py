@@ -17,9 +17,9 @@ class FieldUpdater(object):
     
     def preparetokens(self, tokens):
         if self.config.colorizedpinyingeneration:
-            tokens = transformations.Colorizer(self.config.colorlist).colorize(tokens)
+            tokens = transformations.Colorizer(self.config.tonecolors).colorize(tokens)
     
-        return tokens.flatten(tonify=self.config.tonify)
+        return tokens.flatten(tonify=self.config.shouldtonify)
     
     #
     # Media discovery
@@ -85,20 +85,8 @@ class FieldUpdater(object):
         # Prepare all the meanings by flattening them and removing empty entries
         meanings = [meaning for meaning in [self.preparetokens(dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
         
-        # Don't add meaning numbers if it is disabled or there is only one meaning
-        if len(meanings) > 1 and self.config.numbermeanings != None:
-            def meaningnumber(n):
-                if n < len(self.config.numbermeanings):
-                    return self.config.numbermeanings[n]
-                else:
-                    # Ensure that we fall back on normal (n) numbers if there are more numbers than we have in the supplied list
-                    return "(" + str(n) + ")"
-        
-            # Add numbers to all the meanings in the list
-            meanings = [meaningnumber(n) + " " + meaning for n, meaning in enumerate(meanings)]
-        
-        # Splice the meaning lines together with the seperator
-        return self.config.meaningseperator.join(meanings)
+        # Use the configuration to insert numbering etc
+        return self.config.formatmeanings(meanings)
     
     def generatemeasureword(self, dictmeasurewords):
         if dictmeasurewords == None or len(dictmeasurewords) == 0:
@@ -109,7 +97,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictmeasurewords[0])
     
     def generatecoloredcharacters(self, expression):
-        return transformations.Colorizer(self.config.colorlist).colorize(self.dictionary.tonedchars(expression)).flatten()
+        return transformations.Colorizer(self.config.tonecolors).colorize(self.dictionary.tonedchars(expression)).flatten()
     
     #
     # Core updater routine

@@ -55,7 +55,6 @@ dictlanguage="en"    # English (en):         Full support (online and offline)
 
 ### Options ###
 
-tonify                       = True   # Should we output tone marks rather than numbers on pinyin? True or False
 colorizedpinyingeneration    = True   # Should we try and write readings and measure words that include colorized pinyin? True or False
 meaninggeneration            = True   # Should we try and fill out a field called Meaning with the definition? True or False
 fallbackongoogletranslate    = True   # Should we use Google to fill out the Meaning field if needs be? True or False
@@ -63,18 +62,23 @@ colorizedcharactergeneration = True   # Should we try and fill out a field calle
 audiogeneration              = True   # Should we try and fill out a field called Audio with text-to-speech commands? True or False
 detectmeasurewords           = True   # Should we try and put measure words seperately into a field called MW? True or False
 
+# Tone display mode
+tonedisplay = "tonified"
+#tonedisplay = "numeric"
+
 # Should we give each translation entry a number? Uncomment the line showing how you would like them to be numbered:
-numbermeanings = [u"㊀", u"㊁", u"㊂", u"㊃", u"㊄", u"㊅", u"㊆", u"㊇", u"㊈", u"㊉", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]  # Cute Chinese symbols for first 10, then english up to 20
-#numbermeanings = [u"㊀", u"㊁", u"㊂", u"㊃", u"㊄", u"㊅", u"㊆", u"㊇", u"㊈", u"㊉㊀", u"㊉㊁", u"㊉㊂", u"㊉㊃", u"㊉㊄", u"㊉㊅", u"㊉㊆", u"㊉㊇", u"㊉㊈", u"㊁㊉"]  # Cute Chinese symbols for first 10, then double symbols up to 20
-#numbermeanings = [u"①", u"②", u"③", u"④", u"⑤", u"⑥", u"⑦", u"⑧", u"⑨", u"⑩", u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"]      # Pretty bubble-numerals
-#numbermeanings = []           # use simple "(1)", "(2)", "(3)", "(4)", "(5)" ...
-#numbermeanings = None         # do not give each entry a number
+meaningnumbering = "circledChinese"
+#meaningnumbering = "circledArabic"
+#meaningnumbering = "arabicParens"
+#meaningnumbering = "none"
 
 # Seperator for meaning dictionary entries. Uncomment the one you want or add your own:
-meaningseperator = "<br />"
-#meaningseperator = ", "
-#meaningseperator = "; "
-#meaningseperator = " | "
+meaningseperator = "lines"
+#meaningseperator = "commas"
+#meaningseperator = "custom"
+
+# The seperator to use if you choose custom above:
+custommeaningseperator = " | "
 
 # Prefer simplified or traditional characters? This will be used when formatting meanings with embedded Hanzi and measure words.
 prefersimptrad = "simp"
@@ -100,22 +104,25 @@ mandarinsoundsurl = "http://www.chinese-lessons.com/sounds/Mandarin_sounds.zip"
 # Other applications may not let you use your non-standard colors
 # These also have the benefit of following the colors of the rainbow, awww...
 
-colorlist = {
+tonecolors = [
 #   | Tone colors |
-    1 : u"#ff0000",     # 1st tone color, default is #FF0000 (red)
-    2 : u"#ffaa00",     # 2nd tone color, default is #ffaa00 (orange)
-    3 : u"#00aa00",     # 3rd tone color, default is #00aa00 (green)
-    4 : u"#0000ff",     # 4th tone color, default is #0000FF (blue)
-    5 : u"#545454",     # 5th tone color, default is #545454 (grey)
+    u"#ff0000",     # 1st tone color, default is #FF0000 (red)
+    u"#ffaa00",     # 2nd tone color, default is #ffaa00 (orange)
+    u"#00aa00",     # 3rd tone color, default is #00aa00 (green)
+    u"#0000ff",     # 4th tone color, default is #0000FF (blue)
+    u"#545454"      # 5th tone color, default is #545454 (grey)
+  ]
 
+usercolors = [
 #   | User colors |
-    6 : u"#000000",     # default is #000000, black [not the same as 'no color']
-    7 : u"#00AAFF",     # default is #00AAFF, light blue    (suggested alternative text color)
-    8 : u"#55007F",     # default is #55007F, yelo          (suggested highlighting color)
-    9 : u"#32CD32",     # default is #32CD32, dark green    (candidate for future tone sandhi color) 
-    10: u"#C71585",     # default is #C71585, violet        (randomly chosen default color)
-    11: u"#FF6347",     # default is #FF6347, tomato        (random chosen default color)
-    12: u"#7FFF00"}     # default is #7FFF00, light green   (random chosen default color)
+    u"#000000",     # default is #000000, black [not the same as 'no color']
+    u"#00AAFF",     # default is #00AAFF, light blue    (suggested alternative text color)
+    u"#55007F",     # default is #55007F, yelo          (suggested highlighting color)
+    u"#32CD32",     # default is #32CD32, dark green    (candidate for future tone sandhi color) 
+    u"#C71585",     # default is #C71585, violet        (randomly chosen default color)
+    u"#FF6347",     # default is #FF6347, tomato        (random chosen default color)
+    u"#7FFF00"      # default is #7FFF00, light green   (random chosen default color)
+  ]
 
 ### Field Settings ###
 
@@ -142,11 +149,18 @@ if __name__ != "__main__":
     import sys
 
     import pinyin.config
+    import pinyin.anki
     import pinyin.anki.main as main
     from ankiqt import mw
-        
+    
+    # Extract the settings from the module dictionary - must exclude most stuff because we can't deep copy it
+    settings = {}
+    for key, value in globals().items():
+        if key in pinyin.config.defaultsettings:
+            settings[key] = value
+    
     # Save a reference to the toolkit onto the mw, preventing garbage collection of PyQT objects
-    mw.pinyintoolkit = main.PinyinToolkit(mw, pinyin.config.Config(globals())).installhooks()
+    mw.pinyintoolkit = main.PinyinToolkit(mw, pinyin.config.Config(settings)).installhooks()
 else:
     print "This is a plugin for the Anki Spaced Repition learning system and cannot be run directly."
     print "Please download Anki from <http://ichi2.net/anki/>"

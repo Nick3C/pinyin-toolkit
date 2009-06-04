@@ -10,7 +10,6 @@ Colorize readings according to the reading in the Pinyin.
 * 2009 rewrites by Max Bolingbroke <batterseapower@hotmail.com>
 * 2009 original version by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
 """
-
 class Colorizer(object):
     def __init__(self, colorlist):
         self.colorlist = colorlist
@@ -22,7 +21,7 @@ class Colorizer(object):
         output = TokenList()
         for token in tokens:
             if hasattr(token, "tone"):
-                output.append(u'<span style="color:' + self.colorlist.get(token.tone) + u'">')
+                output.append(u'<span style="color:' + self.colorlist[token.tone - 1] + u'">')
                 output.append(token)
                 output.append(u'</span>')
             else:
@@ -109,13 +108,13 @@ if __name__=='__main__':
     englishdict = Thunk(lambda: dictionary.PinyinDictionary.load("en"))
     
     # Default tone color list for tests
-    colorlist = {
-        1 : u"#ff0000",
-        2 : u"#ffaa00",
-        3 : u"#00aa00",
-        4 : u"#0000ff",
-        5 : u"#545454"
-      }
+    colorlist = [
+        u"#ff0000",
+        u"#ffaa00",
+        u"#00aa00",
+        u"#0000ff",
+        u"#545454"
+      ]
     
     class PinyinColorizerTest(unittest.TestCase):
         def testRSuffix(self):
