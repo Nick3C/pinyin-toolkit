@@ -223,62 +223,6 @@ class PinyinDictionary(object):
                 i += 1
 
 
-
-
-
-
-# Number Converter #
-# Takes western numbers and converts them into Chinese characters so they can be use in the dictionary lookup
-
-nunits = {  0 : u"零",
-            1 : u"一",
-            2 : u"二",
-            3 : u"三",
-            4 : u"四",
-            5 : u"五",
-            6 : u"六",
-            7 : u"七",
-            8 : u"八",
-            9 : u"九"}
-
-magorder={  1 : u"十",     # tens
-            2 : u"百",     # hundreds
-            3 : u"千",      # thousands
-            4 : u"万",      # ten-thousands
-            5 : u"十万",     # hundred thousand 
-            6 : u"百万",     # 
-            7 : u"千万",     # 
-            8 : u"亿",      # 
-            9 : u"十亿",     # 
-            10 : u"百亿",    # 
-            11 : u"千亿",    #
-            12 : u"兆",     #  
-            13 : u"十兆",    #
-            14 : u"百兆",    #
-            15 : u"千兆"}   # 100,000,000,000,000
-               
-    
-    
-# there are bug in this, but we are nearly there    
-def convertnumbers(numberin):  
-    chineseout = u""    
-    nlength = len(numberin)
-        
-    i=0
-    x=nlength-1    # because no 0 so must correct with -1
-    while i < nlength:                      # then loop for others
-        j = i + 1 # start at front for loop
-        y = y + 1 # start at back for order of mag
-        chineseout += nunits[numberin[i:j]]
-        chineseout += magorder[-x:-i]          # add order of mag
-        i += 1
-    return chineseout
-
-
-
-
-########################################
-
 # Testsuite
 if __name__=='__main__':
     import unittest

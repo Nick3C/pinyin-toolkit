@@ -62,7 +62,9 @@ A number of other smaller improvesments and conveniences are also included:
   - obtain audio files in the format "ni3.ogg", "hao3.ogg" (you can use .ogg, .wav and .mp3 files by default)
     * You can use "Tools" > "Download Mandarin sound samples" to automatically install a sample set
   - better quality audio can be found online. See the file "docs-audio.txt" for instructions
-  - these files should be placed in your deck's media directory
+  - these files should be placed in a directory in the toolkit media packs directory (pinyin\media\Pack Name).
+    If you use the builtin option to download the Mandarin Sounds they will be automatically installed in
+    this directory.
   - finally, add your field to your card template  model %(Audio)s to the HTML generated from your model
 
 * IT IS STRONGLY SUGGESTED YOU FOLLOW THE STEPS IN docs-audio.txt TO IMPROVE AUDIO SUPPORT! *

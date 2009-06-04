@@ -22,7 +22,6 @@ class FieldUpdater(object):
         return tokens.flatten(tonify=self.config.tonify)
     
     #
-    # Media discovery: I used to do this
     # Media discovery
     #
     
@@ -45,8 +44,6 @@ class FieldUpdater(object):
             log.info("The media directory was either not present or not accessible")
             mediadircontents = None
         
-        # Finally, list the packs
-        return media.MediaPack.discover(mediadircontents, self.mw.deck.s.all("select originalPath, filename from media"))
         # Finally, find any legacy media in that directory. TODO: use this method for something
         return media.discoverlegacymedia(mediadircontents, self.mw.deck.s.all("select originalPath, filename from media"))
     
@@ -59,10 +56,6 @@ class FieldUpdater(object):
         return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
     
     def generateaudio(self, notifier, dictreading):
-        output, mediamissing = transformations.PinyinAudioReadings(self.discovermediapacks(), self.config.audioextensions).audioreading(dictreading)
-    
-        # Show a warning the first time we detect that we're missing some sounds
-        if mediamissing:
         mediapacks = media.MediaPack.discover()
         if len(mediapacks) == 0:
             # Show a warning the first time we detect that we're missing a sound pack
@@ -83,8 +76,6 @@ class FieldUpdater(object):
             output_tags += "[sound:%s]" % self.mw.deck.addMedia(os.path.join(mediapack.packpath, outputfile))
         
         return output_tags
-    
-        return output
     
     def generatemeanings(self, dictmeanings):
         if dictmeanings == None or len(dictmeanings) == 0:
@@ -132,7 +123,6 @@ class FieldUpdater(object):
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
         if fieldNames['expression'] != None and not(fact[fieldNames['expression']]):
             for key in ["reading", "meaning", "color"]:
-            for key in ["reading", "meaning", "color"]:
                 if fieldNames[key] != None:
                     fact[fieldNames[key]] = u""
             
@@ -144,24 +134,14 @@ class FieldUpdater(object):
             audioField = fieldNames['audio']
             if audioField != None and len(fact[audioField]) < 40:
                 fact[audioField] = u""
-                
-                
+            
             # For now this is a compromise in safety and function.
             # longest MW should be: "? - zhang“ (9 char)
             # shortest possible is "? - ge" 6 char so we will autoblank if less than 12 letters
             # this means blanking will occur if one measure word is there but not if two (so if user added any they are safe)
             mwField = fieldNames['mw']
             if mwField != None and len(fact[mwField]) < 12: 
-                fact[audioField] = u""
-                
-                
-            # For now this is a compromise in safety and function.
-            # longest MW should be: "? - zhang“ (9 char)
-            # shortest possible is "? - ge" 6 char so we will autoblank if less than 12 letters
-            # this means blanking will occur if one measure word is there but not if two (so if user added any they are safe)
-            mwField = fieldNames['MW']
-            if mwField != None and len(fact[mwField]) < 12: 
-                fact[audioField] = u""
+                fact[mwField] = u""
     
         # Figure out the reading for the expression field
         dictreading = self.dictionary.reading(expression)

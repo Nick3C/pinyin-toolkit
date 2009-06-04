@@ -58,6 +58,7 @@ def lookup(query, destlanguage):
         log.warn("Empty result from Google - unexpected behaviour!")
         return None
 
+
 ################################################################################
 #Indicators
 # Future interest in having icons above the facteditor representing various dictionaries
