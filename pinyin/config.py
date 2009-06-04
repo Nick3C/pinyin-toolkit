@@ -3,6 +3,7 @@
 
 import copy
 
+import dictionary
 from logger import log
 
 defaultsettings = {
@@ -141,6 +142,10 @@ class Config(object):
     # Derived settings
     #
     
+    # The reason that it's not totally insane to load the dictionary upon every property access is that secretly
+    # the dictionary keeps a cache of the most recently loaded ones from which it can satisfy this request
+    dictionary = property(lambda self: dictionary.PinyinDictionary.load(self.dictlanguage, self.needmeanings))
+    
     shouldtonify = property(lambda self: tonedisplayshouldtonify[self.tonedisplay])
     needmeanings = property(lambda self: self.meaninggeneration or self.detectmeasurewords)
     meaningnumberingstrings = property(lambda self: meaningnumberingstringss[self.meaningnumbering])
@@ -228,6 +233,9 @@ if __name__=='__main__':
             
             config.tone1color = "hi"
             self.assertEquals(config.tone1color, "hi")
+        
+        def testDictionary(self):
+            self.assertEquals(Config({ "dictlanguage" : "en", "meaninggeneration" : True }).dictionary, dictionary.PinyinDictionary.load("en", True))
         
         def testTonified(self):
             self.assertTrue(Config({ "tonedisplay" : "tonified" }).shouldtonify)

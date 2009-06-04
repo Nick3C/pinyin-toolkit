@@ -94,6 +94,7 @@ class Preferences(QDialog):
             w.setMinimumSize(20, 60)
             w.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             w.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            w.setReadOnly(True)
             w.setText(fieldvalue)
             
             # Add the widget to the grid

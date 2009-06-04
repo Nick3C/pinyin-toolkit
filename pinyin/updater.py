@@ -9,16 +9,16 @@ import media
 import meanings
 import pinyin
 import transformations
+import utils
 
 from logger import log
 
 
 class FieldUpdater(object):
-    def __init__(self, notifier, mediamanager, config, dictionary):
+    def __init__(self, notifier, mediamanager, config):
         self.notifier = notifier
         self.mediamanager = mediamanager
         self.config = config
-        self.dictionary = dictionary
     
     def preparetokens(self, tokens):
         if self.config.colorizedpinyingeneration:
@@ -106,7 +106,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictmeasurewords[0])
     
     def generatecoloredcharacters(self, expression):
-        return transformations.Colorizer(self.config.tonecolors).colorize(self.dictionary.tonedchars(expression)).flatten()
+        return transformations.Colorizer(self.config.tonecolors).colorize(self.config.dictionary.tonedchars(expression)).flatten()
     
     #
     # Core updater routine
@@ -136,16 +136,16 @@ class FieldUpdater(object):
                 fact['mw'] = u""
     
         # Figure out the reading for the expression field
-        dictreading = self.dictionary.reading(expression)
+        dictreading = self.config.dictionary.reading(expression)
     
         # Preload the meaning, but only if we absolutely have to
         if self.config.needmeanings:
             if self.config.detectmeasurewords and "mw" in fact:
                 # Get measure words and meanings seperately
-                dictmeanings, dictmeasurewords = self.dictionary.meanings(expression, self.config.prefersimptrad)
+                dictmeanings, dictmeasurewords = self.config.dictionary.meanings(expression, self.config.prefersimptrad)
             else:
                 # Get meanings and measure words together in one list
-                dictmeanings = self.dictionary.flatmeanings(expression, self.config.prefersimptrad)
+                dictmeanings = self.config.dictionary.flatmeanings(expression, self.config.prefersimptrad)
                 dictmeasurewords = None
             
             # If the dictionary can't answer our question, ask Google Translate.
@@ -217,6 +217,19 @@ if __name__ == "__main__":
                         "color" : u'<span style="color:#ff0000">书</span>'
                       })
         
+        def testFullUpdateGerman(self):
+            self.assertEquals(
+                self.updatefact(u"书", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                    dictlanguage = "de",
+                    colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
+                    tonedisplay = "tonified", audiogeneration = True, audioextensions = [".ogg"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"]), {
+                        "reading" : u'<span style="color:#ff0000">shū</span>',
+                        "meaning" : u'Buch, Geschriebenes (S)',
+                        "mw" : u'',
+                        "audio" : u"[sound:" + os.path.join("Test", "shu1.ogg") + "]",
+                        "color" : u'<span style="color:#ff0000">书</span>'
+                      })
+        
         def testDontOverwriteFields(self):
             self.assertEquals(
                 self.updatefact(u"书", { "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e" },
@@ -275,7 +288,7 @@ if __name__ == "__main__":
         def testUpdateReadingAndColoredHanzi(self):
             self.assertEquals(
                 self.updatefact(u"三峽水库", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
-                    colorizedpinyingeneration = False, colorizedcharactergeneration = True, meaninggeneration = False, detectmeasurewords = False,
+                    dictlanguage = "pinyin", colorizedpinyingeneration = False, colorizedcharactergeneration = True, meaninggeneration = False, detectmeasurewords = False,
                     tonedisplay = "numeric", audiogeneration = False, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]), {
                         "reading" : u'san1 xia2 shui3 ku4', "meaning" : u'', "mw" : "", "audio" : "",
                         "color" : u'<span style="color:#111111">三</span><span style="color:#222222">峽</span><span style="color:#333333">水</span><span style="color:#444444">库</span>'
@@ -311,11 +324,12 @@ if __name__ == "__main__":
             notifier = MockNotifier()
             
             if mediapacks == None:
-                mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3" })]
+                mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
+                                                        "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3" })]
             mediamanager = MockMediaManager(mediapacks)
             
             factclone = copy.deepcopy(fact)
-            FieldUpdater(notifier, mediamanager, config.Config(kwargs), englishdict).updatefact(factclone, expression)
+            FieldUpdater(notifier, mediamanager, config.Config(utils.updated({ "dictlanguage" : "en" }, kwargs))).updatefact(factclone, expression)
             
             return notifier.infos, factclone
     

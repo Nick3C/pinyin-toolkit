@@ -9,15 +9,14 @@ from logger import log
 from pinyin import *
 import meanings
 from utils import *
+import weakcache
+
 
 """
 Encapsulates one or more Chinese dictionaries, and provides the ability to transform
 strings of Hanzi into their pinyin equivalents.
 """
 class PinyinDictionary(object):
-    # Regular expression used for pulling stuff out of the dictionary
-    lineregex = re.compile(r"^([^#\s]+)\s+([^\s]+)\s+\[([^\]]+)\](\s+)?(.*)$")
-    
     languagedicts = {
             'en'     : ('dict-cc-cedict.txt', 1),
             'de'     : ('dict-handedict.txt', 0),
@@ -25,8 +24,18 @@ class PinyinDictionary(object):
             'pinyin' : ('dict-pinyin.txt', 1) # Not really a language, but handy for tests
         }
     
+    # A cache of dictionaries loaded by the program, trimmed when we run low on memory
+    dictionarycache = weakcache.WeakCache(lambda (language, needmeanings): PinyinDictionary.uncachedload(language, needmeanings))
+
+    # Regular expression used for pulling stuff out of the dictionary
+    lineregex = re.compile(r"^([^#\s]+)\s+([^\s]+)\s+\[([^\]]+)\](\s+)?(.*)$")
+    
     @classmethod
     def load(cls, language, needmeanings=True):
+        return cls.dictionarycache[(language, needmeanings)]
+    
+    @classmethod
+    def uncachedload(cls, language, needmeanings):
         if not(needmeanings):
             # We can use the English dictionary if meanings are not required.  This is a good idea because it
             # has more pinyin than either of the other language dictionaries.
@@ -35,6 +44,7 @@ class PinyinDictionary(object):
             # Default to the pinyin-only dictionary if this language doesn't have a dictionary.
             (languagedict, simplifiedcharindex) = cls.languagedicts.get(language, ('dict-pinyin.txt', 1))
         
+        log.info("Beginning load of dictionary for language code %s (%s), need meanings = %s", language, languagedict, needmeanings)
         return PinyinDictionary([languagedict, 'dict-supplimentary.txt', 'dict-userdict.txt'], simplifiedcharindex, needmeanings)
     
     def __init__(self, dictnames, simplifiedcharindex, needmeanings):
@@ -48,7 +58,7 @@ class PinyinDictionary(object):
         for dictpath in [os.path.join(pinyindir(), dictname) for dictname in dictnames]:
             # Avoid loading dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
             if os.path.exists(dictpath):
-                log.info("Loading dictionary from %s", dictpath)
+                log.info("Loading dictionary from %s, load meanings = %s", dictpath, needmeanings)
                 self.loadsingledict(dictpath, needmeanings)
             else:
                 log.warn("Skipping missing dictionary at %s", dictpath)

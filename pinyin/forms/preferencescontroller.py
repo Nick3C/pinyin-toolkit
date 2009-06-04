@@ -10,6 +10,8 @@ import pinyin.mocks
 import pinyin.updater
 import pinyin.utils
 
+import utils
+
 
 previewexpression = u"书"
 # TODO: set media pack up up according to user extensions
@@ -24,7 +26,7 @@ class PreferencesController(object):
         self.view = view
         
         # Set up an updater we will use to deal with the live preview, based off the current model
-        self.updater = pinyin.updater.FieldUpdater(pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager(previewmedia), self.model, dictionary)
+        self.updater = pinyin.updater.FieldUpdater(pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager(previewmedia), self.model)
         
         # Set up the controls - one time only
         self.mappings = []
@@ -241,11 +243,11 @@ class ComboMapping(Mapping):
         self.combobox.connect(self.combobox, SIGNAL("currentIndexChanged(int)"), lambda n: self.updateModel(n))
     
     def updateModel(self, n):
-        self.updateModelValue(self.combobox.itemData(n).toPyObject())
+        self.updateModelValue(utils.fromQVariant(self.combobox.itemData(n)))
     
     def updateViewValue(self, value):
         for n in range(0, self.combobox.count()):
-            if self.combobox.itemData(n).toPyObject() == value:
+            if utils.fromQVariant(self.combobox.itemData(n)) == value:
                 self.combobox.setCurrentIndex(n)
                 return
         
@@ -291,3 +293,4 @@ class ColorChooserMapping(Mapping):
         
         # Modifying the palette seems to require an explicit repaint
         self.button.update()
+

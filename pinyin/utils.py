@@ -204,7 +204,13 @@ def heador(list, orelse):
         return orelse
     else:
         return list[0]
-        
+
+"""
+Returns the left dictionary updated by the right one.
+"""
+def updated(leftdict, rightdict):
+    leftdict.update(rightdict)
+    return leftdict
 
 """
 Given a red, green and blue component of a color, return the corresponding HTML color.

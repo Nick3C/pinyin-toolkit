@@ -26,21 +26,19 @@ class PinyinToolkit(object):
             config.fallbackongoogletranslate = pinyin.dictionaryonline.gCheck(config.dictlanguage)
             log.info("Google Translate has tested internet access and reports status %s", config.fallbackongoogletranslate)
         
-        # Store the configuration and mw
+        # Store the main window
         self.mw = mw
-        self.config = config
         
         # Build objects we use to interface with Anki
-        self.notifier = notifier.AnkiNotifier()
-        self.mediamanager = mediamanager.AnkiMediaManager(self.mw)
+        thenotifier = notifier.AnkiNotifier()
+        themediamanager = mediamanager.AnkiMediaManager(self.mw)
         
         # Build the updater
-        dictionary = pinyin.dictionary.PinyinDictionary.load(config.dictlanguage, needmeanings=config.needmeanings)
-        self.updater = pinyin.updater.FieldUpdater(self.notifier, self.mediamanager, self.config, dictionary)
+        updater = pinyin.updater.FieldUpdater(thenotifier, themediamanager, config)
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
-        self.hooks = [hookbuilder(self.mw, self.notifier, self.mediamanager, self.config, self.updater) for hookbuilder in [hooks.FocusHook, hooks.SampleSoundsHook, hooks.MissingInformationHook]]
+        self.hooks = [hookbuilder(self.mw, thenotifier, themediamanager, config, updater) for hookbuilder in [hooks.FocusHook, hooks.SampleSoundsHook, hooks.MissingInformationHook]]
     
     def installhooks(self):
         # Install all hooks
