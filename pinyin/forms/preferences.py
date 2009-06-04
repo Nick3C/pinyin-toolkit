@@ -15,10 +15,8 @@ class Preferences(QDialog):
         dialog = generated.preferences.Ui_Preferences()
         self.setupDialog(dialog)
         
-        fieldsScroll = self.createFieldsScroll(dialog.fieldsArea)
+        fieldsScroll = self.createFieldsScroll(dialog.fieldsFrame)
         fieldsScroll.setWidget(self.createFieldsFrame(["Expression", "Reading", "Etc"]))
-        
-        self.show()
         
         # Necessary for Anki integration?
         # ui.dialogs.open("AddCards", self)
@@ -28,9 +26,9 @@ class Preferences(QDialog):
         dialog.setupUi(self)
         
         # Make the status background the same colour as the frame.
-        palette = dialog.status.palette()
-        c = unicode(palette.color(QPalette.Window).name())
-        dialog.status.setStyleSheet("* { background: %s; color: #000000; }" % c)
+        # palette = dialog.status.palette()
+        #         c = unicode(palette.color(QPalette.Window).name())
+        #         dialog.status.setStyleSheet("* { background: %s; color: #000000; }" % c)
 
     def createFieldsScroll(self, widget):
         # scrollarea
@@ -88,7 +86,6 @@ if __name__ == "__main__":
     window.resize(250, 150)
     window.setWindowTitle('simple')
     
-    Preferences(window)
-    #window.show()
+    Preferences(window).show()
     
     sys.exit(app.exec_())
