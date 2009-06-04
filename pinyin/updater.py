@@ -64,9 +64,8 @@ class FieldUpdater(object):
         mediapacks = self.mediamanager.discovermediapacks()
         if len(mediapacks) == 0:
             # Show a warning the first time we detect that we're missing a sound pack
-            self.notifier.infoOnce("We appear to be missing some audio samples. This might be our fault, but if you haven't already done so, "
-                                   + "please use 'Tools' -> 'Download Mandarin text-to-speech Audio Files' to install the samples. Alternatively, "
-                                   + "you can disable the text-to-speech functionality in the Pinyin Toolkit settings.")
+            self.notifier.infoOnce("The Pinyin Toolkit cannot find an audio pack for text-to-speech.  We reccomend you either disable the audio "
+                                   + "functionality or install the free Mandarin Sounds audio pack using the Audio tab in Tool > Preferences.")
             
             # There is no way we can generate an audio reading with no packs - give up
             return None
@@ -302,7 +301,7 @@ if __name__ == "__main__":
             
             self.assertEquals(fact, { "reading" : u'san1 yue4', "meaning" : u'', "mw" : "", "audio" : "", "color" : "" })
             self.assertEquals(len(infos), 1)
-            self.assertTrue("missing" in infos[0])
+            self.assertTrue("cannot" in infos[0])
         
         def testFallBackOnGoogleForPhrase(self):
             self.assertEquals(

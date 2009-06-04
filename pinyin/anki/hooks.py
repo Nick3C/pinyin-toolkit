@@ -50,6 +50,8 @@ class FocusHook(Hook):
 # DEBUG - I think these should really be moved to advanced. They aren't going to be run very often and will get in the way. (let's not make Damien complain :)
 
 class MenuHook(Hook):
+    pinyinToolkitMenu = None
+    
     def __init__(self, text, tooltip, *args, **kwargs):
         Hook.__init__(self, *args, **kwargs)
         
@@ -62,14 +64,19 @@ class MenuHook(Hook):
         # Install menu item
         log.info("Installing a menu hook (%s)", type(self))
         
+        # Build and install the top level menu if it doesn't already exist
+        if MenuHook.pinyinToolkitMenu is None:
+            MenuHook.pinyinToolkitMenu = QtGui.QMenu("Pinyin Toolkit", self.mw.mainWin.menuTools)
+            self.mw.mainWin.menuTools.addMenu(MenuHook.pinyinToolkitMenu)
+        
         # HACK ALERT: must use lambda here, or the signal never gets raised! I think this is due to garbage collection...
         self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: self.triggered())
-        self.mw.mainWin.menuTools.addAction(self.action)
+        MenuHook.pinyinToolkitMenu.addAction(self.action)
 
 class PreferencesHook(MenuHook):
     def __init__(self, *args, **kwargs):
         MenuHook.__init__(self,
-                          "Pinyin Toolkit Preferences",
+                          "Preferences",
                           "Configure the Pinyin Toolkit",
                           *args,
                           **kwargs)
@@ -91,22 +98,10 @@ class PreferencesHook(MenuHook):
             # Ensure this is saved in Anki's configuration
             utils.persistconfig(self.mw, self.config)
         
-class SampleSoundsHook(MenuHook):
-    def __init__(self, *args, **kwargs):
-        MenuHook.__init__(self,
-                          'Download Mandarin Sounds Text-To-Speech Pack',
-                          'Download and install a sample set of Mandarin audio files. This will enable automatic text-to-speech.',
-                           *args,
-                           **kwargs)
-
-    def triggered(self):
-        pinyin.media.downloadAndInstallMandarinSounds(self.notifier, self.mediamanager, self.config)
-
-
 class MissingInformationHook(MenuHook):
     def __init__(self, *args, **kwargs):
         MenuHook.__init__(self,
-                          'Fill all missing card data using Pinyin Toolkit',
+                          'Fill missing card data',
                           'Update all the cards in the deck with any missing information the Pinyin Toolkit can provide.',
                            *args,
                            **kwargs)
