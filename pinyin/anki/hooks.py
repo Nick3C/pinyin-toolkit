@@ -46,8 +46,46 @@ class FocusHook(Hook):
         removeHook('fact.focusLost', oldHook)
         addHook('fact.focusLost', self.onFocusLost)
 
-
-# DEBUG - I think these should really be moved to advanced. They aren't going to be run very often and will get in the way. (let's not make Damien complain :)
+# Shrunk version of color shortcut plugin merged with Pinyin Toolkit to give that functionality without the seperate download.
+# Original version by Damien Elmes <anki@ichi2.net>
+class ColorShortcutKeysHook(Hook):
+    def setColor(self, editor, i):
+        log.info("Got color change event for color %d", i)
+        focusededit = editor.focusedEdit()
+        
+        cursor = focusededit.textCursor()
+        focusededit.setTextColor(QColor((self.config.tonecolors + self.config.usercolors)[i - 1]))
+        cursor.clearSelection()
+        focusededit.setTextCursor(cursor)
+    
+    # TODO: this doesn't work yet. The setColor method is never fired.
+    def setupShortcuts(self, editor):
+        # Loop through the 12 F[x] keys, setting each one up
+        log.info("Setting up shortcut buttons on fact editor")
+        for i in range(1, 13):
+            # Build the invisible button used to gather shortcut events
+            button = QtGui.QPushButton()
+            button.setText(str(i))
+            button.setShortcut("Ctrl+F" + str(i))
+            button.setFocusPolicy(QtCore.Qt.NoFocus)
+            button.setFixedSize(0, 0)
+            
+            # Add the button to the icons box on the fact editor
+            editor.iconsBox.addWidget(button)
+            
+            # Connect button to event handler: note hacks to deal with closure scoping
+            self.mw.connect(button, QtCore.SIGNAL("clicked()"), lambda i=i: self.setColor(editor, i))
+            
+            # Possible alternative approach?
+            # QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F" + str(i)), self.mw, lambda i=i: self.setColor(editor, i))
+    
+    def install(self):
+        from anki.hooks import wrap
+        import ankiqt.ui.facteditor
+        
+        log.info("Installing color shortcut keys hook")
+        wrap(ankiqt.ui.facteditor.FactEditor.setupFields, self.setupShortcuts, "after")
+        self.setupShortcuts(self.mw.editor)
 
 class MenuHook(Hook):
     pinyinToolkitMenu = None
