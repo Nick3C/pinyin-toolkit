@@ -20,7 +20,6 @@ class Preferences(QDialog):
         self.controls.setupUi(self)
         
         self.fieldsScroll = self.createFieldsScroll(self.controls.fieldsFrame)
-        self.createButtonGroups()
         
         # Necessary for Anki integration?
         # ui.dialogs.open("AddCards", self)
@@ -28,19 +27,6 @@ class Preferences(QDialog):
     #
     # Setup
     #
-    
-    def createButtonGroups(self):
-        # I've actually put these in the .ui file, but the pyuic4 thing can't import that data! Sigh...
-        def makeButtonGroup(*buttons):
-            group = QButtonGroup(self)
-            for button in buttons:
-                group.addButton(button)
-        
-        makeButtonGroup(self.controls.numericPinyinTonesRadio, self.controls.tonifiedPinyinTonesRadio)
-        makeButtonGroup(self.controls.simplifiedHanziRadio, self.controls.traditionalHanziRadio)
-        makeButtonGroup(self.controls.circledChineseNumberingRadio, self.controls.circledArabicNumberingRadio,
-                        self.controls.plainNumberingRadio, self.controls.noNumberingRadio)
-        makeButtonGroup(self.controls.linesSeperatorRadio, self.controls.commasSeperatorRadio, self.controls.customSeperatorRadio)
     
     def createFieldsScroll(self, widget):
         # scrollarea

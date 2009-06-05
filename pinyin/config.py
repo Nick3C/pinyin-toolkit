@@ -51,7 +51,7 @@ defaultsettings = {
         u"#545454", # grey
       ],
 
-    "usercolors" : [
+    "extraquickaccesscolors" : [
         u"#000000",  # black         (not the same as 'no color')
         u"#00AAFF",  # light blue    (suggested alternative text color)
         u"#55007F",  # yellow        (suggested highlighting color)
@@ -204,20 +204,28 @@ class Config(object):
         return self.__googletranslateworking
     
     #
-    # Tone accessors
+    # Color accessors
     #
     
-    def tonecolorproperty(n):
+    def arrayproperty(attr, n):
         def setter(self, value):
-            self.tonecolors[n] = value
+            getattr(self, attr)[n] = value
         
-        return property(lambda self: self.tonecolors[n], setter)
+        return property(lambda self: getattr(self, attr)[n], setter)
     
-    tone1color = tonecolorproperty(0)
-    tone2color = tonecolorproperty(1)
-    tone3color = tonecolorproperty(2)
-    tone4color = tonecolorproperty(3)
-    tone5color = tonecolorproperty(4)
+    tone1color = arrayproperty("tonecolors", 0)
+    tone2color = arrayproperty("tonecolors", 1)
+    tone3color = arrayproperty("tonecolors", 2)
+    tone4color = arrayproperty("tonecolors", 3)
+    tone5color = arrayproperty("tonecolors", 4)
+    
+    extraquickaccess1color = arrayproperty("extraquickaccesscolors", 0)
+    extraquickaccess2color = arrayproperty("extraquickaccesscolors", 1)
+    extraquickaccess3color = arrayproperty("extraquickaccesscolors", 2)
+    extraquickaccess4color = arrayproperty("extraquickaccesscolors", 3)
+    extraquickaccess5color = arrayproperty("extraquickaccesscolors", 4)
+    extraquickaccess6color = arrayproperty("extraquickaccesscolors", 5)
+    extraquickaccess7color = arrayproperty("extraquickaccesscolors", 6)
 
 
 if __name__=='__main__':
@@ -269,6 +277,13 @@ if __name__=='__main__':
             
             config.tone1color = "hi"
             self.assertEquals(config.tone1color, "hi")
+        
+        def testExtraQuickAccessAcessors(self):
+            config = Config({ "extraquickaccesscolors" : ["1", "2"] })
+            self.assertEquals(config.extraquickaccess2color, "2")
+            
+            config.extraquickaccess2color = "bye"
+            self.assertEquals(config.extraquickaccess2color, "bye")
         
         def testDictionary(self):
             self.assertEquals(Config({ "dictlanguage" : "en", "meaninggeneration" : True }).dictionary, dictionary.PinyinDictionary.load("en", True))

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt4.QtCore import QVariant, SIGNAL
-from PyQt4.QtGui import QColor, QIcon, QPalette
+from PyQt4.QtGui import QButtonGroup, QColor, QIcon, QPalette
 
 import pinyin.config
 from pinyin.languages import languages
@@ -15,8 +15,11 @@ import utils
 
 
 previewexpression = u"书"
+# Could also use:
+#previewexpression = u"住宅樓"
+
 # TODO: set media pack up up according to user extensions
-previewmedia = [pinyin.media.MediaPack("Example", {"shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg"})]
+previewmedia = [pinyin.media.MediaPack("Example", {"shu1.mp3" : "shu1.mp3"})]
 
 class PreferencesController(object):
     def __init__(self, view, notifier, mediamanager, initialconfig):
@@ -100,6 +103,10 @@ class PreferencesController(object):
             
             self.registerTextMapping("custommeaningseperator", self.view.controls.customSeperatorLineEdit)
         
+        setUpHanziPinyin()
+        setUpMeanings()
+    
+    def setUpColors(self):
         # The Tone Colors panel
         def setUpToneColors():
             self.registerCheckMapping("colorizedpinyingeneration", self.view.controls.colorizeCheck)
@@ -107,11 +114,17 @@ class PreferencesController(object):
             for tone in range(1, 6):
                 self.registerColorChooserMapping("tone%dcolor" % tone, getattr(self.view.controls, "tone%dButton" % tone))
         
-        setUpHanziPinyin()
-        setUpMeanings()
+        # The Quick Access Colors panel
+        def setUpQuickAccessColors():
+            for shortcut in range(1, 8):
+                self.registerColorChooserMapping("extraquickaccess%dcolor" % shortcut, getattr(self.view.controls, "quickAccess%dButton" % shortcut))
+        
         setUpToneColors()
+        setUpQuickAccessColors()
     
     def setUpAudio(self):
+        self.registerCheckMapping("audiogeneration", self.view.controls.enableAudioCheck)
+        
         self.updateAudioPacksList()
         
         # Connect up the two buttons to the event handlers
@@ -243,7 +256,11 @@ class RadioMapping(Mapping):
         Mapping.__init__(self, model, key)
         self.radiobuttonswithvalues = radiobuttonswithvalues
         
+        buttongroup = QButtonGroup(self)
         for radiobutton, correspondingvalue in self.radiobuttonswithvalues.items():
+            # Tiresome extra setup to ensure that exactly one button is ever checked
+            buttongroup.addButton(radiobutton)
+            
             # NB: default-argument indirection below to solve closure capture issues
             radiobutton.connect(radiobutton, SIGNAL("clicked()"), lambda cv=correspondingvalue: self.updateModelValue(cv))
 

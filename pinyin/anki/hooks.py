@@ -54,7 +54,7 @@ class ColorShortcutKeysHook(Hook):
         focusededit = editor.focusedEdit()
         
         cursor = focusededit.textCursor()
-        focusededit.setTextColor(QColor((self.config.tonecolors + self.config.usercolors)[i - 1]))
+        focusededit.setTextColor(QColor((self.config.tonecolors + self.config.extraquickaccesscolors)[i - 1]))
         cursor.clearSelection()
         focusededit.setTextCursor(cursor)
     

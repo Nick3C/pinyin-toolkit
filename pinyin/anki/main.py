@@ -13,7 +13,6 @@ import notifier
 import utils
 
 import statsandgraphs
-import shortcutkeys
 
 
 class PinyinToolkit(object):
