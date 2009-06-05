@@ -24,6 +24,7 @@ class FieldUpdater(object):
         if self.config.colorizedpinyingeneration:
             tokens = transformations.Colorizer(self.config.tonecolors).colorize(tokens)
     
+        # TODO: I don't think this will work if we try to tonify pinyin with upper case characters
         return tokens.flatten(tonify=self.config.shouldtonify)
     
     #
