@@ -23,7 +23,7 @@ defaultsettings = {
     "colorizedcharactergeneration" : True, # Should we try and fill out a field called Color with a colored version of the character?
     "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
     "detectmeasurewords"           : True, # Should we try and put measure words seperately into a field called MW?
-    "colorindexs"                  : True  # Should we color the index number for each translation a different color?
+    "colorindexs"                  : True, # Should we color the index number for each translation a different color?
 
     # "numeric" or "tonified"
     "tonedisplay" : "tonified",
