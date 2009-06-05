@@ -24,12 +24,15 @@ import anki.utils
 
 import hooks
 
+from pinyin.logger import log
 import pinyin.utils
 
 
 class HanziGraphHook(hooks.Hook):
     # Returns the Hanzi Figure object for the plot
     def hanziData(self, graphwindow, days=30):
+        log.info("Retrieving %d days worth of Hanzi graph data", days)
+        
         # Retrieve information about the card contents that were first answered on each day
         mids = self.mw.deck.s.column0('select id from models where tags like "%s"', self.config.modelTag)
         rows = self.mw.deck.s.all("""
@@ -76,6 +79,8 @@ cards.factId = fields.factId
         return figure
 
     def setupHanziGraph(self, graphwindow):
+        log.info("Beginning setup of Hanzi graph on the graph window")
+        
         # Append our own graph at the end
         extragraph = ankiqt.ui.graphs.AdjustableFigure(graphwindow.parent, 'hanzi', lambda days: self.hanziData(graphwindow, days), graphwindow.range)
         extragraph.addWidget(QtGui.QLabel("<h1>Hanzi</h1>"))

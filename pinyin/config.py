@@ -111,7 +111,13 @@ class Config(object):
         
         # Set all settings first using the defaults and then by coping the user settings
         for key, value in defaultsettings.items() + (usersettings or {}).items():
-            #log.info("Copying %s field into settings", key)
+            # Because of a BUG a previous versions, users might have some private
+            # data in their settings.  Filter that out here.
+            # NB: this special case is just to make Nick's life easier.  Should be able
+            # to remove it once he has run the new version at least once.
+            if "_Config__" in key:
+                continue
+            
             settings[key] = copy.deepcopy(value)
         
         log.info("Initialized configuration with settings %s", settings)
@@ -136,24 +142,24 @@ class Config(object):
     #
     
     def __getattr__(self, name):
+        # NB: we want to ensure that:
         # 1) Allow reading of the settings dictionary itself
         # 2) Look up the name on the class for consistency
-        if name == "settings" or hasattr(getattr(self.__class__, name, None), '__set__'):
-            return object.__getattribute__(self, name)
-        
-        try:
+        # 3) Reading of transient data like __googletranslateworking goes to the instance
+        if "settings" in self.__dict__ and name in self.__dict__["settings"]:
             return self.__dict__["settings"][name]
-        except KeyError:
-            raise AttributeError(name)
+        else:
+            return object.__getattribute__(self, name)
 
     def __setattr__(self, name, value):
         # 1) Allow writing of the settings dictionary itself
         # 2) Look up the name on the class to ensure that we can write to properties!!
         #    See <http://mail.python.org/pipermail/python-list/2002-January/124867.html>
-        if name == "settings" or hasattr(getattr(self.__class__, name, None), '__set__'):
-            return object.__setattr__(self, name, value)
-
-        self.settings[name] = value
+        # 3) Writes to transient properties go to the instance
+        if "settings" in self.__dict__ and name in self.__dict__["settings"]:
+            self.__dict__["settings"][name] = value
+        else:
+            object.__setattr__(self, name, value)
     
     #
     # Derived settings
@@ -270,6 +276,10 @@ if __name__=='__main__':
         
         def testDontOverwriteSuppliedSettings(self):
             self.assertEquals(Config({ "dictlanguage" : "foobar" }).dictlanguage, "foobar")
+        
+        def testPrivateStuffStaysPrivate(self):
+            for key in Config({}).settings.keys():
+                self.assertFalse("__" in key, "Private stuff called %s leaked" % key)
         
         def testToneAccessors(self):
             config = Config({ "tonecolors" : ["1", "2"]})
