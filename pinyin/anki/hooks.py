@@ -13,6 +13,14 @@ import pinyin.utils
 
 import utils
 
+# imports from Color Shortcut plugin
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+from anki.hooks import wrap,addHook
+from ankiqt import mw
+from ankiqt import ui
+import ankiqt.ui.facteditor
+
 
 class Hook(object):
     def __init__(self, mw, notifier, mediamanager, config, updater):
