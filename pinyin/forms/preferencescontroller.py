@@ -176,7 +176,7 @@ class PreferencesController(object):
             namedvalues.append((fieldnamesbykey[key], value))
         
         # Done: give the named values to the view, sorted by the field name
-        self.view.updateFields(sorted(namedvalues, lambda x, y: cmp(x[0], y[0])))
+        self.view.updateFields(sorted(namedvalues, pinyin.utils.byFirst))
 
     #
     # Mapping helpers

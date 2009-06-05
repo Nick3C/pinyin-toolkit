@@ -250,9 +250,75 @@ def parseHtmlColor(color):
     
     return int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
 
+"""
+Sorting combinator: sort by first element
+"""
+def byFirst(x, y):
+    return cmp(x[0], y[0])
+
+"""
+Sorting combinator: reverse order:
+"""
+def inReverse(how=cmp):
+    return lambda x, y: how(y, x)
+
+"""
+Sorting combinator: lexical order:
+"""
+def lexically(*hows):
+    def do(x, y):
+        # Compare items in the two values in order
+        # TODO: deal with case where lengths differ?
+        for n, (xitem, yitem) in enumerate(zip(x, y)):
+            if n < len(hows):
+                # Use a comparer if we have one
+                how = hows[n]
+            else:
+                # Otherwise default to cmp
+                how = cmp
+            
+            # Return a definitive answer from this element if we can get one
+            res = how(xitem, yitem)
+            if res != 0:
+                return res
+        
+        # Indistinguishable!
+        return 0
+
+    return do
+
+"""
+Cumulative total iterator.
+"""
+def cumulative(sequence):
+    sofar = 0
+    for n in sequence:
+        sofar = sofar + n
+        yield sofar
+
 if __name__=='__main__':
     import unittest
     import re
+    
+    class CumulativeTest(unittest.TestCase):
+        def testCumulativeEmpty(self):
+            self.assertEquals(list(cumulative([])), [])
+            
+        def testCumulative(self):
+            self.assertEquals(list(cumulative([1, 2, 3, 2, 1])), [1, 3, 6, 8, 9])
+    
+    class SortingTest(unittest.TestCase):
+        def testSortedByFirst(self):
+            self.assertEquals(sorted([(5, "1"), (2, "4"), (3, "2"), (1, "5"), (4, "3")], byFirst), [(1, "5"), (2, "4"), (3, "2"), (4, "3"), (5, "1")])
+        
+        def testSortedInReverse(self):
+            self.assertEquals(sorted([5, 2, 3, 1, 4], inReverse()), [5, 4, 3, 2, 1])
+            self.assertEquals(sorted([5, 2, 3, 1, 4], inReverse(inReverse())), [1, 2, 3, 4, 5])
+        
+        def testSortedLexically(self):
+            self.assertEquals(sorted([(3, 2), (1, 2), (1, 1), (3, 1), (2, 0)], lexically()), [(1, 1), (1, 2), (2, 0), (3, 1), (3, 2)])
+            self.assertEquals(sorted([(3, 2), (1, 2), (1, 1), (3, 1), (2, 0)], lexically(inReverse())), [(3, 1), (3, 2), (2, 0), (1, 1), (1, 2)])
+            self.assertEquals(sorted([(3, 2), (1, 2), (1, 1), (3, 1), (2, 0)], lexically(inReverse(), inReverse())), [(3, 2), (3, 1), (2, 0), (1, 2), (1, 1)])
     
     class HeadOrTest(unittest.TestCase):
         def testHeadOrNonEmpty(self):

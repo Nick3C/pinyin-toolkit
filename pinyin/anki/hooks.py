@@ -90,12 +90,12 @@ class ColorShortcutKeysHook(Hook):
 class MenuHook(Hook):
     pinyinToolkitMenu = None
     
-    def __init__(self, text, tooltip, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         Hook.__init__(self, *args, **kwargs)
         
         # Store the action on the class.  Storing a reference to it is necessary to avoid it getting garbage collected.
-        self.action = QtGui.QAction(text, self.mw)
-        self.action.setStatusTip(tooltip)
+        self.action = QtGui.QAction(self.__class__.menutext, self.mw)
+        self.action.setStatusTip(self.__class__.menutooltip)
         self.action.setEnabled(True)
     
     def install(self):
@@ -112,12 +112,8 @@ class MenuHook(Hook):
         MenuHook.pinyinToolkitMenu.addAction(self.action)
 
 class PreferencesHook(MenuHook):
-    def __init__(self, *args, **kwargs):
-        MenuHook.__init__(self,
-                          "Preferences",
-                          "Configure the Pinyin Toolkit",
-                          *args,
-                          **kwargs)
+    menutext = "Preferences"
+    menutooltip = "Configure the Pinyin Toolkit"
     
     def triggered(self):
         log.info("User opened preferences dialog")
@@ -137,12 +133,8 @@ class PreferencesHook(MenuHook):
             utils.persistconfig(self.mw, self.config)
         
 class MissingInformationHook(MenuHook):
-    def __init__(self, *args, **kwargs):
-        MenuHook.__init__(self,
-                          'Fill missing card data',
-                          'Update all the cards in the deck with any missing information the Pinyin Toolkit can provide.',
-                           *args,
-                           **kwargs)
+    menutext = 'Fill missing card data'
+    menutooltip = 'Update all the cards in the deck with any missing information the Pinyin Toolkit can provide.'
     
     def suitableCards(self, deck):
         for model in deck.models:
