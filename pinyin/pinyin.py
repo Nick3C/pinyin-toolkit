@@ -13,7 +13,6 @@ class Pinyin(object):
     
     """
     Constructs a Pinyin object from text representing a single character and numeric tone mark.
-    Optionally also takes as an argument the character it originated from.
     
     >>> Pinyin("hen3")
     hen3
