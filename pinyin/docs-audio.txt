@@ -49,7 +49,7 @@ Audacity will now go through each of your MP3 files and prepare them to be used 
 It will take about 10 minutes to complete as it goes through each audio file and makes the changes (around 1,000)
 
 6) The files will appear in a subdirectory from where your .mp3 files were located.
-    Simply copy the .ogg filesinto you deck media directory and you are finished!
+    Simply copy the .ogg filesinto the directory: "[yourankiplugindir]\pinyin\media\ChinesePodModified" and you are finished!
 
 You will now have optimium text-to-speech convesion for Anki!
 

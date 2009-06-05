@@ -12,6 +12,7 @@ from logger import log
 #  * User colors
 #  * Candidate field names
 #  * Deck tag
+#  * Color option for the line-index (cute symbols)
 
 defaultsettings = {
     "dictlanguage" : "en",
@@ -22,6 +23,7 @@ defaultsettings = {
     "colorizedcharactergeneration" : True, # Should we try and fill out a field called Color with a colored version of the character?
     "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
     "detectmeasurewords"           : True, # Should we try and put measure words seperately into a field called MW?
+    "colorindexs"                  : True  # Should we color the index number for each translation a different color?
 
     # "numeric" or "tonified"
     "tonedisplay" : "tonified",
@@ -50,6 +52,9 @@ defaultsettings = {
         u"#0000ff", # blue
         u"#545454", # grey
       ],
+
+    "lineindexcolor" : "#646060" # grey
+
 
     "usercolors" : [
         u"#000000",  # black         (not the same as 'no color')
@@ -172,11 +177,27 @@ class Config(object):
         # Don't add meaning numbers if it is disabled or there is only one meaning
         if len(meanings) > 1 and self.meaningnumberingstrings != None:
             def meaningnumber(n):
+            
+                # Temporary Settings for index colorization
+                colorindexs=True
+                lineindexcolor="#646060"
+                
                 if n < len(self.meaningnumberingstrings):
-                    return self.meaningnumberingstrings[n]
+                    if (colorindexs):
+                        output = '<span style="color=' + lineindexcolor + ';">' + self.meaningnumberingstrings[n] + '</span>'
+                    else:
+                        output = self.meaningnumberingstrings[n]
+                    
                 else:
                     # Ensure that we fall back on normal (n) numbers if there are more numbers than we have in the supplied list
-                    return "(" + str(n + 1) + ")"
+                    
+                    # Check whether we are colorizing text
+                    if (colorindexs):
+                        output ='<span style="color=' + lineindexcolor + ';">(' + str(n + 1) + ')</span>'
+                    else:
+                        output = '(' + str(n + 1) + ')'
+
+                return output
         
             # Add numbers to all the meanings in the list
             meanings = [meaningnumber(n) + " " + meaning for n, meaning in enumerate(meanings)]
