@@ -22,10 +22,9 @@ class FieldUpdater(object):
     
     def preparetokens(self, tokens):
         if self.config.colorizedpinyingeneration:
-            tokens = transformations.Colorizer(self.config.tonecolors).colorize(tokens)
+            tokens = transformations.colorize(self.config.tonecolors, tokens)
     
-        # TODO: I don't think this will work if we try to tonify pinyin with upper case characters
-        return tokens.flatten(tonify=self.config.shouldtonify)
+        return pinyin.flatten(tokens, tonify=self.config.shouldtonify)
     
     #
     # Media discovery
@@ -106,7 +105,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictmeasurewords[0])
     
     def generatecoloredcharacters(self, expression):
-        return transformations.Colorizer(self.config.tonecolors).colorize(self.config.dictionary.tonedchars(expression)).flatten()
+        return pinyin.flatten(transformations.colorize(self.config.tonecolors, self.config.dictionary.tonedchars(expression)))
     
     #
     # Core updater routine
@@ -158,7 +157,7 @@ class FieldUpdater(object):
                 
                 # Only fill out the meanings field if we get something useful back
                 if translation != None:
-                    dictmeanings = [pinyin.TokenList([translation])]
+                    dictmeanings = [pinyin.TokenList([pinyin.Text(translation)])]
 
     
             # DEBUG: Nick wants to do something with audio for measure words here?
@@ -245,6 +244,14 @@ if __name__ == "__main__":
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False,
                     detectmeasurewords = False, audiogeneration = False), { "expression" : u"啤酒" })
         
+        def testUpdateMeaningAndMWWithoutMWField(self):
+            self.assertEquals(
+                self.updatefact(u"啤酒", { "expression" : "", "meaning" : "" },
+                    colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True,
+                    detectmeasurewords = True, audiogeneration = False), {
+                        "expression" : u"啤酒", "meaning" : u"㊀ beer<br />㊁ MW: 杯 - b\u0113i, 瓶 - p\xedng, 罐 - gu\xe0n, 桶 - t\u01d2ng, 缸 - g\u0101ng"
+                      })
+
         def testUpdateReadingOnly(self):
             self.assertEquals(
                 self.updatefact(u"啤酒", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },

@@ -139,13 +139,6 @@ def md5(what):
     return md5.new(what).hexdigest()
 
 """
-Reports whethere this token is the pinyin for 'r5' which often occurs at the end of words.
-"""
-def iserhuapinyintoken(token):
-    import pinyin
-    return type(token) == pinyin.Pinyin and token.word == 'r' and token.tone == 5
-
-"""
 Lazy evaluation: defer evaluation of the function, then cache the result.
 """
 class Thunk(object):

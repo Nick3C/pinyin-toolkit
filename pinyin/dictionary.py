@@ -113,10 +113,10 @@ class PinyinDictionary(object):
             is_punctuation = ispunctuation(thing)
             already_have_space = have_some_text and tokens[-1].endswith(u' ')
             if have_some_text and not(is_punctuation) and not(already_have_space):
-                tokens.append(u' ')
+                tokens.append(Text(u' '))
             
             # Add this reading into the token list with nice formatting
-            tokens.appendspacedwordreading(self.__readings[thing])
+            tokens.append(Word.spacedwordreading(self.__readings[thing]))
         
         return self.mapparsedtokens(sentence, addword)
 
@@ -127,22 +127,26 @@ class PinyinDictionary(object):
         log.info("Requested toned characters for %s", sentence)
         
         def addword(tokens, thing):
-            # If we can't associate characters with tokens on a one-to-one basis we had better give up
             reading_tokens = self.__readings[thing]
+            
+            # If we can't associate characters with tokens on a one-to-one basis we had better give up
             if len(thing) != len(reading_tokens):
                 log.warn("Couldn't produce toned characters for %s because there are a different number of reading tokens than characters", thing)
-                tokens.append(thing)
+                tokens.append(Text(thing))
                 return
             
             # Add characters to the tokens /without/ spaces between them, but with tone info
+            wordtokens = TokenList([])
             for character, reading_token in zip(thing, reading_tokens):
                 # Avoid making the numbers from the supplementary dictionary into toned
                 # things, because it confuses users :-)
                 if hasattr(reading_token, "tone") and not(character.isdecimal()):
-                    tokens.append(TonedCharacter(character, reading_token.tone))
+                    wordtokens.append(TonedCharacter(character, reading_token.tone))
                 else:
                     # Sometimes the tokens do not have tones (e.g. in the translation for T-shirt)
-                    tokens.append(character)
+                    wordtokens.append(Text(character))
+            
+            tokens.append(Word(wordtokens))
         
         return self.mapparsedtokens(sentence, addword)
 
@@ -154,7 +158,7 @@ class PinyinDictionary(object):
             if not recognised:
                 # A single unrecognised character: it's probably just whitespace or punctuation.
                 # Append it directly to the token list.
-                tokens.append(thing)
+                tokens.append(Text(thing))
             else:
                 # Got a recognised token sequence! Hooray! Use the user-supplied function to add this
                 # thing to the output
@@ -198,7 +202,7 @@ class PinyinDictionary(object):
         dictmeanings, dictmeasurewords = self.meanings(sentence, prefersimptrad)
         
         if dictmeanings != None or dictmeasurewords != None:
-            return (dictmeanings or []) + [TokenList(["MW: "] + dictmeasureword) for dictmeasureword in (dictmeasurewords or [])]
+            return (dictmeanings or []) + [TokenList([Text("MW: ")] + dictmeasureword) for dictmeasureword in (dictmeasurewords or [])]
         else:
             return None
 
@@ -245,24 +249,24 @@ if __name__=='__main__':
     class TestPinyinDictionary(unittest.TestCase):
         def testTonedTokens(self):
             toned = pinyindict.tonedchars(u"一个")
-            self.assertEquals(toned.flatten(), u"一个")
-            self.assertEquals(toned[0].tone, 1)
-            self.assertEquals(toned[1].tone, 4)
+            self.assertEquals(flatten(toned), u"一个")
+            self.assertEquals(toned[0].token[0].tone, 1)
+            self.assertEquals(toned[0].token[1].tone, 4)
 
         def testTonedTokensWithoutTone(self):
             toned = pinyindict.tonedchars(u"T恤")
-            self.assertEquals(toned.flatten(), u"T恤")
-            self.assertEquals(toned[1].tone, 4)
+            self.assertEquals(flatten(toned), u"T恤")
+            self.assertEquals(toned[0].token[1].tone, 4)
 
         def testTonedTokenNumbers(self):
             # Although it kind of makes sense to return the arabic numbers with tone colors, users don't expect it :-)
             toned = pinyindict.tonedchars(u"1994")
-            self.assertEquals(toned.flatten(), u"1994")
-            self.assertEquals([hasattr(token, "tone") for token in toned], [False, False, False])
+            self.assertEquals(flatten(toned), u"1994")
+            self.assertEquals([hasattr(token, "tone") for token in toned], [False, False])
 
         def testNumbersWherePinyinLengthDoesntMatchCharacters(self):
-            self.assertEquals(englishdict.tonedchars(u"1000000000").flatten(), u"1000000000")
-            self.assertEquals(englishdict.reading(u"1000000000").flatten(), u"yi1 shi2 yi4")
+            self.assertEquals(flatten(englishdict.tonedchars(u"1000000000")), u"1000000000")
+            self.assertEquals(flatten(englishdict.reading(u"1000000000")), u"yi1 shi2 yi4")
             self.assertEquals(self.flatmeanings(englishdict, u"1000000000"), None)
 
         def testPhraseMeanings(self):
@@ -276,45 +280,45 @@ if __name__=='__main__':
 
         def testMissingDictionary(self):
             dict = PinyinDictionary(['idontexist.txt'], 1, True)
-            self.assertEquals(dict.reading(u"个").flatten(), u"个")
+            self.assertEquals(flatten(dict.reading(u"个")), u"个")
             self.assertEquals(self.flatmeanings(dict, u"个"), None)
         
         def testMissingLanguage(self):
             dict = PinyinDictionary.load('foobar', True)
-            self.assertEquals(dict.reading(u"个").flatten(), "ge4")
+            self.assertEquals(flatten(dict.reading(u"个")), "ge4")
             self.assertEquals(self.flatmeanings(dict, u"个"), None)
         
         def testPinyinDictionary(self):
-            self.assertEquals(pinyindict.reading(u"一个").flatten(), "yi1 ge4")
-            self.assertEquals(pinyindict.reading(u"一個").flatten(), "yi1 ge4")
+            self.assertEquals(flatten(pinyindict.reading(u"一个")), "yi1 ge4")
+            self.assertEquals(flatten(pinyindict.reading(u"一個")), "yi1 ge4")
             self.assertEquals(self.flatmeanings(pinyindict, u"一个"), None)
         
         def testGermanDictionary(self):
-            self.assertEquals(germandict.reading(u"请").flatten(), "qing3")
-            self.assertEquals(germandict.reading(u"請").flatten(), "qing3")
+            self.assertEquals(flatten(germandict.reading(u"请")), "qing3")
+            self.assertEquals(flatten(germandict.reading(u"請")), "qing3")
             self.assertEquals(self.flatmeanings(germandict, u"請"), ["Bitte ! (u.E.) (Int)", "bitten, einladen (u.E.) (V)"])
     
         def testEnglishDictionary(self):
-            self.assertEquals(englishdict.reading(u"鼓聲").flatten(), "gu3 sheng1")
-            self.assertEquals(englishdict.reading(u"鼓声").flatten(), "gu3 sheng1")
+            self.assertEquals(flatten(englishdict.reading(u"鼓聲")), "gu3 sheng1")
+            self.assertEquals(flatten(englishdict.reading(u"鼓声")), "gu3 sheng1")
             self.assertEquals(self.flatmeanings(englishdict, u"鼓聲"), ["sound of a drum", "drumbeat"])
     
         def testFrenchDictionary(self):
             dict = PinyinDictionary.load('fr', True)
-            self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
-            self.assertEquals(dict.reading(u"白天").flatten(), "bai2 tian")
+            self.assertEquals(flatten(dict.reading(u"白天")), "bai2 tian")
+            self.assertEquals(flatten(dict.reading(u"白天")), "bai2 tian")
             self.assertEquals(self.flatmeanings(dict, u"白天"), [u"journée (n.v.) (n)"])
     
         def testWordsWhosePrefixIsNotInDictionary(self):
-            self.assertEquals(germandict.reading(u"生日").flatten(), "sheng1 ri4")
+            self.assertEquals(flatten(germandict.reading(u"生日")), "sheng1 ri4")
             self.assertEquals(self.flatmeanings(germandict, u"生日"), [u"Geburtstag (S)"])
     
         def testProperName(self):
-            self.assertEquals(englishdict.reading(u"珍・奥斯汀").flatten(), u"Zhen1 · Ao4 si1 ting1")
+            self.assertEquals(flatten(englishdict.reading(u"珍・奥斯汀")), u"Zhen1 · Ao4 si1 ting1")
             self.assertEquals(self.flatmeanings(englishdict, u"珍・奥斯汀"), [u"Jane Austen (1775-1817), English novelist", u"also written 简・奥斯汀 - Jian3 · Ao4 si1 ting1"])
     
         def testShortPinyin(self):
-            self.assertEquals(englishdict.reading(u"股指").flatten(), "gu3 zhi3")
+            self.assertEquals(flatten(englishdict.reading(u"股指")), "gu3 zhi3")
             self.assertEquals(self.flatmeanings(englishdict, u"股指"), [u"stock market index", u"share price index", u"abbr. for 股票指数 - gu3 piao4 zhi3 shu4"])
     
         def testSimpMeanings(self):
@@ -336,8 +340,8 @@ if __name__=='__main__':
             else:
                 return None
         
-        def flattenall(self, things):
-            return [thing.flatten() for thing in things]
+        def flattenall(self, tokens):
+            return [flatten(token) for token in tokens]
     
     class TestPinyinConverter(unittest.TestCase):
         # Test data:
@@ -366,6 +370,6 @@ if __name__=='__main__':
     
         # Test helpers
         def reading(self, what):
-            return pinyindict.reading(what).flatten()
+            return flatten(pinyindict.reading(what))
     
     unittest.main()

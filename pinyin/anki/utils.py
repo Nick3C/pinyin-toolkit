@@ -10,8 +10,15 @@ It is responsible for choosing which of the available fields on a fact we map to
 class AnkiFactProxy(object):
     def __init__(self, candidateFieldNamesByKey, fact):
         self.fact = fact
+        
         # NB: the fieldnames dictionary IS part of the interface of this class
-        self.fieldnames = dict([(key, chooseField(candidateFieldNames, fact)) for key, candidateFieldNames in candidateFieldNamesByKey.items()])
+        self.fieldnames = {}
+        for key, candidateFieldNames in candidateFieldNamesByKey.items():
+            # Don't add a key into the dictionary if we can't find a field, or we end
+            # up reporting that we the contain the field but die during access
+            fieldname = chooseField(candidateFieldNames, fact)
+            if fieldname is not None:
+                self.fieldnames[key] = fieldname
 
     def __contains__(self, key):
         return key in self.fieldnames
@@ -42,3 +49,30 @@ def persistconfig(mw, config):
     # However, because we can't pickle the Config directly we need to make sure the Anki
     # configuration is updated with the new value whenever we modify the config.
     mw.config["pinyintoolkit"] = config.settings
+
+if __name__ == "__main__":
+    import unittest
+    
+    class AnkiFactProxyTest(unittest.TestCase):
+        def testDontContainMissingFields(self):
+            self.assertFalse("key" in AnkiFactProxy({"key" : ["Foo", "Bar"]}, { "Baz" : "Hi" }))
+        
+        def testContainsPresentFields(self):
+            self.assertFalse("key" in AnkiFactProxy({"key" : ["Foo", "Bar"]}, { "Bar" : "Hi" }))
+        
+        def testSet(self):
+            fact = { "Baz" : "Hi" }
+            AnkiFactProxy({"key" : ["Foo", "Bar"]}, fact)["key"] = "Bye"
+            self.assertEquals(fact["Baz"], "Bye")
+        
+        def testGet(self):
+            fact = { "Baz" : "Hi" }
+            self.assertEquals(AnkiFactProxy({"key" : ["Foo", "Bar"]}, fact)["key"], "Hi")
+        
+        def testPriority(self):
+            fact = { "Baz" : "Hi", "Foo" : "Meh" }
+            AnkiFactProxy({"key" : ["Foo", "Bar"]}, fact)["key"] = "Bye"
+            self.assertEquals(fact["Foo"], "Bye")
+            self.assertEquals(fact["Bar"], "Hi")
+    
+    unittest.main()

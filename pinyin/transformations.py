@@ -5,29 +5,79 @@ from logger import log
 from pinyin import *
 from utils import *
 
+
+# Convenience wrapper around the TrimErhuaVisitor
+def trimerhua(token):
+    prefix, candidateer = token.accept(TrimErhuaVisitor())
+    # NB: either thing may be None, but the TokenList filters them out
+    return TokenList([prefix, candidateer])
+
+class TrimErhuaVisitor(TokenVisitor):
+    def visitText(self, text):
+        return text, None
+
+    def visitPinyin(self, pinyin):
+        if pinyin.iser:
+            return None, pinyin
+        else:
+            return pinyin, None
+
+    def visitTonedCharacter(self, tonedcharacter):
+        if tonedcharacter.iser:
+            return None, tonedcharacter
+        else:
+            return tonedcharacter, None
+
+    def visitWord(self, word):
+        prefix, candidateer = word.token.accept(self)
+        
+        if prefix:
+            # There was at least one non-er character, so return that only
+            return Word(prefix), None
+        else:
+            # OK, the word contained only an er: return that as the new candidate
+            return None, Word(candidateer)
+
+    def visitTokenList(self, tokens):
+        outputtokens, candidateer = TokenList(), None
+        for token in tokens:
+            outputtokens.append(candidateer) # NB: Nones are filtered by append
+            output, candidateer = token.accept(self)
+            outputtokens.append(output) # NB: Nones are filtered by append
+        
+        return outputtokens, candidateer
+
+
+# Convenience wrapper around the ColorizerVisitor
+def colorize(colorlist, token):
+    value = token.accept(ColorizerVisitor(colorlist))
+    return value
+
 """
 Colorize readings according to the reading in the Pinyin.
 * 2009 rewrites by Max Bolingbroke <batterseapower@hotmail.com>
 * 2009 original version by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
 """
-class Colorizer(object):
+class ColorizerVisitor(MapTokenVisitor):
     def __init__(self, colorlist):
         self.colorlist = colorlist
         log.info("Using color list %s", self.colorlist)
         
-    def colorize(self, tokens):
-        log.info("Requested colorization for %d tokens", len(tokens))
-        
-        output = TokenList()
-        for token in tokens:
-            if hasattr(token, "tone"):
-                output.append(u'<span style="color:' + self.colorlist[token.tone - 1] + u'">')
-                output.append(token)
-                output.append(u'</span>')
-            else:
-                output.append(token)
-        
-        return output
+    def visitText(self, text):
+        return text
+
+    def visitPinyin(self, pinyin):
+        return self.colorize(pinyin)
+
+    def visitTonedCharacter(self, tonedcharacter):
+        return self.colorize(tonedcharacter)
+    
+    def colorize(self, token):
+        return TokenList([
+            Text(u'<span style="color:' + self.colorlist[token.tone - 1] + u'">'),
+            token,
+            Text(u'</span>')
+          ])
 
 """
 Output audio reading corresponding to a textual reading.
@@ -39,43 +89,6 @@ class PinyinAudioReadings(object):
         self.mediapacks = mediapacks
         self.audioextensions = audioextensions
     
-    def audioreadingforpack(self, mediapack, tokens):
-        output = []
-        mediamissingcount = 0
-        for token in tokens:
-            # Remove any erhuas from audio before being generated.
-            # For example we want 儿子 to be "er2 zi5" but "门儿" (men2r) must become "men2"
-            # It seems unlikely we will ever get erhua audio (i.e "men2r.ogg") so this is likely to be permanent
-            # DEBUG - add code fulfilling the above
-            # Also skip anything that doesn't look like pinyin, such as English words
-            if type(token) != Pinyin or token.numericformat(hideneutraltone=False) == "r5":
-                continue
-        
-            # Find possible base sounds we could accept
-            possiblebases = [token.numericformat(hideneutraltone=False)]
-            if token.tone == 5:
-                # Sometimes we can replace tone 5 with 4 in order to deal with lack of '[xx]5.ogg's
-                possiblebases.extend([token.word, token.word + '4'])
-            elif u"u:" in token.word:
-                # Typically u: is written as v in filenames
-                possiblebases.append(token.word.replace(u"u:", u"v") + str(token.tone))
-        
-            # Find path to first suitable media in the possibilty list
-            for possiblebase in possiblebases:
-                media = mediapack.mediafor(possiblebase, self.audioextensions)
-                if media:
-                    break
-        
-            if media:
-                # If we've managed to find some media, we can put it into the output:
-                output.append(media)
-            else:
-                # Otherwise, increment the count of missing media we use to determine optimality
-                log.warning("Couldn't find media for %s in %s", token, mediapack)
-                mediamissingcount += 1
-    
-        return (output, mediamissingcount)
-    
     def audioreading(self, tokens):
         log.info("Requested audio reading for %d tokens", len(tokens))
         
@@ -84,7 +97,7 @@ class PinyinAudioReadings(object):
         bestmediapack, bestoutput, bestmediamissingcount = None, None, len(tokens) + 1
         for mediapack in self.mediapacks:
             log.info("Checking for reading in pack %s", mediapack.name)
-            output, mediamissingcount = self.audioreadingforpack(mediapack, tokens)
+            output, mediamissingcount = audioreadingforpack(mediapack, self.audioextensions, trimerhua(tokens))
             
             # We will end up choosing whatever pack minimizes the number of errors:
             if mediamissingcount < bestmediamissingcount:
@@ -95,6 +108,53 @@ class PinyinAudioReadings(object):
             return bestmediapack, bestoutput, (bestmediamissingcount != 0)
         else:
             return None, [], True
+
+# Simple wrapper around the PinyinAudioReadingsVisitor
+def audioreadingforpack(mediapack, audioextensions, tokens):
+    visitor = PinyinAudioReadingsVisitor(mediapack, audioextensions)
+    tokens.accept(visitor)
+    return (visitor.output, visitor.mediamissingcount)
+
+class PinyinAudioReadingsVisitor(LeafTokenVisitor):
+    def __init__(self, mediapack, audioextensions):
+        self.mediapack = mediapack
+        self.audioextensions = audioextensions
+        
+        self.output = []
+        self.mediamissingcount = 0
+    
+    def visitText(self, text):
+        pass
+
+    def visitPinyin(self, pinyin):
+        # Find possible base sounds we could accept
+        possiblebases = [pinyin.numericformat(hideneutraltone=False)]
+        if pinyin.tone == 5:
+            # Sometimes we can replace tone 5 with 4 in order to deal with lack of '[xx]5.ogg's
+            possiblebases.extend([pinyin.word, pinyin.word + '4'])
+        elif u"u:" in pinyin.word:
+            # Typically u: is written as v in filenames
+            possiblebases.append(pinyin.word.replace(u"u:", u"v") + str(pinyin.tone))
+    
+        # Find path to first suitable media in the possibilty list
+        for possiblebase in possiblebases:
+            media = self.mediapack.mediafor(possiblebase, self.audioextensions)
+            if media:
+                break
+    
+        if media:
+            # If we've managed to find some media, we can put it into the output:
+            self.output.append(media)
+        else:
+            # Otherwise, increment the count of missing media we use to determine optimality
+            log.warning("Couldn't find media for %s in %s", pinyin, self.mediapack)
+            self.mediamissingcount += 1
+
+    def visitTonedCharacter(self, tonedcharacter):
+        pass
+
+    def visitWord(self, word):
+        trimerhua(word.token).accept(self)
 
 
 # Testsuite
@@ -136,7 +196,31 @@ if __name__=='__main__':
     
         # Test helpers
         def colorize(self, what):
-            return Colorizer(colorlist).colorize(englishdict.reading(what)).flatten()
+            return flatten(colorize(colorlist, englishdict.reading(what)))
+    
+    class TrimErhuaTest(unittest.TestCase):
+        def testTrimErhuaEmpty(self):
+            self.assertEquals(flatten(trimerhua(TokenList([]))), u'')
+        
+        def testTrimErhuaSingleErPinyin(self):
+            self.assertEquals(flatten(trimerhua(Pinyin(u'r5'))), u'r')
+            self.assertEquals(flatten(trimerhua(TonedCharacter(u'儿', 5))), u'儿')
+            self.assertEquals(flatten(trimerhua(Word(Pinyin(u'r5')))), u'r')
+            self.assertEquals(flatten(trimerhua(Word(TonedCharacter(u'儿', 5)))), u'儿')
+            self.assertEquals(flatten(trimerhua(TokenList([Pinyin(u'r5')]))), u'r')
+            self.assertEquals(flatten(trimerhua(TokenList([TonedCharacter(u'儿', 5)]))), u'儿')
+    
+        def testTrimErhuaCharacters(self):
+            self.assertEquals(flatten(trimerhua(Word(TokenList([TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2), TonedCharacter(u"儿", 5)])))), u"一瓶")
+        
+        def testTrimErhuaPinyin(self):
+            self.assertEquals(flatten(trimerhua(Word(TokenList([Pinyin(u"yi1"), Pinyin(u"ping2"), Pinyin(u"r5")])))), u"yi1ping2")
+        
+        def testDontTrimErhuaOutsideWord(self):
+            self.assertEquals(flatten(trimerhua(TokenList([Pinyin(u"yi1"), Pinyin(u"ping2"), Pinyin(u"r5")]))), u"yi1ping2r")
+    
+        def testDontTrimNonErhua(self):
+            self.assertEquals(flatten(trimerhua(Word(TokenList([TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2)])))), u"一瓶")
     
     class CharacterColorizerTest(unittest.TestCase):
         def testColorize(self):
@@ -155,7 +239,7 @@ if __name__=='__main__':
     
         # Test helpers
         def colorize(self, what):
-            return Colorizer(colorlist).colorize(englishdict.tonedchars(what)).flatten()
+            return flatten(colorize(colorlist, englishdict.tonedchars(what)))
     
     class PinyinAudioReadingsTest(unittest.TestCase):
         default_raw_available_media = ["na3.mp3", "ma4.mp3", "xiao3.mp3", "ma3.mp3", "ci2.mp3", "dian3.mp3",
@@ -163,6 +247,7 @@ if __name__=='__main__':
         
         def testRSuffix(self):
             self.assertHasReading(u"哪兒", ["na3.mp3"])
+            self.assertHasReading(u"哪儿", ["na3.mp3"])
         
         def testFifthTone(self):
             self.assertHasReading(u"的", ["de5.mp3"], raw_available_media=["de5.mp3", "de.mp3", "de4.mp3"])

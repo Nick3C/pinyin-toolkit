@@ -4,11 +4,11 @@
 import re
 
 from logger import log
-from pinyin import TokenList
+from pinyin import *
 import utils
 
 class MeaningFormatter(object):
-    embeddedchineseregex = re.compile(r"(?:(?:([^\|\[\s]*)\|([^\|\[\s]*))|([^\|\[\s]*))(?:\s*\[([^\]]*)\])?")
+    embeddedchineseregex = re.compile(r"(?:(?:([^\|\[\s]*)\|([^\|\[\s]*))|([^\|\[\s]+))(?:\s*\[([^\]]*)\])?")
     
     def __init__(self, simplifiedcharindex, prefersimptrad):
         self.simplifiedcharindex = simplifiedcharindex
@@ -38,7 +38,7 @@ class MeaningFormatter(object):
                     self.formatmatch(tokens, thing, tonedchars_callback)
                 else:
                     # Just a string: append it as-is
-                    tokens.append(thing)
+                    tokens.append(Text(thing))
             
             # Add the tokens to the right pile
             if ismeasureword:
@@ -61,16 +61,16 @@ class MeaningFormatter(object):
         
         if match.group(4) != None:
             # There was some pinyin for the character after it - include it
-            tokens.append(character)
-            tokens.append(" - ")
-            tokens.appendspacedwordreading(TokenList.fromspacedstring(match.group(4)))
+            tokens.append(Text(character))
+            tokens.append(Text(" - "))
+            tokens.append(Word.spacedwordreading(TokenList.fromspacedstring(match.group(4))))
         else:
             if tonedchars_callback:
                 # Look up the tone for the character so we can display it more nicely, as in the other branch
                 tokens.extend(tonedchars_callback(character))
             else:
                 # No callback, so the best we can do is to include the characters verbatim
-                tokens.append(character)
+                tokens.append(Text(character))
 
 if __name__=='__main__':
     import unittest
@@ -88,7 +88,7 @@ if __name__=='__main__':
         shu_trad_mws = [u"本 - ben3, 冊 - ce4, 部 - bu4, 叢 - cong2"]
         
         def testDatesInMeaning(self):
-            means, mws = self.parseunflat(1, "simp", "/Jane Austen (1775-1817), English novelist/also written 简・奧斯汀|简・奥斯汀[Jian3 · Ao4 si1 ting1]/")
+            means, mws = self.parseunflat(1, "simp", u"/Jane Austen (1775-1817), English novelist/also written 简・奧斯汀|简・奥斯汀[Jian3 · Ao4 si1 ting1]/")
             self.assertEquals(len(means), 2)
             self.assertEquals(mws, [])
             
@@ -127,19 +127,18 @@ if __name__=='__main__':
             self.assertEquals(mws, self.shu_trad_mws)
     
         def testSplitMultiEmbeddedPinyin(self):
-            # 詞典 词典 [ci2 dian3] /dictionary (of Chinese compound words)/also written 辭典|辞典[ci2 dian3]/CL:部[bu4],本[ben3]/
             means, mws = self.parse(1, "simp", u"/dictionary (of Chinese compound words)/also written 辭典|辞典[ci2 dian3]/CL:部[bu4],本[ben3]/")
             self.assertEquals(means, [u"dictionary (of Chinese compound words)", u"also written 辞典 - ci2 dian3"])
             self.assertEquals(mws, [u"部 - bu4, 本 - ben3"])
     
         def testCallback(self):
-            means, mws = self.parse(1, "simp", self.shu_def, tonedchars_callback=lambda x: ["JUNK"])
-            self.assertEquals(means, [u'JUNK', u'JUNK', u'JUNKJUNK JUNKJUNK JUNKJUNK JUNKJUNK JUNKJUNK JUNK'])
+            means, mws = self.parse(1, "simp", self.shu_def, tonedchars_callback=lambda x: [Text(u"JUNK")])
+            self.assertEquals(means, [u'JUNK', u'JUNK', u'JUNK JUNK JUNK JUNK JUNK JUNK'])
     
         # Test helpers
         def parse(self, *args, **kwargs):
             means, mws = self.parseunflat(*args, **kwargs)
-            return [mean.flatten() for mean in means], [mw.flatten() for mw in mws]
+            return [flatten(mean) for mean in means], [flatten(mw) for mw in mws]
         
         def parseunflat(self, simplifiedcharindex, prefersimptrad, definition, tonedchars_callback=None):
             return MeaningFormatter(simplifiedcharindex, prefersimptrad).parsedefinition(definition, tonedchars_callback=tonedchars_callback)
