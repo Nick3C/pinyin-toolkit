@@ -188,7 +188,7 @@ class PinyinDictionary(object):
                     return None, None
                 else:
                     # We got a raw definition, but we need to clean up it before using it
-                    foundmeanings, foundmeasurewords = meanings.MeaningFormatter(self.__simplifiedcharindex, prefersimptrad).parsedefinition(definition, self.tonedchars)
+                    foundmeanings, foundmeasurewords = meanings.MeaningFormatter(self.__simplifiedcharindex, prefersimptrad).parsedefinition(definition, self.tonedchars)                  
 
         return foundmeanings, foundmeasurewords
 

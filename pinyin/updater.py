@@ -10,15 +10,18 @@ import meanings
 import pinyin
 import transformations
 import utils
+import re
 
 from logger import log
 
 # This function generates a list of links to online dictionaries, etc to query the expressiont
 def generatelinks(expression):
     log.info("generatelink called with  %s", expression)                
-    linkdefs = {   'nckiu' : ('http://www.nciku.com/mini/all/', ''),        # seach using nckiu (mini) dictionary
+    linkdefs = {            # Remember: these are displayed in reverse order
+                        'e' : ('http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified=', '') , # Send to CEDICT edit mode
+                        'CEDICT' : ('http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb=',''),   # search using CEDICT
                         'WikiDict' : ('http://en.wiktionary.org/wiki/', ''),
-                        'submit to CEDICT' : ('http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified=', '')
+                        'nckiu' : ('http://www.nciku.com/mini/all/', '')        # seach using nckiu (mini) dictionary
                     }
     
     linksdata = u""
@@ -110,8 +113,18 @@ class FieldUpdater(object):
             # After flattening and stripping, we didn't get any meanings: don't update the field
             return None
         
+        # needs to sort out color preferences here because otherwise cause recursive problem in config.py
+        colorindexs = self.config.colorindexs       
+        lineindexcolor = self.config.lineindexcolor
+        if (colorindexs):
+                    lineindexcolor= lineindexcolor 
+        else:
+                lineindexcolor = u""            # if not true then let the color be nothing (and anki will remove the dudd tag for us)
+
+        
+        
         # Use the configuration to insert numbering etc
-        return self.config.formatmeanings(meanings)
+        return self.config.formatmeanings(meanings,lineindexcolor)
     
     def generatemeasureword(self, dictmeasurewords):
         if dictmeasurewords == None or len(dictmeasurewords) == 0:
@@ -132,7 +145,7 @@ class FieldUpdater(object):
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
         if expression == None or expression.strip() == u"":
-            for key in ["reading", "meaning", "color"]:
+            for key in ["reading", "meaning", "color", "links"]:
                 if key in fact:
                     fact[key] = u""
             
@@ -186,20 +199,27 @@ class FieldUpdater(object):
             #' If testing seperately then putting audio in the MW field is a good idea (so it will play when the measure word question is answered)
                 
                 
+         # Finally, if hanzi masking is on then scan through entry and replace the meaning characters with the symbol
+        meaning=self.generatemeanings(dictmeanings)
+        if (self.config.hanzimasking):
+                meaning.replace(expression, self.config.hanzimaskingcharacter) 
+                
         # Do the updates on the fields the user has requested:
         updaters = {
                 'expression' : (True,                                     lambda: expression),
                 'reading'    : (True,                                     lambda: self.generatereading(dictreading)),
-                'meaning'    : (self.config.meaninggeneration,            lambda: self.generatemeanings(dictmeanings)),
+                'meaning'    : (self.config.meaninggeneration,            lambda: meaning),
                 'mw'         : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
                 'audio'      : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
                 'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression)),
                 'links'     : (self.config.generateweblinks,  lambda: generatelinks(expression))
             }
+        
+        fact['links'] = u""    # blank links before we try to replace data (it should be over-written in all circumstances)
 
         for key, (enabled, updater) in updaters.items():
             # Skip updating if no suitable field, we are disabled, or the field has text
-            if not(key in fact) or not(enabled) or fact[key].strip() != u"":
+            if not(key in fact) or not(enabled) or (fact[key].strip() != u""):
                 continue
 
             # Update the value in that field

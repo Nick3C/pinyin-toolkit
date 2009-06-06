@@ -25,8 +25,13 @@ defaultsettings = {
     "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
     "detectmeasurewords"           : True, # Should we try and put measure words seperately into a field called MW?
     "colorindexs"                  : True, # Should we color the index number for each translation a different color?
-    "generateweblinks"          :True, # Should we try to generate some online dictionary references for each card into a field called Links?
-
+    "generateweblinks"          : True, # Should we try to generate some online dictionary references for each card into a field called Links?
+    "generatepos"                     : True, # Should we try to generate the POS (part of Speech) from dictionaries?
+    "enablefeedback"        : True, # should support for submitting entries to CEDICT, etc be turned on?
+    "hanzimasking"      : True, # should Hanzi masking be turned on? i.e. if the expression appears in the meaning field be replaced with a "㊥" or "[~]"
+    "tonesandhiconvert"     : True,  # Should the tone sandhi tones: (3, 3) be colored differently
+    "difflineindexcolor"        : True,  # Should we use a different color to make the dictionary line-index [ i.e. the example (1), (2), (3) ] clearer?
+    
     # "numeric" or "tonified"
     "tonedisplay" : "tonified",
 
@@ -46,6 +51,9 @@ defaultsettings = {
     # You should not have to change this setting as it defaults to a free and usable sound-set.
     # Be aware that you may be able to find higher quality audio files from other sources.
     "mandarinsoundsurl" : "http://www.chinese-lessons.com/sounds/Mandarin_sounds.zip",
+    
+    # The character to use for hanzi masing in meannigs defaults to ㊥, ~ or [~] are obvious alternatives
+    "hanzimaskingcharacter" : u"㊥",
 
     "tonecolors" : [
         u"#ff0000", # red
@@ -53,9 +61,10 @@ defaultsettings = {
         u"#00aa00", # green
         u"#0000ff", # blue
         u"#545454", # grey
+        u"#66CC66",    # tone sandhi
       ],
 
-    "lineindexcolor" : "#646060", # grey
+    "lineindexcolor" : "#A4A4A4", # grey
 
 
     "usercolors" : [
@@ -76,7 +85,8 @@ defaultsettings = {
         'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
         'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
         'mw'         : ["MW", "Measure Word", "Classifier", u"量词"],
-        'links'         :["Links", "Link", "Web"]   
+        'links'         :["Links", "Link", "LinksBar", "Links Bar", "Link Bar", "LinkBar", "Web", "Dictionary", "URL", "URLs"] ,
+        'POS'       :["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] 
       },
     
     # Only decks with this tag are processed
@@ -152,6 +162,7 @@ class Config(object):
         try:
             return self.__dict__["settings"][name]
         except KeyError:
+            log.exception("Key error in config while looking up  %s", name)
             raise AttributeError(name)
 
     def __setattr__(self, name, value):
@@ -176,20 +187,13 @@ class Config(object):
     meaningnumberingstrings = property(lambda self: meaningnumberingstringss[self.meaningnumbering])
     meaningseperatorstring = property(lambda self: meaningseperatorstrings.get(self.meaningseperator) or self.custommeaningseperator)
     
-    def formatmeanings(self, meanings):
+    def formatmeanings(self, meanings,lineindexcolor=u""):
         # Don't add meaning numbers if it is disabled or there is only one meaning
         if len(meanings) > 1 and self.meaningnumberingstrings != None:
             def meaningnumber(n):
-            
-                # Temporary Settings for index colorization
-                colorindexs=True
-                lineindexcolor="#A4A4A4"
-                
+                            
                 if n < len(self.meaningnumberingstrings):
-                    if (colorindexs):
-                        output = '<span style="color:' + lineindexcolor + ';">' + self.meaningnumberingstrings[n] + '</span>'
-                    else:
-                        output = self.meaningnumberingstrings[n]
+                    output = '<span style="color:' + lineindexcolor + ';">' + self.meaningnumberingstrings[n] + '</span>'
                     
                 else:
                     # Ensure that we fall back on normal (n) numbers if there are more numbers than we have in the supplied list
