@@ -17,18 +17,19 @@ from logger import log
 # This function generates a list of links to online dictionaries, etc to query the expressiont
 def generatelinks(expression):
     log.info("generatelink called with  %s", expression)                
-    linkdefs = {            # Remember: these are displayed in reverse order
-                        'e' : ('http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified=', '') , # Send to CEDICT edit mode
-                        'CEDICT' : ('http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb=',''),   # search using CEDICT
-                        'WikiDict' : ('http://en.wiktionary.org/wiki/', ''),
-                        'nckiu' : ('http://www.nciku.com/mini/all/', '')        # seach using nckiu (mini) dictionary
+    linkdefs = {   # Remember: these are displayed in reverse order
+                        'e' : ('http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified=', '','CC-CEDICT submit new entry') , # Send to CEDICT edit mode
+                        'nckiu' : ('http://www.nciku.com/mini/all/', '','nckiu') ,       # seach using nckiu (mini) dictionary
+                        'CEDICT' : ('http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb=','','CC-CEDICT at MDBG'),   # search using CEDICT
+                        'WikiD' : ('http://en.wiktionary.org/wiki/', '',' Wiki Dictionary'),
+                        'YellowB' : ('http://www.yellowbridge.com/chinese/charsearch.php?searchChinese=1&zi=','','Yellow Bridge') # Yellow Bridge, excellent 
                     }
     
     linksdata = u""
-    for key, (urlprefix, urlsuffix) in linkdefs.items():
+    for key, (urlprefix, urlsuffix, tooltip) in linkdefs.items():
             if linksdata != "":      # add spaces to seperate links (if one exists already)
                     linksdata += "  "
-            linksdata += '[<a href="' + urlprefix + expression + urlsuffix + '">' + key + '</a>]'
+            linksdata += '[<a href="' + urlprefix + expression + urlsuffix + '" title="' + tooltip + '">' + key + '</a>]'
     return linksdata
 
 
