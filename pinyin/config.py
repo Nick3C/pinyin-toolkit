@@ -180,11 +180,11 @@ class Config(object):
             
                 # Temporary Settings for index colorization
                 colorindexs=True
-                lineindexcolor="#646060"
+                lineindexcolor="#A4A4A4"
                 
                 if n < len(self.meaningnumberingstrings):
                     if (colorindexs):
-                        output = '<span style="color=' + lineindexcolor + ';">' + self.meaningnumberingstrings[n] + '</span>'
+                        output = '<span style="color:' + lineindexcolor + ';">' + self.meaningnumberingstrings[n] + '</span>'
                     else:
                         output = self.meaningnumberingstrings[n]
                     
@@ -193,7 +193,7 @@ class Config(object):
                     
                     # Check whether we are colorizing text
                     if (colorindexs):
-                        output ='<span style="color=' + lineindexcolor + ';">(' + str(n + 1) + ')</span>'
+                        output ='<span style="color:' + lineindexcolor + ';">(' + str(n + 1) + ')</span>'
                     else:
                         output = '(' + str(n + 1) + ')'
 
