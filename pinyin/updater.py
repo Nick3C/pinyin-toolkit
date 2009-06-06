@@ -14,12 +14,19 @@ import utils
 from logger import log
 
 # This function generates a list of links to online dictionaries, etc to query the expressiont
-def genlink(dictionarylinktext, urlprefix, query, urlsuffix = ""):
-        log.info("genlink called")
-        if dictionarylinktext == None:
-                return
-        link = '[<a href="' + urlprefix + query + urlsuffix + '">' + dictionarylinktext + '</a>]'
-        return link
+def generatelinks(expression):
+    log.info("generatelink called with  %s", expression)                
+    linkdefs = {   'nckiu' : ('http://www.nciku.com/mini/all/', ''),        # seach using nckiu (mini) dictionary
+                        'WikiDict' : ('http://en.wiktionary.org/wiki/', ''),
+                        'submit to CEDICT' : ('http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified=', '')
+                    }
+    
+    linksdata = u""
+    for key, (urlprefix, urlsuffix) in linkdefs.items():
+            if linksdata != "":      # add spaces to seperate links (if one exists already)
+                    linksdata += "  "
+            linksdata += '[<a href="' + urlprefix + expression + urlsuffix + '">' + key + '</a>]'
+    return linksdata
 
 
 
@@ -117,23 +124,6 @@ class FieldUpdater(object):
     def generatecoloredcharacters(self, expression):
         return transformations.Colorizer(self.config.tonecolors).colorize(self.config.dictionary.tonedchars(expression)).flatten()
     
-    # 
-    # 
-    # 
-    def generatelinksinit(self, expression):
-        log.info("generatelink called with  %s", expression)                
-        linksdata = u""
-        setlinks = {
-                'nckiu' : ("http://www.nciku.com/mini/all/",""),        # seach using nckiu (mini) dictionary
-                'wikidict' : ('http://en.wiktionary.org/wiki/',''),
-                'submit to MDBG' : ('http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified=','')
-        }
-        
-        for key, (urlprefix, urlsuffix) in setlinks():
-                if linksdata != "":      # add spaces to seperate links (if one exists already)
-                        linksdata += "  "
-                linksdata += genlink(key, urlprefix, urlsuffix)    
-        return linksdata
 
     #
     # Core updater routine
@@ -196,9 +186,6 @@ class FieldUpdater(object):
             #' If testing seperately then putting audio in the MW field is a good idea (so it will play when the measure word question is answered)
                 
                 
-                
-        self.config.generateweblinks = True         # temporary preference for link generation
-        
         # Do the updates on the fields the user has requested:
         updaters = {
                 'expression' : (True,                                     lambda: expression),
@@ -207,7 +194,7 @@ class FieldUpdater(object):
                 'mw'         : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
                 'audio'      : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
                 'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression)),
-                'links'     : (self.config.generateweblinks,  lambda: self.generatelinksinit(expression))
+                'links'     : (self.config.generateweblinks,  lambda: generatelinks(expression))
             }
 
         for key, (enabled, updater) in updaters.items():

@@ -13,6 +13,7 @@ from logger import log
 #  * Candidate field names
 #  * Deck tag
 #  * Color option for the line-index (cute symbols)
+# * link generator (and a list of the links to be generated)
 
 defaultsettings = {
     "dictlanguage" : "en",
@@ -24,6 +25,7 @@ defaultsettings = {
     "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
     "detectmeasurewords"           : True, # Should we try and put measure words seperately into a field called MW?
     "colorindexs"                  : True, # Should we color the index number for each translation a different color?
+    "generateweblinks"          :True, # Should we try to generate some online dictionary references for each card into a field called Links?
 
     # "numeric" or "tonified"
     "tonedisplay" : "tonified",
@@ -73,7 +75,8 @@ defaultsettings = {
         'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
         'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
         'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
-        'mw'         : ["MW", "Measure Word", "Classifier", u"量词"]
+        'mw'         : ["MW", "Measure Word", "Classifier", u"量词"],
+        'links'         :["Links", "Link", "Web"]   
       },
     
     # Only decks with this tag are processed

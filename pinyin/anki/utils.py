@@ -17,10 +17,10 @@ class AnkiFactProxy(object):
         return key in self.fieldnames
 
     def __getitem__(self, key):
-        return self.fact[self.fieldnames[key]]
+            return self.fact[self.fieldnames[key]]
     
     def __setitem__(self, key, value):
-        self.fact[self.fieldnames[key]] = value
+            self.fact[self.fieldnames[key]] = value
 
 def chooseField(candidateFieldNames, fact):
     # Find the first field that is present in the fact
