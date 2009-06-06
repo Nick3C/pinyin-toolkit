@@ -18,18 +18,39 @@ from logger import log
 def generatelinks(expression):
     log.info("generatelink called with  %s", expression)                
     linkdefs = {   # Remember: these are displayed in reverse order
-                        'e' : ('http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified=', '','CC-CEDICT submit new entry') , # Send to CEDICT edit mode
-                        'nckiu' : ('http://www.nciku.com/mini/all/', '','nckiu') ,       # seach using nckiu (mini) dictionary
-                        'CEDICT' : ('http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb=','','CC-CEDICT at MDBG'),   # search using CEDICT
-                        'WikiD' : ('http://en.wiktionary.org/wiki/', '',' Wiki Dictionary'),
-                        'YellowB' : ('http://www.yellowbridge.com/chinese/charsearch.php?searchChinese=1&zi=','','Yellow Bridge') # Yellow Bridge, excellent 
+                        1 : (u'http://www.nciku.com/mini/all/', u'',u'nckiu') ,       # seach using nckiu (mini) dictionary
+                        2  :(u"http://dict.cn/",u'',u'dict.cn'),
+                        3 : (u'http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb=',u'',u'CEDCIT'), 
+                         # Send to CEDICT edit mode
+                        4 : (u'http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified=', u'',u'e') ,
+                        5 : (u'http://www.yellowbridge.com/chinese/charsearch.php?searchChinese=1&zi=',u'',u'YellowB') ,
+                        6 : (u'http://www.unicode.org/cgi-bin/GetUnihanData.pl?codepoint=',u'',u'Unihan'),
+                        7 : (u'http://love.iciba.com//?',u'/?',u'iciba'),
+                        8 : (u'http://dict.youdao.com/search?q=',u'&btnindex=&ue=utf8&keyfrom=dict.index',u'有道'),
+                        9 : (u'http://www.hudong.com/wiki/',u'',u'互动百科'),
+                        10 : (u'http://zidian.cn.yahoo.com/result_cn2en.html?p=',u'',u'雅虎')
+                        #x : (u'http://en.wiktionary.org/wiki/',u'',u'WikiDict'),   # not that good yet
+                            #
                     }
+    """
+    Consider:
+    Chinese wikipedia
+    
+    need to deal with unicode encoding first
+    great, add it       http://hmarty.free.fr/hanzi/
+    alright but ugly    http://humanum.arts.cuhk.edu.hk/cgi-bin/agrep-lindict?query=test&category=full&boo=no&ignore=on&substr=on&order=all
+    not so good         http://cdict.net/?q=%AD%FC
+
+    need to crack javascript:
+    AMAZING         http://www.zdic.net/    [largest encyclopedia in china)
+    """
+    
     
     linksdata = u""
-    for key, (urlprefix, urlsuffix, tooltip) in linkdefs.items():
+    for key, (urlprefix, urlsuffix, textname) in linkdefs.items():
             if linksdata != "":      # add spaces to seperate links (if one exists already)
-                    linksdata += "  "
-            linksdata += '[<a href="' + urlprefix + expression + urlsuffix + '" title="' + tooltip + '">' + key + '</a>]'
+                    linksdata += " "
+            linksdata += '[<a href="' + urlprefix + expression + urlsuffix + '">' + textname + '</a>]'
     return linksdata
 
 
