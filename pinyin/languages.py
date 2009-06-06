@@ -9,14 +9,20 @@
 #   ISO 3166-1 country code. This is only use to select a flag icon for the preferences combo box.
 #   I haven't bothered going through giving every language one of these yet.
 #
+#  A language with a flat next to it has been tested to have at least some support (i.e. google translate)
+#  A language that is commented out has zero support (i.e. google translate cna't handle it)
+#  Chinese is also commented out (because there is no point is transalting Chinese-Chinese)
+#
+# albanian has support, missing from list
+# 
 # Fourth column:
 #   Human readable language name.
 languages = [
-    (0, "aa", None, "Afar"),
-    (0, "ab", None, "Abkhazian"),
-    (0, "af", None, "Afrikaans"),
-    (0, "am", None, "Amharic"),
-    (0, "ar", None, "Arabic"),
+    #(0, "aa", None, "Afar"),               # no support as of 2009-06-06
+    #(0, "ab", None, "Abkhazian"),      # no support as of 2009-06-06
+    #(0, "af", None, "Afrikaans"),      # no support as of 2009-06-06
+    #(0, "am", None, "Amharic"),     # no support as of 2009-06-06
+    (0, "ar", "ar", "Arabic"),            # support: gtrans
     (0, "as", None, "Assamese"),
     (0, "ay", None, "Aymara"),
     (0, "az", None, "Azerbaijani"),
@@ -26,7 +32,7 @@ languages = [
     (0, "bh", None, "Bihari"),
     (0, "bi", None, "Bislama"),
     (0, "bn", None, "Bengali"),
-    (0, "bo", None, "Tibetan"),
+    #(0, "bo", "cn", "Tibetan"),     # no support as of 2009-06-06
     (0, "br", None, "Breton"),
     (0, "ca", None, "Catalan"),
     (0, "co", None, "Corsican"),
@@ -35,17 +41,17 @@ languages = [
     (0, "da", None, "Danish"),
     (2, "de", "de", "German"),
     (0, "dz", None, "Bhutani"),
-    (0, "el", None, "Greek"),
-    (2, "en", "gb", "English"),
+    (0, "el", "gr", "Greek"),       # support: gtrans
+    (2, "en", "gb", "English"),     # full suport: gtrans, CC-CEDICT
     (0, "eo", None, "Esperanto"),
     (0, "es", None, "Spanish"),
     (0, "et", None, "Estonian"),
     (0, "eu", None, "Basque"),
     (0, "fa", None, "Persian"),
-    (0, "fi", None, "Finnish"),
+    (0, "fi", "FI", "Finnish"),       # support: gtrans
     (0, "fj", None, "Fiji"),
     (0, "fo", None, "Faroese"),
-    (1, "fr", "fr", "French"),
+    (1, "fr", "fr", "French"),      # hybri support: gtrans, CFDICT
     (0, "fy", None, "Frisian"),
     (0, "ga", None, "Irish"),
     (0, "gd", None, "Scots Gaelic"),
@@ -54,7 +60,7 @@ languages = [
     (0, "gu", None, "Gujarati"),
     (0, "ha", None, "Hausa"),
     (0, "he", None, "Hebrew"),
-    (0, "hi", None, "Hindi"),
+    #(0, "hi", "in", "Hindi"),     # supoprt: gtrans
     (0, "hr", None, "Croatian"),
     (0, "hu", None, "Hungarian"),
     (0, "hy", None, "Armenian"),
@@ -63,9 +69,9 @@ languages = [
     (0, "ie", None, "Interlingue"),
     (0, "ik", None, "Inupiak"),
     (0, "is", None, "Icelandic"),
-    (0, "it", None, "Italian"),
+    (0, "it", "it", "Italian"),     # supoprt: gtrans
     (0, "iu", None, "Inuktitut"),
-    (0, "ja", None, "Japanese"),
+    (0, "ja", "jp", "Japanese"),
     (0, "jw", None, "Javanese"),
     (0, "ka", None, "Georgian"),
     (0, "kk", None, "Kazakh"),
@@ -84,7 +90,7 @@ languages = [
     (0, "mg", None, "Malagasy"),
     (0, "mi", None, "Maori"),
     (0, "mk", None, "Macedonian"),
-    (0, "ml", None, "Malayalam"),
+    #(0, "ml", "my", "Malayalam"),     # no support as of 2009-06-06
     (0, "mn", None, "Mongolian"),
     (0, "mo", None, "Moldavian"),
     (0, "mr", None, "Marathi"),
@@ -128,7 +134,7 @@ languages = [
     (0, "ta", None, "Tamil"),
     (0, "te", None, "Telugu"),
     (0, "tg", None, "Tajik"),
-    (0, "th", None, "Thai"),
+    (0, "th", "th", "Thai"),
     (0, "ti", None, "Tigrinya"),
     (0, "tk", None, "Turkmen"),
     (0, "tl", None, "Tagalog"),
@@ -143,12 +149,12 @@ languages = [
     (0, "ur", None, "Urdu"),
     (0, "uz", None, "Uzbek"),
     (0, "vi", None, "Vietnamese"),
-    (0, "vo", None, "Volapuk"),
+    #(0, "vo", None, "Volapuk"),     # no support as of 2009-06-06
     (0, "wo", None, "Wolof"),
     (0, "xh", None, "Xhosa"),
     (0, "yi", None, "Yiddish"),
     (0, "yo", None, "Yoruba"),
     (0, "za", None, "Zhuang"),
-    (0, "zh", "cn", "Chinese"),
+    #(0, "zh", "cn", "Chinese"),
     (0, "zu", None, "Zulu")
   ]

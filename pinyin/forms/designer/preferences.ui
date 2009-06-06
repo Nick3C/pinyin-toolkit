@@ -201,7 +201,7 @@
              <item row="2" column="0">
               <widget class="QLabel" name="languageLabel">
                <property name="text">
-                <string>Language:</string>
+                <string>Language (a flag means that language is guaranteed some support):</string>
                </property>
               </widget>
              </item>
@@ -335,7 +335,7 @@
              <item row="0" column="0">
               <widget class="QCheckBox" name="colorizeCheck">
                <property name="text">
-                <string>Colorize Pinyin and Hanzi with tones where possible</string>
+                <string>Colorize Pinyin and Hanzi with tones where possible. It is *strongly* suggested that you do not change these colors.</string>
                </property>
               </widget>
              </item>
@@ -345,13 +345,13 @@
                 <widget class="QPushButton" name="tone1Button">
                  <property name="font">
                   <font>
-                   <pointsize>15</pointsize>
+                   <pointsize>13</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
-                  <string>ā</string>
+                  <string>1 (ā)</string>
                  </property>
                 </widget>
                </item>
@@ -359,13 +359,13 @@
                 <widget class="QPushButton" name="tone2Button">
                  <property name="font">
                   <font>
-                   <pointsize>15</pointsize>
+                   <pointsize>13</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
-                  <string>á</string>
+                  <string>2 (á)</string>
                  </property>
                 </widget>
                </item>
@@ -373,13 +373,13 @@
                 <widget class="QPushButton" name="tone3Button">
                  <property name="font">
                   <font>
-                   <pointsize>15</pointsize>
+                   <pointsize>13</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
-                  <string>ǎ</string>
+                  <string>3 (ǎ)</string>
                  </property>
                 </widget>
                </item>
@@ -387,13 +387,13 @@
                 <widget class="QPushButton" name="tone4Button">
                  <property name="font">
                   <font>
-                   <pointsize>15</pointsize>
+                   <pointsize>13</pointsize>
                    <weight>75</weight>
                    <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
-                  <string>à</string>
+                  <string>4 (à)</string>
                  </property>
                 </widget>
                </item>
@@ -407,7 +407,7 @@
                   </font>
                  </property>
                  <property name="text">
-                  <string>a</string>
+                  <string>5 (a)</string>
                  </property>
                 </widget>
                </item>

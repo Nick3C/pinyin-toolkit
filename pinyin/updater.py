@@ -13,6 +13,16 @@ import utils
 
 from logger import log
 
+# This function generates a list of links to online dictionaries, etc to query the expressiont
+def genlink(dictionarylinktext, urlprefix, query, urlsuffix = ""):
+        log.info("genlink called")
+        if dictionarylinktext == None:
+                return
+        link = '[<a href="' + urlprefix + query + urlsuffix + '">' + dictionarylinktext + '</a>]'
+        return link
+
+
+
 
 class FieldUpdater(object):
     def __init__(self, notifier, mediamanager, config):
@@ -107,10 +117,27 @@ class FieldUpdater(object):
     def generatecoloredcharacters(self, expression):
         return transformations.Colorizer(self.config.tonecolors).colorize(self.config.dictionary.tonedchars(expression)).flatten()
     
+    # 
+    # 
+    # 
+    def generatelinksinit(self, expression):
+        log.info("generatelink called with  %s", expression)                
+        linksdata = u""
+        setlinks = {
+                'nckiu' : ("http://www.nciku.com/mini/all/",""),        # seach using nckiu (mini) dictionary
+                'wikidict' : ('http://en.wiktionary.org/wiki/',''),
+                'submit to MDBG' : ('http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified=','')
+        }
+        
+        for key, (urlprefix, urlsuffix) in setlinks():
+                if linksdata != "":      # add spaces to seperate links (if one exists already)
+                        linksdata += "  "
+                linksdata += genlink(key, urlprefix, urlsuffix)    
+        return linksdata
+
     #
     # Core updater routine
     #
-    
     def updatefact(self, fact, expression):
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
@@ -136,7 +163,7 @@ class FieldUpdater(object):
     
         # Figure out the reading for the expression field
         dictreading = self.config.dictionary.reading(expression)
-    
+  
         # Preload the meaning, but only if we absolutely have to
         if self.config.needmeanings:
             if self.config.detectmeasurewords and "mw" in fact:
@@ -161,8 +188,17 @@ class FieldUpdater(object):
 
     
             # DEBUG: Nick wants to do something with audio for measure words here?
-            # " [sound:MW]" # DEBUG - pass to audio loop
-    
+            # yes, want the measure word to appear as:
+            #       [MW1] - [MWPY1]
+            #       [MW2] - [MWPY2]
+            #       [sound:mw1][sound:mw2]
+            # The measure word shouldn't be included on the main card because if so you break min-info rule (harder to learn it)
+            #' If testing seperately then putting audio in the MW field is a good idea (so it will play when the measure word question is answered)
+                
+                
+                
+        self.config.generateweblinks = True         # temporary preference for link generation
+        
         # Do the updates on the fields the user has requested:
         updaters = {
                 'expression' : (True,                                     lambda: expression),
@@ -170,18 +206,25 @@ class FieldUpdater(object):
                 'meaning'    : (self.config.meaninggeneration,            lambda: self.generatemeanings(dictmeanings)),
                 'mw'         : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
                 'audio'      : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
-                'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression))
+                'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression)),
+                'links'     : (self.config.generateweblinks,  lambda: self.generatelinksinit(expression))
             }
-    
+
         for key, (enabled, updater) in updaters.items():
             # Skip updating if no suitable field, we are disabled, or the field has text
             if not(key in fact) or not(enabled) or fact[key].strip() != u"":
                 continue
-        
+
             # Update the value in that field
             value = updater()
             if value != None and value != fact[key]:
                 fact[key] = value
+         
+
+
+
+
+
 
 if __name__ == "__main__":
     import copy
