@@ -22,15 +22,22 @@ A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 
 pinyin_toolkit="0.05 dev feature complete 0.1"
+# Dictionary's last updated: 2009-06-06
 
-CCDict_Ver="2009-05-29T05:46:28Z" # [n=84885] http://www.mdbg.net/chindict/chindict.php?page=cc-cedict
-HanDeDict_Ver="Sat May 30 00:20:38 2009" # [n=169500] http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl&w=8
-CFDICT_Ver="Wed Jan 21 01:49:53 2009" # [n=593] http://www.chinaboard.de/fr/cfdict.php?mode=dl&w=8
+CEDICT_Ver="2009-06-05 03:55:19 GMT "
+# http://www.mdbg.net/chindict/chindict.php?page=cc-cedict
+# entries=85275
 
+HanDeDict_Ver="Sat Jun 06 00:07:38 2009"
+# http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl&w=8
+# entries=170648
+
+CFDICT_Ver="Wed Jan 21 01:49:53 2009"
+# http://www.chinaboard.de/fr/cfdict.php?mode=dl&w=8
+# entries=593
 
 if __name__ != "__main__":
     import pinyin.anki.main as main
