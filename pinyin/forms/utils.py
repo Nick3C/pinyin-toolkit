@@ -8,6 +8,7 @@ from PyQt4.QtGui import QBrush, QDesktopServices, QFont, QImage, QPalette, QPixm
 # Substantially cribbed from Anki (main.py, onOpenPluginFolder):
 def openFolder(path):
     import sys
+    import subprocess
     
     if sys.platform == "win32":
         subprocess.Popen("explorer", path.encode(sys.getfilesystemencoding()))
