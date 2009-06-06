@@ -4,6 +4,8 @@
 from PyQt4 import QtGui, QtCore
 
 import anki.utils
+import ankiqt.ui.facteditor
+from anki.hooks import wrap,addHook
 
 import pinyin.forms.preferences
 import pinyin.forms.preferencescontroller
@@ -13,13 +15,6 @@ import pinyin.utils
 
 import utils
 
-# imports from Color Shortcut plugin
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from anki.hooks import wrap,addHook
-from ankiqt import mw
-from ankiqt import ui
-import ankiqt.ui.facteditor
 
 
 class Hook(object):
@@ -53,6 +48,12 @@ class FocusHook(Hook):
         log.info("Installing focus hook")
         removeHook('fact.focusLost', oldHook)
         addHook('fact.focusLost', self.onFocusLost)
+        
+        #import stats
+        import statsandgraphs
+        
+        log.info("Installing Hanzi graph hook")
+        wrap(ankiqt.ui.graphs.GraphWindow.setupGraphs, statsandgraphs.HanziGraphHook.setupHanziGraph, "after")
 
 # Shrunk version of color shortcut plugin merged with Pinyin Toolkit to give that functionality without the seperate download.
 # Original version by Damien Elmes <anki@ichi2.net>
@@ -92,6 +93,9 @@ class ColorShortcutKeysHook(Hook):
         from anki.hooks import wrap
         import ankiqt.ui.facteditor
         
+        log.info("Installing hanzi graph module")
+        import statsandgraphs
+                
         log.info("Installing color shortcut keys hook")
         wrap(ankiqt.ui.facteditor.FactEditor.setupFields, self.setupShortcuts, "after")
         self.setupShortcuts(self.mw.editor)

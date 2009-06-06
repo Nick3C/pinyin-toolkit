@@ -169,7 +169,8 @@ def discoverlegacymedia(mediadircontents, mediaindex):
     return mediadircontents
 
 """
-# initial work on an importer for the SWAX audio files
+# initial work on an importer for the SWAC audio files
+# This might be useful: http://polyglotte.tuxfamily.org/autres/anki_swac_en.html
 
 def SWACimport(dir):
     swacurl="http://download.shtooka.net/cmn-balm-hsk1_ogg.tar"
