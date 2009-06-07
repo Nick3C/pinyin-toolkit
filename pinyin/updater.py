@@ -223,7 +223,7 @@ class FieldUpdater(object):
                 
          # Finally, if hanzi masking is on then scan through entry and replace the meaning characters with the symbol
         meaning=self.generatemeanings(dictmeanings)
-        if (self.config.hanzimasking):
+        if (self.config.hanzimasking) and not (meaning==None):
                 meaning.replace(expression, self.config.hanzimaskingcharacter) 
                 
         # Do the updates on the fields the user has requested:
