@@ -67,6 +67,10 @@ img[align="center"] {
     width: 480px;
 }
 
+.feature {
+    min-height: 165px;
+}
+
 .linkscolumn {
     position: absolute;
     right: 30px;
@@ -75,9 +79,12 @@ img[align="center"] {
     width: 200px;
 }
 
-.feature {
-    min-height: 165px;
+/*
+.linkentry {
+    width: 180px;
+    margin: 0 auto;
 }
+*/
 
 /* Used for the pitch paragraph that describes what we do */
 .pitch {
