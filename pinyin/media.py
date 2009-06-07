@@ -11,16 +11,25 @@ import zipfile
 from logger import log
 import utils
 
+
 def downloadAndInstallMandarinSounds(notifier, mediamanager, config):
     log.info("Downloading Mandarin sound pack")
-        
-    # Download ZIP, using cache if necessary
-    downloader = MediaDownloader(mediamanager.mediadir())
-    the_media = downloader.download("Mandarin Sounds", config.mandarinsoundsurl,
-                                    lambda: notifier.info("Downloading the sounds - this might take a while!"))
+    
+    try:
+        # Download ZIP, using cache if necessary
+        downloader = MediaDownloader(mediamanager.mediadir())
+        the_media = downloader.download("Mandarin Sounds", config.mandarinsoundsurl,
+                                        lambda: notifier.info("Downloading the sounds - this might take a while!"))
+    except IOError, e:
+        notifier.exception("Error while downloading the sound pack: are you connected to the internet?", e)
+        return
 
-    # Install each file from the ZIP into our media folder
-    the_media.installpack(mediamanager.mediadir())
+    try:
+        # Install each file from the ZIP into our media folder
+        the_media.installpack(mediamanager.mediadir())
+    except zipfile.BadZipfile, e:
+        notifier.exception("The downloaded sound pack appeared to be corrupt", e)
+        return
 
     # Tell the user we are done
     exampleAudioField = config.candidateFieldNamesByKey['audio'][0]

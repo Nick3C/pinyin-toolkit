@@ -17,3 +17,7 @@ class AnkiNotifier(object):
         if not(what in self.alreadyshown):
             self.info(what)
             self.alreadyshown.append(what)
+    
+    def exception(self, text, exception):
+        import ankiqt.ui.utils
+        ankiqt.ui.utils.showWarning(text + u"\r\nThe exception was:\r\n" + unicode(exception))

@@ -4,6 +4,7 @@ A notifier used in tests.
 class MockNotifier(object):
     def __init__(self):
         self.infos = []
+        self.exceptions = []
     
     def info(self, what):
         self.infos.append(what)
@@ -11,6 +12,9 @@ class MockNotifier(object):
     def infoOnce(self, what):
         # Don't distinguish between once and many for now
         self.infos.append(what)
+    
+    def exception(self, text, exception):
+        self.exceptions.append((text, exception))
 
 """
 A notifier used in the live previewer.
@@ -20,6 +24,9 @@ class NullNotifier(object):
         pass
     
     def infoOnce(self, *args):
+        pass
+    
+    def exception(self, *args):
         pass
 
 """
