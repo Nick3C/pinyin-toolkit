@@ -29,7 +29,7 @@ defaultsettings = {
     "hanzimasking"                 : True, # Should Hanzi masking be turned on? i.e. if the expression appears in the meaning field be replaced with a "㊥" or "[~]"
     "colormeaningnumbers"          : True, # Should we color the index number for each translation a different color?
     
-    "weblinkgeneration"            : True, # Should we try to generate some online dictionary references for each card into a field called Links?
+    "weblinkgeneration"            : False, # Should we try to generate some online dictionary references for each card into a field called Links?
     
     # Unimplemented flags (why did Nick add these???)
     "generatepos"                  : True, # Should we try to generate the POS (part of Speech) from dictionaries?
