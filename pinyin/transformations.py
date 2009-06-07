@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import random
+
 from logger import log
 from pinyin import *
 from utils import *
@@ -94,17 +96,23 @@ class PinyinAudioReadings(object):
         
         # Try possible packs to format the tokens. Basically, we
         # don't want to use a mix of sounds from different packs
-        bestmediapack, bestoutput, bestmediamissingcount = None, None, len(tokens) + 1
+        bestmediapacksoutputs, bestmediamissingcount = [], len(tokens) + 1
         for mediapack in self.mediapacks:
             log.info("Checking for reading in pack %s", mediapack.name)
             output, mediamissingcount = audioreadingforpack(mediapack, self.audioextensions, trimerhua(tokens))
             
-            # We will end up choosing whatever pack minimizes the number of errors:
-            if mediamissingcount < bestmediamissingcount:
-                bestmediapack, bestoutput, bestmediamissingcount = mediapack, output, mediamissingcount
+            # We will end up choosing one of the packs that minimizes the number of errors:
+            if mediamissingcount == bestmediamissingcount:
+                # Just as good as a previous pack, so this is an alternative
+                bestmediapacksoutputs.append((mediapack, output))
+            elif mediamissingcount < bestmediamissingcount:
+                # Strictly better than the previous ones, so this is the new best option
+                bestmediapacksoutputs = [(mediapack, output)]
+                bestmediamissingcount = mediamissingcount
         
         # Did we get any result at all?
-        if bestoutput != None:
+        if len(bestmediapacksoutputs) != 0:
+            bestmediapack, bestoutput = random.choice(bestmediapacksoutputs)
             return bestmediapack, bestoutput, (bestmediamissingcount != 0)
         else:
             return None, [], True
@@ -295,13 +303,26 @@ if __name__=='__main__':
             self.assertHasReading(u"根", ["GeN1.mP3"], available_media={"GeN1.mP3" : "GeN1.mP3" })
     
         def testDontMixPacks(self):
-            packs = [MediaPack("Foo", {"ni3.mp3" : "ni3.mp3"}), MediaPack("Bar", {"hao3.mp3" : "hao3.mp3"})]
-            self.assertHasPartialReading(u"你好", ["ni3.mp3"], bestpackshouldbe=packs[0], mediapacks=packs)
+            packs = [MediaPack("Foo", {"ni3.mp3" : "ni3.mp3", "ma3.mp3" : "ma3.mp3"}), MediaPack("Bar", {"hao3.mp3" : "hao3.mp3"})]
+            self.assertHasPartialReading(u"你好马", ["ni3.mp3", "ma3.mp3"], bestpackshouldbe=packs[0], mediapacks=packs)
     
         def testUseBestPack(self):
             packs = [MediaPack("Foo", {"xiao3.mp3" : "xiao3.mp3", "ma3.mp3" : "ma3.mp3"}),
                      MediaPack("Bar", {"ma3.mp3" : "ma3.mp3", "ci2.mp3" : "ci2.mp3", "dian3.mp3" : "dian3.mp3"})]
             self.assertHasPartialReading(u"小马词典", ["ma3.mp3", "ci2.mp3", "dian3.mp3"], bestpackshouldbe=packs[1], mediapacks=packs)
+    
+        def testRandomizeBestPackOnTie(self):
+            pack1 = MediaPack("Foo", {"ni3.mp3" : "PACK1.mp3"})
+            pack2 = MediaPack("Bar", {"ni3.mp3" : "PACK2.mp3"})
+    
+            gotpacks = []
+            for n in range(1, 10):
+                gotpack, _, _ = PinyinAudioReadings([pack1, pack2], [".mp3", ".ogg"]).audioreading(englishdict.reading(u"你"))
+                gotpacks.append(gotpack)
+            
+            # This test will nondeterministically fail (1/2)^10 = 0.01% of the time
+            self.assertTrue(pack1 in gotpacks)
+            self.assertTrue(pack2 in gotpacks)
     
         # Test helpers
         def assertHasReading(self, what, shouldbe, **kwargs):
