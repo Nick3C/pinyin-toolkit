@@ -1,0 +1,110 @@
+body {
+    /* Slightly dirty red background to offset the bright banner */
+    background: #FFCCCC;
+    color: #000000;
+    font-family: Lucida Grande, Arial,sans-serif;
+    margin: 17px 0 8px;
+}
+
+#header {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 169px;
+    offset: 0 0 0 0;
+    overflow: hidden;
+    
+    background-image: url('../images/header-tile.jpg');
+    background-repeat: repeat-x;
+}
+
+h3 {
+    font-size: 16px;
+}
+
+p {
+    font-size: 14px;
+    line-height: 19px;
+    margin: 8px 0 0;
+}
+
+a {
+    color : #E00000;
+    font-weight : bold;
+    text-decoration : none;
+}
+
+a:hover {
+    text-decoration:underline;
+}
+
+img {
+    border: medium none;
+}
+
+img[align="center"] {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#content {
+    top: 169px;
+    
+    /* Center the div */
+    width: 753px;
+    margin: 180px auto 0 auto;
+}
+
+.columns {
+    padding: 0 0 10px;
+    position: relative;
+}
+
+.textcolumn {
+    padding: 0 0 0 32px;
+    width: 480px;
+}
+
+.linkscolumn {
+    position: absolute;
+    right: 30px;
+    text-align: center;
+    top: 15px;
+    width: 200px;
+}
+
+.feature {
+    min-height: 165px;
+}
+
+/* Used for the pitch paragraph that describes what we do */
+.pitch {
+    color: #222222 !important;
+    font-size: 20px;
+    line-height: 30px;
+    margin: 0 0 20px;
+}
+
+.miniscreen {
+    background-color: #888888;
+    float: left;
+    margin: 0 20px 10px 0;
+}
+
+.miniscreen.odd {
+    float: right;
+    margin-left: 20px;
+    margin-right: 0;
+}
+
+.footer {
+    padding: 20px;
+    text-align: center;
+}
+
+#legal {
+    color: #888888;
+    font-size: 10px;
+}
