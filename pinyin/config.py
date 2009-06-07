@@ -95,11 +95,17 @@ defaultsettings = {
     
     # Links occur in the order that they will be shown in the file
     "weblinks" : [
-      ('e',       'Submit CC-CEDICT entry', 'http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified={searchTerms}'),
-      ('nckiu',   'nckiu',                  'http://www.nciku.com/mini/all/{searchTerms}'),
-      ('CEDICT',  'CC-CEDICT at MDBG',      'http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb={searchTerms}'),
-      ('WikiD',   'Wiki Dictionary',        'http://en.wiktionary.org/wiki/{searchTerms}'),
-      ('YellowB', 'Yellow Bridge',          'http://www.yellowbridge.com/chinese/charsearch.php?searchChinese=1&zi={searchTerms}')
+      ('e',       'Submit CC-CEDICT entry',  'http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified={searchTerms}'),
+      ('Nckiu',   'Nckiu',                   'http://www.nciku.com/mini/all/{searchTerms}'),
+      ('CEDICT',  'CC-CEDICT at MDBG',       'http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb={searchTerms}'),
+      ('Dict.cn', 'Dict.cn',                 'http://dict.cn/{searchTerms}'),
+      ('Iciba',   'Iciba',                   'http://love.iciba.com//?{searchTerms}/?')
+      (u'互动百科',   'Hudong',                  'http://www.hudong.com/wiki/{searchTerms}'),
+      ('Unihan',  'Unicode Unihan Database', 'http://www.unicode.org/cgi-bin/GetUnihanData.pl?codepoint={searchTerms}'),
+      ('WikiD',   'Wiktionary',              'http://en.wiktionary.org/wiki/{searchTerms}'), # Not that good yet
+      ('YellowB', 'Yellow Bridge',           'http://www.yellowbridge.com/chinese/charsearch.php?searchChinese=1&zi={searchTerms}'),
+      (u'有道',     'Youdao',                  'http://dict.youdao.com/search?q={searchTerms}&btnindex=&ue=utf8&keyfrom=dict.index'),
+      (u'雅虎',     'Zidian',                  'http://zidian.cn.yahoo.com/result_cn2en.html?p={searchTerms}')
     ],
     
     # Only decks with this tag are processed

@@ -177,7 +177,7 @@ class FieldUpdater(object):
             #       [sound:mw1][sound:mw2]
             # The measure word shouldn't be included on the main card because if so you break min-info rule (harder to learn it)
             #' If testing seperately then putting audio in the MW field is a good idea (so it will play when the measure word question is answered)
-        
+
         # Do the updates on the fields the user has requested:
         updaters = {
                 'expression' : (True,                                     lambda: expression),
