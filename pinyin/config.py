@@ -99,7 +99,7 @@ defaultsettings = {
       ('Nckiu',   'Nckiu',                   'http://www.nciku.com/mini/all/{searchTerms}'),
       ('CEDICT',  'CC-CEDICT at MDBG',       'http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb={searchTerms}'),
       ('Dict.cn', 'Dict.cn',                 'http://dict.cn/{searchTerms}'),
-      ('Iciba',   'Iciba',                   'http://love.iciba.com//?{searchTerms}/?')
+      ('Iciba',   'Iciba',                   'http://love.iciba.com//?{searchTerms}/?'),
       (u'互动百科',   'Hudong',                  'http://www.hudong.com/wiki/{searchTerms}'),
       ('Unihan',  'Unicode Unihan Database', 'http://www.unicode.org/cgi-bin/GetUnihanData.pl?codepoint={searchTerms}'),
       ('WikiD',   'Wiktionary',              'http://en.wiktionary.org/wiki/{searchTerms}'), # Not that good yet
