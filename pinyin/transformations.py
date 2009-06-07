@@ -46,7 +46,7 @@ class PinyinAudioReadings(object):
             # Remove any erhuas from audio before being generated.
             # For example we want 儿子 to be "er2 zi5" but "门儿" (men2r) must become "men2"
             # It seems unlikely we will ever get erhua audio (i.e "men2r.ogg") so this is likely to be permanent
-            # DEBUG - add code fulfilling the above
+
             # Also skip anything that doesn't look like pinyin, such as English words
             if type(token) != Pinyin or token.numericformat(hideneutraltone=False) == "r5":
                 continue
