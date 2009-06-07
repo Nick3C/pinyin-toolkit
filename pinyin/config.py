@@ -75,10 +75,10 @@ defaultsettings = {
         u"#000000",  # black         (not the same as 'no color')
         u"#00AAFF",  # light blue    (suggested alternative text color)
         u"#55007F",  # yellow        (suggested highlighting color)
-        u"#32CD32",  # dark green    (candidate for future tone sandhi color) 
-        u"#C71585",  # violet        (randomly chosen default color)
-        u"#FF6347",  # tomato        (random chosen default color)
-        u"#7FFF00"   # light green   (random chosen default color)
+        # u"#32CD32",  # dark green    (candidate for future tone sandhi color) 
+        # u"#C71585",  # violet        (randomly chosen default color)
+        # u"#FF6347",  # tomato        (random chosen default color)
+        # u"#7FFF00"   # light green   (random chosen default color)
       ],
 
     # Field names are listed in descending order of priority
@@ -264,10 +264,10 @@ class Config(object):
     extraquickaccess1color = arrayproperty("extraquickaccesscolors", 0)
     extraquickaccess2color = arrayproperty("extraquickaccesscolors", 1)
     extraquickaccess3color = arrayproperty("extraquickaccesscolors", 2)
-    extraquickaccess4color = arrayproperty("extraquickaccesscolors", 3)
-    extraquickaccess5color = arrayproperty("extraquickaccesscolors", 4)
-    extraquickaccess6color = arrayproperty("extraquickaccesscolors", 5)
-    extraquickaccess7color = arrayproperty("extraquickaccesscolors", 6)
+    # extraquickaccess4color = arrayproperty("extraquickaccesscolors", 3)
+    # extraquickaccess5color = arrayproperty("extraquickaccesscolors", 4)
+    # extraquickaccess6color = arrayproperty("extraquickaccesscolors", 5)
+    # extraquickaccess7color = arrayproperty("extraquickaccesscolors", 6)
 
 
 if __name__=='__main__':

@@ -409,68 +409,12 @@
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QPushButton" name="quickAccess4Button">
-              <property name="font">
-               <font>
-                <pointsize>15</pointsize>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>9</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="quickAccess5Button">
-              <property name="font">
-               <font>
-                <pointsize>15</pointsize>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>10</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="quickAccess6Button">
-              <property name="font">
-               <font>
-                <pointsize>15</pointsize>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>11</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="quickAccess7Button">
-              <property name="font">
-               <font>
-                <pointsize>15</pointsize>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>12</string>
-              </property>
-             </widget>
-            </item>
            </layout>
           </item>
           <item row="0" column="0">
            <widget class="QLabel" name="quickAccessLabel">
             <property name="text">
-             <string>These colors, along with the tone colors, are available in the fact editor by pressing Ctrl+F1 to Ctrl+F12 while some text is selected:</string>
+             <string>These colors, along with the tone colors, are available in the fact editor by pressing Ctrl+F1 to Ctrl+F8 while some text is selected:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignJustify|Qt::AlignVCenter</set>

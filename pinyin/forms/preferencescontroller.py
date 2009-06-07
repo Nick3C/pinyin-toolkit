@@ -116,7 +116,7 @@ class PreferencesController(object):
         
         # The Quick Access Colors panel
         def setUpQuickAccessColors():
-            for shortcut in range(1, 8):
+            for shortcut in range(1, 4):
                 self.registerColorChooserMapping("extraquickaccess%dcolor" % shortcut, getattr(self.view.controls, "quickAccess%dButton" % shortcut))
         
         setUpToneColors()
