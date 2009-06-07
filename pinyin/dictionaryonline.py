@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import urllib, urllib2
+import urllib2
 
 from pinyin import TokenList
 from logger import log
+import utils
 
 # This module will takes a phrase and passes it to online services for translation
 # For now this modle provides support for google translate. In the future more dictionaries may be added.
@@ -32,7 +33,7 @@ def gCheck(destlanguage='en'):
 # The lookup function is based on code from the Chinese Example Sentence Plugin by <aaron@lamelion.com>
 def lookup(query, destlanguage):
     # Set up URL
-    url = "http://translate.google.com/translate_a/t?client=t&text=%s&sl=%s&tl=%s" % (urllib.quote(query.encode('utf-8')), 'zh-CN', destlanguage)
+    url = "http://translate.google.com/translate_a/t?client=t&text=%s&sl=%s&tl=%s" % (utils.urlescape(query), 'zh-CN', destlanguage)
     con = urllib2.Request(url, headers={'User-Agent':'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'}, origin_req_host='http://translate.google.com')
     
     # Open the connection

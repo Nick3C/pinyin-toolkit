@@ -10,6 +10,7 @@ import meanings
 import pinyin
 import transformations
 import utils
+import re
 
 from logger import log
 
@@ -81,7 +82,7 @@ class FieldUpdater(object):
         
         return output_tags
     
-    def generatemeanings(self, dictmeanings):
+    def generatemeanings(self, expression, dictmeanings):
         if dictmeanings == None:
             # We didn't get any meanings, don't update the field
             return None
@@ -93,6 +94,10 @@ class FieldUpdater(object):
             # After flattening and stripping, we didn't get any meanings: don't update the field
             return None
         
+        if self.config.hanzimasking:
+            # Hanzi masking is on: scan through the meanings and remove the expression itself
+            meanings = [meaning.replace(expression, self.config.hanzimaskingcharacter) for meaning in meanings]
+
         # Use the configuration to insert numbering etc
         return self.config.formatmeanings(meanings)
     
@@ -107,10 +112,13 @@ class FieldUpdater(object):
     def generatecoloredcharacters(self, expression):
         return pinyin.flatten(transformations.colorize(self.config.tonecolors, self.config.dictionary.tonedchars(expression)))
     
+    def weblinkgeneration(self, expression):
+        # Generate a list of links to online dictionaries, etc to query the expression
+        return " ".join(['[<a href="' + urltemplate.replace("{searchTerms}", utils.urlescape(expression)) + '" title="' + tooltip + '">' + text + '</a>]' for text, tooltip, urltemplate in self.config.weblinks])
+
     #
     # Core updater routine
     #
-    
     def updatefact(self, fact, expression):
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
@@ -136,7 +144,7 @@ class FieldUpdater(object):
     
         # Figure out the reading for the expression field
         dictreading = self.config.dictionary.reading(expression)
-    
+  
         # Preload the meaning, but only if we absolutely have to
         if self.config.needmeanings:
             if self.config.detectmeasurewords and "mw" in fact:
@@ -159,29 +167,39 @@ class FieldUpdater(object):
                 if translation != None:
                     dictmeanings = [pinyin.TokenList([pinyin.Text(translation)])]
 
-    
+            # NB: expression only used for Hanzi masking here
+            meaning = self.generatemeanings(expression, dictmeanings)
+            
             # DEBUG: Nick wants to do something with audio for measure words here?
-            # " [sound:MW]" # DEBUG - pass to audio loop
-    
+            # yes, want the measure word to appear as:
+            #       [MW1] - [MWPY1]
+            #       [MW2] - [MWPY2]
+            #       [sound:mw1][sound:mw2]
+            # The measure word shouldn't be included on the main card because if so you break min-info rule (harder to learn it)
+            #' If testing seperately then putting audio in the MW field is a good idea (so it will play when the measure word question is answered)
+        
         # Do the updates on the fields the user has requested:
         updaters = {
                 'expression' : (True,                                     lambda: expression),
                 'reading'    : (True,                                     lambda: self.generatereading(dictreading)),
-                'meaning'    : (self.config.meaninggeneration,            lambda: self.generatemeanings(dictmeanings)),
+                'meaning'    : (self.config.meaninggeneration,            lambda: meaning),
                 'mw'         : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
                 'audio'      : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
-                'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression))
+                'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression)),
+                'weblinks'   : (self.config.weblinkgeneration,            lambda: self.weblinkgeneration(expression))
             }
-    
-        for key, (enabled, updater) in updaters.items():
-            # Skip updating if no suitable field, we are disabled, or the field has text
-            if not(key in fact) or not(enabled) or fact[key].strip() != u"":
-                continue
         
+        for key, (enabled, updater) in updaters.items():
+            # Skip updating if no suitable field, we are disabled, or the field has text.
+            # NB: we always want to update the weblinks field, if it is present and enabled.
+            if not(key in fact) or not(enabled) or (fact[key].strip() != u"" and key != "weblinks"):
+                continue
+
             # Update the value in that field
             value = updater()
             if value != None and value != fact[key]:
                 fact[key] = value
+
 
 if __name__ == "__main__":
     import copy
@@ -207,8 +225,8 @@ if __name__ == "__main__":
             self.assertEquals(
                 self.updatefact(u"书", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
                     colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
-                    tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
-                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"]), {
+                    tonedisplay = "tonified", meaningnumbering = "circledChinese", colormeaningnumbers = False, meaningseperator = "lines", prefersimptrad = "simp",
+                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False), {
                         "reading" : u'<span style="color:#ff0000">shū</span>',
                         "meaning" : u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History',
                         "mw" : u'本 - <span style="color:#00aa00">běn</span>, 册 - <span style="color:#0000ff">cè</span>, 部 - <span style="color:#0000ff">bù</span>, 丛 - <span style="color:#ffaa00">cóng</span>',
@@ -234,7 +252,7 @@ if __name__ == "__main__":
                 self.updatefact(u"书", { "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e" },
                     colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
                     tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
-                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"]), {
+                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = True), {
                         "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e"
                       })
         
@@ -242,64 +260,90 @@ if __name__ == "__main__":
             self.assertEquals(
                 self.updatefact(u"啤酒", { "expression" : "" },
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False,
-                    detectmeasurewords = False, audiogeneration = False), { "expression" : u"啤酒" })
+                    detectmeasurewords = False, audiogeneration = False, weblinkgeneration = False), { "expression" : u"啤酒" })
         
         def testUpdateMeaningAndMWWithoutMWField(self):
             self.assertEquals(
                 self.updatefact(u"啤酒", { "expression" : "", "meaning" : "" },
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True,
-                    detectmeasurewords = True, audiogeneration = False), {
+                    meaningnumbering = "circledChinese", colormeaningnumbers = False, detectmeasurewords = True, audiogeneration = False, weblinkgeneration = False), {
                         "expression" : u"啤酒", "meaning" : u"㊀ beer<br />㊁ MW: 杯 - b\u0113i, 瓶 - p\xedng, 罐 - gu\xe0n, 桶 - t\u01d2ng, 缸 - g\u0101ng"
+                      })
+
+        def testMeaningHanziMasking(self):
+            # TODO: maybe we should mask the tone information too?
+            self.assertEquals(
+                self.updatefact(u"书", { "meaning" : "" },
+                    colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
+                    tonedisplay = "tonified", meaningnumbering = "circledArabic", colormeaningnumbers = False, meaningseperator = "custom", custommeaningseperator = " | ", prefersimptrad = "simp",
+                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = True, hanzimaskingcharacter = "MASKED"), {
+                        "meaning" : u'① book | ② letter | ③ same as <span style="color:#ff0000">MASKED</span><span style="color:#ff0000">\u7ecf</span> Book of History | ④ MW: 本 - <span style="color:#00aa00">běn</span>, 册 - <span style="color:#0000ff">cè</span>, 部 - <span style="color:#0000ff">bù</span>, 丛 - <span style="color:#ffaa00">cóng</span>',
                       })
 
         def testUpdateReadingOnly(self):
             self.assertEquals(
                 self.updatefact(u"啤酒", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False,
-                    detectmeasurewords = False, audiogeneration = False, tonedisplay = "numeric"), {
+                    detectmeasurewords = False, audiogeneration = False, tonedisplay = "numeric", weblinkgeneration = False), {
                         "reading" : u'pi2 jiu3', "meaning" : "", "mw" : "", "audio" : "", "color" : ""
                       })
         
         def testUpdateReadingAndMeaning(self):
             self.assertEquals(
-                self.updatefact(u"㝵", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
-                    colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
-                    tonedisplay = "numeric", meaningnumbering = "arabicParens", meaningseperator = "commas", prefersimptrad = "trad",
-                    audiogeneration = False, tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"]), {
+                self.updatefact(u"㝵", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : "" },
+                    colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False, tonedisplay = "numeric",
+                    meaningnumbering = "arabicParens", colormeaningnumbers = True, meaningnumberingcolor = "#123456", meaningseperator = "commas", prefersimptrad = "trad",
+                    audiogeneration = False, tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False), {
                         "reading" : u'<span style="color:#ffaa00">de2</span>',
-                        "meaning" : u'(1) to obtain, (2) archaic variant of 得 - <span style="color:#ffaa00">de2</span>, (3) component in 礙 - <span style="color:#0000ff">ai4</span> and 鍀 - <span style="color:#ffaa00">de2</span>',
-                        "mw" : "", "audio" : "", "color" : ""
+                        "meaning" : u'<span style="color:#123456">(1)</span> to obtain, <span style="color:#123456">(2)</span> archaic variant of 得 - <span style="color:#ffaa00">de2</span>, <span style="color:#123456">(3)</span> component in 礙 - <span style="color:#0000ff">ai4</span> and 鍀 - <span style="color:#ffaa00">de2</span>',
+                        "mw" : "", "audio" : "", "color" : "", "weblinks" : ""
                       })
         
         def testUpdateReadingAndMeasureWord(self):
             self.assertEquals(
-                self.updatefact(u"丈夫", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                self.updatefact(u"丈夫", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : "" },
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = True,
-                    tonedisplay = "numeric", prefersimptrad = "trad", audiogeneration = False), {
+                    tonedisplay = "numeric", prefersimptrad = "trad", audiogeneration = False, weblinkgeneration = False), {
                         "reading" : u'zhang4 fu', "meaning" : u'',
-                        "mw" : u"個 - ge4", "audio" : "", "color" : ""
+                        "mw" : u"個 - ge4", "audio" : "", "color" : "", "weblinks" : ""
                       })
         
         def testUpdateReadingAndAudio(self):
             self.assertEquals(
-                self.updatefact(u"三七開", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                self.updatefact(u"三七開", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : "" },
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = False,
-                    tonedisplay = "tonified", audiogeneration = True, audioextensions = [".mp3", ".ogg"]), {
+                    tonedisplay = "tonified", audiogeneration = True, audioextensions = [".mp3", ".ogg"], weblinkgeneration = False), {
                         "reading" : u'sān qī kāi', "meaning" : u'', "mw" : "",
                         "audio" : u"[sound:" + os.path.join("Test", "san1.mp3") + "]" +
                                   u"[sound:" + os.path.join("Test", "qi1.ogg") + "]" +
                                   u"[sound:" + os.path.join("Test", "location/Kai1.mp3") + "]",
-                        "color" : ""
+                        "color" : "", "weblinks" : ""
                       })
         
         def testUpdateReadingAndColoredHanzi(self):
             self.assertEquals(
-                self.updatefact(u"三峽水库", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                self.updatefact(u"三峽水库", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : u"" },
                     dictlanguage = "pinyin", colorizedpinyingeneration = False, colorizedcharactergeneration = True, meaninggeneration = False, detectmeasurewords = False,
-                    tonedisplay = "numeric", audiogeneration = False, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]), {
+                    tonedisplay = "numeric", audiogeneration = False, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"], weblinkgeneration = False), {
                         "reading" : u'san1 xia2 shui3 ku4', "meaning" : u'', "mw" : "", "audio" : "",
-                        "color" : u'<span style="color:#111111">三</span><span style="color:#222222">峽</span><span style="color:#333333">水</span><span style="color:#444444">库</span>'
+                        "color" : u'<span style="color:#111111">三</span><span style="color:#222222">峽</span><span style="color:#333333">水</span><span style="color:#444444">库</span>', "weblinks" : ""
                       })
+        
+        def testUpdateReadingAndLinks(self):
+            self.assertEquals(
+                self.updatefact(u"一概", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : "Yes, I get overwritten!" },
+                    colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = False,
+                    tonedisplay = "numeric", audiogeneration = False, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"],
+                    weblinkgeneration = True, weblinks = [("YEAH!", "mytitle", "silly{searchTerms}url"), ("NAY!", "myothertitle", "verysilly{searchTerms}url")]), {
+                        "reading" : u'yi1 gai4', "meaning" : u'', "mw" : "", "audio" : "", "color" : u'',
+                        "weblinks" : u'[<a href="silly%E4%B8%80%E6%A6%82url" title="mytitle">YEAH!</a>] [<a href="verysilly%E4%B8%80%E6%A6%82url" title="myothertitle">NAY!</a>]'
+                      })
+        
+        def testWebLinkFieldCanBeMissingAndStaysMissing(self):
+            self.assertEquals(self.updatefact(u"一概", { }, weblinkgeneration = True), { })
+        
+        def testWebLinksNotBlankedIfDisabled(self):
+            self.assertEquals(self.updatefact(u"一概", { "weblinks": "Nope!" }, weblinkgeneration = False), { "weblinks" : "Nope!" })
         
         def testNotifiedUponAudioGenerationWithNoPacks(self):
             infos, fact = self.updatefactwithinfos(u"三月", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
@@ -316,7 +360,7 @@ if __name__ == "__main__":
                 self.updatefact(u"㝵㝵㝵㝵㝵", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
                     fallbackongoogletranslate = True,
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
-                    tonedisplay = "numeric", audiogeneration = False), {
+                    tonedisplay = "numeric", audiogeneration = False, hanzimasking = False), {
                         "reading" : u'de2 de2 de2 de2 de2',
                         "meaning" : u'㝵㝵㝵㝵㝵<br /><span style="color:gray"><small>[Google Translate]</small></span>',
                         "mw" : "", "audio" : "", "color" : ""

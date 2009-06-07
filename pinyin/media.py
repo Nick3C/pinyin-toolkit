@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import urllib
 import shutil
 import tempfile
@@ -166,6 +167,47 @@ def discoverlegacymedia(mediadircontents, mediaindex):
     
     # Return the remaining files
     return mediadircontents
+
+"""
+# initial work on an importer for the SWAC audio files
+# This might be useful: http://polyglotte.tuxfamily.org/autres/anki_swac_en.html
+
+def SWACimport(dir):
+    swacurl="http://download.shtooka.net/cmn-balm-hsk1_ogg.tar"
+    
+    # 1 - Download te zip file 
+
+    # 2 - unzip to media dir
+    
+    # 3 - open the index file
+    
+    packdir="C:\Nick\Language\Mandarin Sound Files\Swac" # testdir
+    tagfile = "index.tags.txt"
+    fullpath = os.path.join(packdir, tagfile)
+    
+    
+    # 4 - scan through the index file and put the file names and piniyn into variables
+    
+    # regex should match the filename and put it into group(1)
+    # and output pinyin to group(3)
+    lineregex = re.compile(r"[[](.+)[]].+SWAC_ALPHAIDX=(.+)", re.MULTILINE)
+    
+    #open file for reading
+    file = codecs.open(fullpath, "r", encoding='utf-8')
+   
+    matches = re.search(file)
+    matches.group(1)
+    matches.group(3)
+
+    file.close()    
+    
+    # 4 - remove tones from pinin variable
+    
+    # 5 - rename & move the files to the main directory 
+    
+    os.rename(tagfull, pinyinname)
+"""
+
 
 if __name__ == "__main__":
     import unittest

@@ -289,9 +289,20 @@ def cumulative(sequence):
         sofar = sofar + n
         yield sofar
 
+def urlescape(what):
+    import urllib
+    return urllib.quote(what.encode('utf-8'))
+
 if __name__=='__main__':
     import unittest
     import re
+    
+    class UrlEscapeTest(unittest.TestCase):
+        def testEscapeUrlEncode(self):
+            self.assertEquals(urlescape("Hello World"), "Hello%20World")
+        
+        def testEscapeUTF8(self):
+            self.assertEquals(urlescape(u"你"), "%E4%BD%A0")
     
     class CumulativeTest(unittest.TestCase):
         def testCumulativeEmpty(self):

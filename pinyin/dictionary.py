@@ -18,10 +18,10 @@ strings of Hanzi into their pinyin equivalents.
 """
 class PinyinDictionary(object):
     languagedicts = {
-            'en'     : ('dict-cc-cedict.txt', 1),
-            'de'     : ('dict-handedict.txt', 0),
-            'fr'     : ('dict-cfdict.txt', 0),
-            'pinyin' : ('dict-pinyin.txt', 1) # Not really a language, but handy for tests
+            'en'     : ('cedict_ts.u8', 1),
+            'de'     : ('handedict_nb.u8', 0),
+            'fr'     : ('cfdict_nb.u8', 0),
+            'pinyin' : ('cedict_pinyin.u8', 1) # Not really a language, but handy for tests
         }
     
     # A cache of dictionaries loaded by the program, trimmed when we run low on memory
@@ -42,10 +42,11 @@ class PinyinDictionary(object):
             (languagedict, simplifiedcharindex) = cls.languagedicts['en']
         else:
             # Default to the pinyin-only dictionary if this language doesn't have a dictionary.
-            (languagedict, simplifiedcharindex) = cls.languagedicts.get(language, ('dict-pinyin.txt', 1))
+            # DEBUG - this means that we will lose measure words for languages other than English - seperate the two
+            (languagedict, simplifiedcharindex) = cls.languagedicts.get(language, ('cedict_pinyin.u8', 1))
         
         log.info("Beginning load of dictionary for language code %s (%s), need meanings = %s", language, languagedict, needmeanings)
-        return PinyinDictionary([languagedict, 'dict-supplimentary.txt', 'dict-userdict.txt'], simplifiedcharindex, needmeanings)
+        return PinyinDictionary([languagedict, 'pinyin_toolkit_sydict.u8', 'dict-userdict.txt'], simplifiedcharindex, needmeanings)
     
     def __init__(self, dictnames, simplifiedcharindex, needmeanings):
         # Save the simplified index
@@ -55,7 +56,7 @@ class PinyinDictionary(object):
         self.__maxcharacterlen = 0
         self.__readings = {}
         self.__definition = {}
-        for dictpath in [os.path.join(pinyindir(), dictname) for dictname in dictnames]:
+        for dictpath in [os.path.join(pinyindir(), "dictionaries", dictname) for dictname in dictnames]:
             # Avoid loading dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
             if os.path.exists(dictpath):
                 log.info("Loading dictionary from %s, load meanings = %s", dictpath, needmeanings)
@@ -191,7 +192,7 @@ class PinyinDictionary(object):
                     return None, None
                 else:
                     # We got a raw definition, but we need to clean up it before using it
-                    foundmeanings, foundmeasurewords = meanings.MeaningFormatter(self.__simplifiedcharindex, prefersimptrad).parsedefinition(definition, self.tonedchars)
+                    foundmeanings, foundmeasurewords = meanings.MeaningFormatter(self.__simplifiedcharindex, prefersimptrad).parsedefinition(definition, self.tonedchars)                  
 
         return foundmeanings, foundmeasurewords
 

@@ -4,6 +4,8 @@
 from PyQt4 import QtGui, QtCore
 
 import anki.utils
+import ankiqt.ui.facteditor
+from anki.hooks import wrap,addHook
 
 import pinyin.forms.preferences
 import pinyin.forms.preferencescontroller
@@ -12,6 +14,7 @@ import pinyin.media
 import pinyin.utils
 
 import utils
+
 
 
 class Hook(object):
@@ -60,9 +63,10 @@ class ColorShortcutKeysHook(Hook):
     
     # TODO: this doesn't work yet. The setColor method is never fired.
     def setupShortcuts(self, editor):
-        # Loop through the 12 F[x] keys, setting each one up
+        # Loop through the 8 F[x] keys, setting each one up
+        # Note: Ctrl-F9 is the HTML editor. Don't do this as it causes a conflict
         log.info("Setting up shortcut buttons on fact editor")
-        for i in range(1, 13):
+        for i in range(1, 8):
             # Build the invisible button used to gather shortcut events
             button = QtGui.QPushButton()
             button.setText(str(i))

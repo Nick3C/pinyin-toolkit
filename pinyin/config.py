@@ -12,17 +12,30 @@ from logger import log
 #  * User colors
 #  * Candidate field names
 #  * Deck tag
+#  * Color option for the line-index (cute symbols)
+# * link generator (and a list of the links to be generated)
 
 defaultsettings = {
     "dictlanguage" : "en",
 
     "colorizedpinyingeneration"    : True, # Should we try and write readings and measure words that include colorized pinyin?
+    "colorizedcharactergeneration" : True, # Should we try and fill out a field called Color with a colored version of the character?
+    
+    "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
+    
     "meaninggeneration"            : True, # Should we try and fill out a field called Meaning with the definition? 
     "fallbackongoogletranslate"    : True, # Should we use Google to fill out the Meaning field if needs be? 
-    "colorizedcharactergeneration" : True, # Should we try and fill out a field called Color with a colored version of the character?
-    "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
     "detectmeasurewords"           : True, # Should we try and put measure words seperately into a field called MW?
-
+    "hanzimasking"                 : True, # Should Hanzi masking be turned on? i.e. if the expression appears in the meaning field be replaced with a "㊥" or "[~]"
+    "colormeaningnumbers"          : True, # Should we color the index number for each translation a different color?
+    
+    "weblinkgeneration"            : True, # Should we try to generate some online dictionary references for each card into a field called Links?
+    
+    # Unimplemented flags (why did Nick add these???)
+    "generatepos"                  : True, # Should we try to generate the POS (part of Speech) from dictionaries?
+    "enablefeedback"               : True, # Should support for submitting entries to CEDICT, etc be turned on?
+    "tonesandhiconvert"            : True, # Should the tone sandhi tones: (3, 3) be colored differently
+    
     # "numeric" or "tonified"
     "tonedisplay" : "tonified",
 
@@ -42,6 +55,9 @@ defaultsettings = {
     # You should not have to change this setting as it defaults to a free and usable sound-set.
     # Be aware that you may be able to find higher quality audio files from other sources.
     "mandarinsoundsurl" : "http://www.chinese-lessons.com/sounds/Mandarin_sounds.zip",
+    
+    # The character to use for hanzi masking in meanings: ~ or [~] are obvious alternatives
+    "hanzimaskingcharacter" : u"㊥",
 
     "tonecolors" : [
         u"#ff0000", # red
@@ -49,7 +65,11 @@ defaultsettings = {
         u"#00aa00", # green
         u"#0000ff", # blue
         u"#545454", # grey
+        # This should not be in in this array. This is for actual tones only:
+        # u"#66CC66", # tone sandhi
       ],
+    
+    "meaningnumberingcolor" : "#A4A4A4", # grey
 
     "extraquickaccesscolors" : [
         u"#000000",  # black         (not the same as 'no color')
@@ -68,8 +88,19 @@ defaultsettings = {
         'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
         'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
         'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
-        'mw'         : ["MW", "Measure Word", "Classifier", u"量词"]
+        'mw'         : ["MW", "Measure Word", "Classifier", u"量词"],
+        'weblinks'   : ["Links", "Link", "LinksBar", "Links Bar", "Link Bar", "LinkBar", "Web", "Dictionary", "URL", "URLs"],
+        'pos'        : ["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] 
       },
+    
+    # Links occur in the order that they will be shown in the file
+    "weblinks" : [
+      ('e',       'Submit CC-CEDICT entry', 'http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified={searchTerms}'),
+      ('nckiu',   'nckiu',                  'http://www.nciku.com/mini/all/{searchTerms}'),
+      ('CEDICT',  'CC-CEDICT at MDBG',      'http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb={searchTerms}'),
+      ('WikiD',   'Wiki Dictionary',        'http://en.wiktionary.org/wiki/{searchTerms}'),
+      ('YellowB', 'Yellow Bridge',          'http://www.yellowbridge.com/chinese/charsearch.php?searchChinese=1&zi={searchTerms}')
+    ],
     
     # Only decks with this tag are processed
     "modelTag" : "Mandarin"
@@ -179,10 +210,15 @@ class Config(object):
         if len(meanings) > 1 and self.meaningnumberingstrings != None:
             def meaningnumber(n):
                 if n < len(self.meaningnumberingstrings):
-                    return self.meaningnumberingstrings[n]
+                    number = self.meaningnumberingstrings[n]
                 else:
                     # Ensure that we fall back on normal (n) numbers if there are more numbers than we have in the supplied list
-                    return "(" + str(n + 1) + ")"
+                    number = '(' + str(n + 1) + ')'
+
+                if self.colormeaningnumbers:
+                    return '<span style="color:' + self.meaningnumberingcolor + '">' + number + '</span>'
+                else:
+                    return number
         
             # Add numbers to all the meanings in the list
             meanings = [meaningnumber(n) + " " + meaning for n, meaning in enumerate(meanings)]
@@ -190,24 +226,24 @@ class Config(object):
         # Use the seperator to join the meanings together
         return self.meaningseperatorstring.join(meanings)
     
-    shouldusegoogletranslate = property(lambda self: self.getshouldusegoogletranslate)
-    
     def getshouldusegoogletranslate(self):
         # Fail fast if the user has turned Google off:
-        if not config.fallbackongoogletranslate:
+        if not self.fallbackongoogletranslate:
             return False
-        
+
         # Determine the status of Google Translate if we haven't already done so.
         # TODO: should try every 5 minutes or something rather than giving up on first failure.
         if self.__googletranslateworking == None:
             # Test internet connectivity by performing a gTrans call.
             # If this call fails then translations are disabled until Anki is restarted.
             # This prevents a several second delay from occuring when changing a field with no internet
-            self.__googletranslateworking = dictionaryonline.gCheck(config.dictlanguage)
+            self.__googletranslateworking = dictionaryonline.gCheck(self.dictlanguage)
             log.info("Google Translate has tested internet access and reports status %s", self.__googletranslateworking)
-        
+
         # Only use it if it appears to be working
         return self.__googletranslateworking
+
+    shouldusegoogletranslate = property(getshouldusegoogletranslate)
     
     #
     # Color accessors
@@ -309,20 +345,28 @@ if __name__=='__main__':
             self.assertFalse(Config({ "meaninggeneration" : False, "detectmeasurewords" : False }).needmeanings)
         
         def testFormatMeaningsOptions(self):
-            self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "lines" }).formatmeanings([u"a", u"b"]),
+            self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "lines", "colormeaningnumbers" : False }).formatmeanings([u"a", u"b"]),
                               u"(1) a<br />(2) b")
-            self.assertEquals(Config({ "meaningnumbering" : "circledChinese", "meaningseperator" : "commas" }).formatmeanings([u"a", u"b"]),
+            self.assertEquals(Config({ "meaningnumbering" : "circledChinese", "meaningseperator" : "commas", "colormeaningnumbers" : False }).formatmeanings([u"a", u"b"]),
                               u"㊀ a, ㊁ b")
-            self.assertEquals(Config({ "meaningnumbering" : "circledArabic", "meaningseperator" : "custom", "custommeaningseperator" : " | " }).formatmeanings([u"a", u"b"]),
+            self.assertEquals(Config({ "meaningnumbering" : "circledArabic", "meaningseperator" : "custom", "custommeaningseperator" : " | ", "colormeaningnumbers" : False }).formatmeanings([u"a", u"b"]),
                               u"① a | ② b")
-            self.assertEquals(Config({ "meaningnumbering" : "none", "meaningseperator" : "custom", "custommeaningseperator" : " ^_^ " }).formatmeanings([u"a", u"b"]),
+            self.assertEquals(Config({ "meaningnumbering" : "none", "meaningseperator" : "custom", "custommeaningseperator" : " ^_^ ", "colormeaningnumbers" : False }).formatmeanings([u"a", u"b"]),
                               u"a ^_^ b")
+            self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "lines", "colormeaningnumbers" : True, "meaningnumberingcolor" : "#aabbcc" }).formatmeanings([u"a", u"b"]),
+                            u'<span style="color:#aabbcc">(1)</span> a<br /><span style="color:#aabbcc">(2)</span> b')
         
         def testFormatMeaningsSingleMeaning(self):
             self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "lines" }).formatmeanings([u"a"]), u"a")
         
         def testFormatTooManyMeanings(self):
-            self.assertEquals(Config({ "meaningnumbering" : "circledChinese", "meaningseperator" : "commas" }).formatmeanings([str(n) for n in range(1, 22)]),
+            self.assertEquals(Config({ "meaningnumbering" : "circledChinese", "meaningseperator" : "commas", "colormeaningnumbers" : False }).formatmeanings([str(n) for n in range(1, 22)]),
                               u"㊀ 1, ㊁ 2, ㊂ 3, ㊃ 4, ㊄ 5, ㊅ 6, ㊆ 7, ㊇ 8, ㊈ 9, ㊉ 10, ⑪ 11, ⑫ 12, ⑬ 13, ⑭ 14, ⑮ 15, ⑯ 16, ⑰ 17, ⑱ 18, ⑲ 19, ⑳ 20, (21) 21")
+    
+        def testShouldUseGoogleTranslateDontUse(self):
+            self.assertFalse(Config({ "fallbackongoogletranslate" : False }).shouldusegoogletranslate)
+            
+        def testShouldUseGoogleTranslateShouldUse(self):
+            self.assertTrue(Config({ "fallbackongoogletranslate" : True }).shouldusegoogletranslate)
     
     unittest.main()
