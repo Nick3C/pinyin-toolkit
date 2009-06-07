@@ -11,6 +11,24 @@ class Word(object):
     def __init__(self, token):
         self.token = token
     
+    def __eq__(self, other):
+        if other is None:
+            return False
+        
+        return self.token == other.token
+    
+    def __ne__(self, other):
+        return not(self == other)
+    
+    def __repr__(self):
+        return u"Word(%s)" % repr(self.token)
+    
+    def __str__(self):
+        return unicode(self)
+    
+    def __unicode__(self):
+        return u"<%s>" % unicode(self.token)
+    
     def accept(self, visitor):
         return visitor.visitWord(self)
     
@@ -392,6 +410,17 @@ if __name__ == "__main__":
         def testEndsWith(self):
             self.assertTrue(Word(Text(u"hello")).endswith(u"lo"))
             self.assertFalse(Word(Text(u"hello")).endswith(u"ol"))
+        
+        def testEquality(self):
+            self.assertEquals(Word(Text(u"hello")), Word(Text(u"hello")))
+            self.assertNotEquals(Word(Text(u"hello")), Word(Text(u"hallo")))
+        
+        def testRepr(self):
+            self.assertEquals(repr(Word(Text(u"hello"))), 'Word(Text(u"hello"))')
+        
+        def testStr(self):
+            self.assertEquals(str(Word(Text(u"hello"))), u"<hello>")
+            self.assertEquals(unicode(Word(Text(u"hello"))), u"<hello>")
     
     class TonedCharacterTest(unittest.TestCase):
         def testIsEr(self):

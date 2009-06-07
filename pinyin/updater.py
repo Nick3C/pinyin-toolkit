@@ -87,6 +87,10 @@ class FieldUpdater(object):
             # We didn't get any meanings, don't update the field
             return None
         
+        if self.config.hanzimasking:
+            # Hanzi masking is on: scan through the meanings and remove the expression itself
+            dictmeanings = [transformations.maskhanzi(expression, self.config.hanzimaskingcharacter, dictmeaning) for dictmeaning in dictmeanings]
+
         # Prepare all the meanings by flattening them and removing empty entries
         meanings = [meaning for meaning in [self.preparetokens(dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
         
@@ -94,10 +98,6 @@ class FieldUpdater(object):
             # After flattening and stripping, we didn't get any meanings: don't update the field
             return None
         
-        if self.config.hanzimasking:
-            # Hanzi masking is on: scan through the meanings and remove the expression itself
-            meanings = [meaning.replace(expression, self.config.hanzimaskingcharacter) for meaning in meanings]
-
         # Use the configuration to insert numbering etc
         return self.config.formatmeanings(meanings)
     
@@ -271,13 +271,12 @@ if __name__ == "__main__":
                       })
 
         def testMeaningHanziMasking(self):
-            # TODO: maybe we should mask the tone information too?
             self.assertEquals(
                 self.updatefact(u"书", { "meaning" : "" },
                     colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
                     tonedisplay = "tonified", meaningnumbering = "circledArabic", colormeaningnumbers = False, meaningseperator = "custom", custommeaningseperator = " | ", prefersimptrad = "simp",
                     audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = True, hanzimaskingcharacter = "MASKED"), {
-                        "meaning" : u'① book | ② letter | ③ same as <span style="color:#ff0000">MASKED</span><span style="color:#ff0000">\u7ecf</span> Book of History | ④ MW: 本 - <span style="color:#00aa00">běn</span>, 册 - <span style="color:#0000ff">cè</span>, 部 - <span style="color:#0000ff">bù</span>, 丛 - <span style="color:#ffaa00">cóng</span>',
+                        "meaning" : u'① book | ② letter | ③ same as MASKED<span style="color:#ff0000">\u7ecf</span> Book of History | ④ MW: 本 - <span style="color:#00aa00">běn</span>, 册 - <span style="color:#0000ff">cè</span>, 部 - <span style="color:#0000ff">bù</span>, 丛 - <span style="color:#ffaa00">cóng</span>',
                       })
 
         def testUpdateReadingOnly(self):
