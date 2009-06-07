@@ -209,7 +209,7 @@ def heador(list, orelse):
         return list[0]
 
 """
-Returns the left dictionary updated by the right one.
+Returns the left dictionary or set updated by the right one.
 """
 def updated(leftdict, rightdict):
     leftdict.update(rightdict)

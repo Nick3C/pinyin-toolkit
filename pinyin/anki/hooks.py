@@ -88,7 +88,7 @@ class ColorShortcutKeysHook(Hook):
         import ankiqt.ui.facteditor
         
         log.info("Installing color shortcut keys hook")
-        wrap(ankiqt.ui.facteditor.FactEditor.setupFields, self.setupShortcuts, "after")
+        ankiqt.ui.facteditor.FactEditor.setupFields = wrap(ankiqt.ui.facteditor.FactEditor.setupFields, self.setupShortcuts, "after")
         self.setupShortcuts(self.mw.editor)
 
 class MenuHook(Hook):
