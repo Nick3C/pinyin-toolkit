@@ -33,6 +33,10 @@ def generatelinks(expression):
                             #
                     }
     """
+    Change MDBG submit to match:
+    http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=1&insertsimpleentry_old_cedict=語言障礙+语言障碍+[yu3+yan2+zhang4+ai4]+/speech+defect/
+    
+    
     Consider:
     Chinese wikipedia
     
@@ -237,7 +241,8 @@ class FieldUpdater(object):
                 'links'     : (self.config.generateweblinks,  lambda: generatelinks(expression))
             }
         
-        fact['links'] = u""    # blank links before we try to replace data (it should be over-written in all circumstances)
+        if ('links' in fact):
+                fact['links'] = u""    # blank links before we try to replace data (it should be over-written in all circumstances)
 
         for key, (enabled, updater) in updaters.items():
             # Skip updating if no suitable field, we are disabled, or the field has text
