@@ -11,7 +11,7 @@ def openFolder(path):
     import subprocess
     
     if sys.platform == "win32":
-        subprocess.Popen("explorer", path.encode(sys.getfilesystemencoding()))
+        subprocess.Popen(["explorer", path.encode(sys.getfilesystemencoding())])
     else:
         QDesktopServices.openUrl(QUrl("file://" + path))
 
