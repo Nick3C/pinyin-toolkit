@@ -31,26 +31,62 @@ import pinyin.statistics
 
 
 class HanziGraphHook(hooks.Hook):
+    # TODO: these colors can be indistinct: change them to different shades?
+    gradeColors = {
+        u'HSK Basic'        : u'#110000',
+        u'HSK Elementary'   : u'#330000',
+        u'HSK Intermediate' : u'#550000',
+        u'HSK Advanced'     : u'#990000',
+        u'Non-HSK'          : u'#FF0000'
+      }
+    
     # Returns the Hanzi Figure object for the plot
     def calculateHanziData(self, graphwindow, hanzidata, days=30):
         log.info("Calculating %d days worth of Hanzi graph data", days)
         
         # Use the statistics engine to generate the data for graphing
-        x, y, gradeys = pinyin.statistics.hanziDailyStats(hanzidata, days)
-        # TODO: use gradeys
+        xs, _totaly, gradeys = pinyin.statistics.hanziDailyStats(hanzidata, days)
         
-        # Setup the graph we will fill with the information
+        # Set up the figure into which we will add all our graphs
         figure = Figure(figsize=(graphwindow.dg.width, graphwindow.dg.height), dpi=graphwindow.dg.dpi)
+        self.addLegend(figure)
+        self.addGraph(figure, graphwindow, days, xs, gradeys)
+        
+        return figure
+
+    def addLegend(self, figure):
+        # Create the legend graph
+        cheat = figure.add_subplot(111)
+        bars, labels = [], []
+        for n, (grade, gradeColor) in enumerate(self.gradeColors.items()):
+            bars.append(cheat.bar(-3 - n, 0, color = gradeColor))
+            labels.append(grade)
+        
+        # Add legend to the plot window
+        cheat.legend(bars, labels, loc='upper left')
+    
+    def addGraph(self, figure, graphwindow, days, xs, gradeys):
+        # Create the graph we will fill with the cumulative total information
         graph = figure.add_subplot(111)
         graph.set_xlim(xmin=-days, xmax=0)
-        
+
+        # Build all the x-y pairs that we are going to display: we want to show
+        # a stacked area graph of the number of characters from each grade learnt over time
+        colors, xys = [], []
+        cumulative = [0 for _ in xs]
+        for grade in pinyin.statistics.hanziGrades:
+            # Increase the cumulative amount
+            cumulative = [sofar + now for sofar, now in zip(cumulative, gradeys[grade])]
+            colors.append(self.gradeColors[grade])
+            xys.append((xs, cumulative))
+
         # Set the minimum y value to be the smallest number of characters
         # in the range. Otherwise, if the number of hanzi you know didn't go
         # up too much in the given range, you'll get pretty much a rectangle
         # of a graph, which is not very useful
-        if len(y) > 1:
-            lastcount = y[len(y) - 1]
-            firstcount = y[0]
+        if len(xs) > 0:
+            firstcount = max([ys[0] for xs, ys in xys])
+            lastcount = max([ys[len(ys) - 1] for xs, ys in xys])
             
             # NB: add one to the ymax or else the graph stuff may throws a wobbly
             # because the ymin and ymax are too close together if there hasn't been
@@ -58,10 +94,10 @@ class HanziGraphHook(hooks.Hook):
             padding = (lastcount - firstcount) / 10
             graph.set_ylim(ymin=max(0, firstcount - padding), ymax=lastcount + padding + 1)
 
-        # Add the final graph to the window
-        graphwindow.dg.filledGraph(graph, days, "#fdce51", x, y)
-        
-        return figure
+        # Add the final cumulative graph to the window.
+        # NB: *reverse* lists to be displayed to get z-ordering correct
+        flatxys = sum([[xs, ys] for xs, ys in xys[::-1]], [])
+        graphwindow.dg.filledGraph(graph, days, colors[::-1], *flatxys)
 
     def prepareHanziData(self):
         log.info("Retrieving Hanzi graph data")
