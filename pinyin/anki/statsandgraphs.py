@@ -117,14 +117,27 @@ class HanziGraphHook(hooks.Hook):
         
         # Retrieve information about the card contents that were first answered on each day
         return self.mw.deck.s.all("""
-        select value, firstAnswered from cards, fields, facts
+        select value, firstAnswered from cards, fields, fieldModels, facts
         where
         cards.reps > 0 and
         cards.factId = fields.factId
         and cards.factId = facts.id
         and facts.modelId in %s
+        and fields.fieldModelId = fieldModels.id
+        and fieldModels.name in %s
         order by firstAnswered
-        """ % anki.utils.ids2str(mids))
+        """ % (anki.utils.ids2str(mids), self.toSqlLiteral(self.config.candidateFieldNamesByKey['expression'])))
+
+    def toSqlLiteral(self, thing):
+        if isinstance(thing, list):
+            return "(" + ",".join([self.toSqlLiteral(item) for item in thing]) + ")"
+        elif isinstance(thing, basestring):
+            # TODO: SQL escape??
+            return u'"%s"' % thing
+        elif isinstance(thing, int) or isinstance(thing, long):
+            return unicode(thing)
+        else:
+            raise ValueError("Unsupported thing %s in SQL call", thing)
 
     def setupHanziGraph(self, graphwindow):
         log.info("Beginning setup of Hanzi graph on the graph window")
@@ -137,7 +150,7 @@ class HanziGraphHook(hooks.Hook):
         
         # Append our own graph at the end
         extragraph = AdjustableFigure(graphwindow.parent, 'hanzi', lambda days: self.calculateHanziData(graphwindow, hanzidata, days), graphwindow.range)
-        extragraph.addWidget(QtGui.QLabel("<h1>Unique Hanzi (Cumulative, by HSK Level)</h1>"))
+        extragraph.addWidget(QtGui.QLabel("<h1>Unique Hanzi (Cumulative, By HSK Level)</h1>"))
         graphwindow.vbox.addWidget(extragraph)
         graphwindow.widgets.append(extragraph)
     
