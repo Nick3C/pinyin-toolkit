@@ -32,23 +32,11 @@ import pinyin.statistics
 
 class HanziGraphHook(hooks.Hook):
     # Returns the Hanzi Figure object for the plot
-    def hanziData(self, graphwindow, days=30):
-        log.info("Retrieving %d days worth of Hanzi graph data", days)
-        
-        # Retrieve information about the card contents that were first answered on each day
-        mids = self.mw.deck.s.column0('select id from models where tags like "%s"' % self.config.modelTag)
-        rows = self.mw.deck.s.all("""
-        select value, firstAnswered from cards, fields, facts
-        where
-        cards.reps > 0 and
-        cards.factId = fields.factId
-        and cards.factId = facts.id
-        and facts.modelId in %s
-        order by firstAnswered
-        """ % anki.utils.ids2str(mids))
+    def calculateHanziData(self, graphwindow, hanzidata, days=30):
+        log.info("Calculating %d days worth of Hanzi graph data", days)
         
         # Use the statistics engine to generate the data for graphing
-        x, y, gradeys = pinyin.statistics.hanziDailyStats(rows, days)
+        x, y, gradeys = pinyin.statistics.hanziDailyStats(hanzidata, days)
         # TODO: use gradeys
         
         # Setup the graph we will fill with the information
@@ -75,13 +63,36 @@ class HanziGraphHook(hooks.Hook):
         
         return figure
 
+    def prepareHanziData(self):
+        log.info("Retrieving Hanzi graph data")
+        
+        # Find models in this deck with the correct tag
+        mids = self.mw.deck.s.column0('select id from models where tags like "%s"' % self.config.modelTag)
+        if len(mids) == 0:
+            return None
+        
+        # Retrieve information about the card contents that were first answered on each day
+        return self.mw.deck.s.all("""
+        select value, firstAnswered from cards, fields, facts
+        where
+        cards.reps > 0 and
+        cards.factId = fields.factId
+        and cards.factId = facts.id
+        and facts.modelId in %s
+        order by firstAnswered
+        """ % anki.utils.ids2str(mids))
+
     def setupHanziGraph(self, graphwindow):
         log.info("Beginning setup of Hanzi graph on the graph window")
         
-        # TODO: don't do this if the deck doesn't have a Mandarin tag
+        # Preload data
+        hanzidata = self.prepareHanziData()
+        if hanzidata is None:
+            # Don't add a graph if the deck doesn't have a Mandarin tag
+            return
         
         # Append our own graph at the end
-        extragraph = AdjustableFigure(graphwindow.parent, 'hanzi', lambda days: self.hanziData(graphwindow, days), graphwindow.range)
+        extragraph = AdjustableFigure(graphwindow.parent, 'hanzi', lambda days: self.calculateHanziData(graphwindow, hanzidata, days), graphwindow.range)
         extragraph.addWidget(QtGui.QLabel("<h1>Cumulative Unique Hanzi Learned</h1>"))
         graphwindow.vbox.addWidget(extragraph)
         graphwindow.widgets.append(extragraph)
