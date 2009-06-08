@@ -121,14 +121,14 @@ if __name__ == "__main__":
         
         def testComplex(self):
             self.assertEquals(self.stats([
-                (u"的是", -1),
+                (u"的是斯", -1),
                 (u"轴", 0),
                 (u'暇TSHIRT', -3),
                 (u'失斯', -1),
                 (u'格捂Western Characters', -5),
                 (u'', -3),
                 (u'撞冒', -6),
-                (u'迅', -10),
+                (u'迅迅迅迅迅', -10),
                 (u'扛', -2)
               ], 5), [
                 (-4, [5, 1, 3, 0, 0, 1]),

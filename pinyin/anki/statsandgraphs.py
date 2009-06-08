@@ -32,20 +32,22 @@ import pinyin.statistics
 
 class HanziGraphHook(hooks.Hook):
     # TODO: these colors can be indistinct: change them to different shades?
-    gradeColors = {
-        u'HSK Basic'        : u'#110000',
-        u'HSK Elementary'   : u'#330000',
-        u'HSK Intermediate' : u'#550000',
-        u'HSK Advanced'     : u'#990000',
-        u'Non-HSK'          : u'#FF0000'
+    gradeColorsShortNames = {
+        u'HSK Basic'        : (u'#110000', "Basic"),
+        u'HSK Elementary'   : (u'#330000', "Element."),
+        u'HSK Intermediate' : (u'#550000', "Intermed."),
+        u'HSK Advanced'     : (u'#990000', "Advanced"),
+        u'Non-HSK'          : (u'#FF0000', "Non-HSK")
       }
     
     # Returns the Hanzi Figure object for the plot
-    def calculateHanziData(self, graphwindow, hanzidata, days=30):
+    def calculateHanziData(self, graphwindow, hanzidata, days):
         log.info("Calculating %d days worth of Hanzi graph data", days)
         
-        # Use the statistics engine to generate the data for graphing
-        xs, _totaly, gradeys = pinyin.statistics.hanziDailyStats(hanzidata, days)
+        # Use the statistics engine to generate the data for graphing.
+        # NB: should add one to the number of days because we want to
+        # return e.g. 8 days of data for a 7 day plot (the extra day is "today").
+        xs, _totaly, gradeys = pinyin.statistics.hanziDailyStats(hanzidata, days + 1)
         
         # Set up the figure into which we will add all our graphs
         figure = Figure(figsize=(graphwindow.dg.width, graphwindow.dg.height), dpi=graphwindow.dg.dpi)
@@ -58,9 +60,10 @@ class HanziGraphHook(hooks.Hook):
         # Create the legend graph
         cheat = figure.add_subplot(111)
         bars, labels = [], []
-        for n, (grade, gradeColor) in enumerate(self.gradeColors.items()):
+        for n, grade in enumerate(pinyin.statistics.hanziGrades):
+            gradeColor, gradeShortName = self.gradeColorsShortNames[grade]
             bars.append(cheat.bar(-3 - n, 0, color = gradeColor))
-            labels.append(grade)
+            labels.append(gradeShortName)
         
         # Add legend to the plot window
         cheat.legend(bars, labels, loc='upper left')
@@ -76,7 +79,7 @@ class HanziGraphHook(hooks.Hook):
         for grade in pinyin.statistics.hanziGrades:
             # Increase the cumulative amount
             cumulative = [sofar + now for sofar, now in zip(cumulative, gradeys[grade])]
-            colors.append(self.gradeColors[grade])
+            colors.append(self.gradeColorsShortNames[grade][0])
             xys.append((xs, cumulative))
 
         # Add the final cumulative graph to the window.
@@ -134,7 +137,7 @@ class HanziGraphHook(hooks.Hook):
         
         # Append our own graph at the end
         extragraph = AdjustableFigure(graphwindow.parent, 'hanzi', lambda days: self.calculateHanziData(graphwindow, hanzidata, days), graphwindow.range)
-        extragraph.addWidget(QtGui.QLabel("<h1>Cumulative Unique Hanzi Learned</h1>"))
+        extragraph.addWidget(QtGui.QLabel("<h1>Unique Hanzi (Cumulative, by HSK Level)</h1>"))
         graphwindow.vbox.addWidget(extragraph)
         graphwindow.widgets.append(extragraph)
     
