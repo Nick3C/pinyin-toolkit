@@ -8,6 +8,84 @@ from pinyin import *
 from utils import *
 
 
+# Convenience wrapper around the ToneSandhiVisitor
+def tonesandhi(token):
+    ismono, doer = token.accept(ToneSandhiVisitor())
+    return doer(False, ismono, True, False)
+
+"""
+Applies tone sandhi. Nick thinks the rules are as follows:
+* simple rule: a mono-syllabic word loses it's third tone if followed by another mono-syllabic word
+* a monosyllabic word in front of a multi-syllabic word keeps its third tone, the multi-syllabic word changes to 2^x,3
+* monosyllabic word after a multi-syllabic word keeps its third tone but the multi-syllabic words lose all of their third tones
+* multisylabic words not followed by monosyllabic words convert all third tones except the last into second tones.
+
+See also: <http://en.wikipedia.org/wiki/Standard_Mandarin#Tone_sandhi>. This disagrees with those rules:
+* "If the first word is two syllables, and the second word is one syllable, the first two syllables become 2nd tones,
+   and the last syllable stays 3rd tone"
+  - So ALL of a multisyllabic word should be 3rd tone if it is followed by a monosyllabic one
+"""
+class ToneSandhiVisitor(TokenVisitor):
+    # Each visit method returns a pair of a marker saying whether this particular token
+    # could (if enclosed in a Word) be monosyllabic, and a function which when given
+    # various information about the syllabic context in which it sits returns new tokens.
+    #
+    # For those familiar with it, I'm basically making use of lazy functional programming
+    # with recursive value definitions (albeit it in a rather clunky format!)
+    
+    def visitText(self, text):
+        return False, lambda _a, _b, _c, _d: text
+
+    def visitPinyin(self, pinyin):
+        return self.visitToned(pinyin, lambda tone: Pinyin(pinyin.word + str(tone)))
+
+    def visitTonedCharacter(self, tonedcharacter):
+        return self.visitToned(tonedcharacter, lambda tone: TonedCharacter(unicode(tonedcharacter), tone))
+
+    def visitToned(self, toned, rebuild):
+        def do(monobefore, ismono, islastinword, monoafter):
+            if toned.tone != 3:
+                # Don't modify non-3rd tone things
+                return toned
+            
+            # When do we lose tones?
+            print toned, monobefore, ismono, islastinword, monoafter
+            shouldusethirdtone = [
+                ismono and monoafter,                                   # Mono loses tone if followed by mono
+                (not ismono) and (not islastinword) and monobefore,     # Multi loses tone in non-last positions if following mono
+                (not ismono) and monoafter,                             # Multi loses tone is all positions if followed by mono
+                (not ismono) and (not islastinword) and (not monoafter) # Multi loses tone in non-last positions if not followed by mono
+              ]
+            
+            if any(shouldusethirdtone):
+                return rebuild(2)
+            else:
+                return toned
+        
+        return True, do
+
+    def visitWord(self, word):
+        ismono, doer = word.token.accept(self)
+        return ismono, lambda monobefore, _, islastinword, monoafter: doer(monobefore, ismono, True, monoafter)
+
+    def visitTokenList(self, tokens):
+        ismonos = []
+        doers = []
+        for token in tokens:
+            ismono, doer = token.accept(self)
+            ismonos.append(ismono)
+            doers.append(doer)
+        
+        def do(monobefore, ismono, islastinword, monoafter):
+            newtokens = TokenList()
+            for n, doer in enumerate(doers):
+                newtokens.append(doer(n >= 1 and ismono and ismonos[n - 1], ismono, islastinword and n == len(doers) - 1, n < len(doers) - 1 and ismono and ismonos[n + 1]))
+            
+            return newtokens
+        
+        return (len(ismonos) == 1) and ismonos[0], do
+
+
 # Convenience wrapper around the TrimErhuaVisitor
 def trimerhua(token):
     prefix, candidateer = token.accept(TrimErhuaVisitor())
@@ -355,6 +433,21 @@ if __name__=='__main__':
             else:
                 pack = MediaPack("Test", dict([(filename, filename) for filename in raw_available_media]))
                 return pack, [pack]
+    
+    class ToneSandhiTest(unittest.TestCase):
+        def testSimple(self):
+            self.assertSandhi(Pinyin("hen3"), Pinyin("hao3"), "hen2hao3")
+            self.assertSandhi(Word(Pinyin("hen3")), Word(Pinyin("hao3")), "hen2hao3")
+        
+        def testMultiMono(self):
+            self.assertSandhi(Word(TokenList([Pinyin("bao3"), Pinyin("guan3")])), Word(Pinyin("hao3")), "bao2guan2hao3")
+        
+        def testMonoMulti(self):
+            self.assertSandhi(Word(Pinyin("lao3")), Word(TokenList([Pinyin("bao3"), Pinyin("guan3")])), "lao3bao2guan3")
+        
+        # Test helpers
+        def assertSandhi(self, *args):
+            self.assertEquals(flatten(tonesandhi(TokenList(args[:-1]))), args[-1])
     
     class TrimErhuaTest(unittest.TestCase):
         def testTrimErhuaEmpty(self):
