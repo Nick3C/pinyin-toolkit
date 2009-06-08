@@ -31,13 +31,13 @@ import pinyin.statistics
 
 
 class HanziGraphHook(hooks.Hook):
-    # TODO: these colors can be indistinct: change them to different shades?
+    # Color Gradient for HSK score: http://gotomy.com/color.html to find a smooth gradient
     gradeColorsShortNames = {
-        u'HSK Basic'        : (u'#110000', "Basic"),
-        u'HSK Elementary'   : (u'#330000', "Element."),
-        u'HSK Intermediate' : (u'#550000', "Intermed."),
-        u'HSK Advanced'     : (u'#990000', "Advanced"),
-        u'Non-HSK'          : (u'#FF0000', "Non-HSK")
+        u'HSK Basic'        : (u'#FF0033', "Basic"),
+        u'HSK Elementary'   : (u'#CC0066', "Element."),
+        u'HSK Intermediate' : (u'#990099', "Intermed."),
+        u'HSK Advanced'     : ('#6600CC', "Advanced"),
+        u'Non-HSK'          : (u'#3300FF', "Non-HSK")
       }
     
     # Returns the Hanzi Figure object for the plot
