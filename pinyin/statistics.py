@@ -93,7 +93,7 @@ def hanziDailyStats(firstAnsweredValues, daysInRange):
             cumulativeByGrades[grade] = cumulativeByGrades.get(grade, 0) + 1
         
         # We're done with the day. Add output to the graph if we are interested
-        if day >= -daysInRange:
+        if day > -daysInRange:
             # X axis
             days.append(day)
             
@@ -102,7 +102,8 @@ def hanziDailyStats(firstAnsweredValues, daysInRange):
             
             # Other Y axes (one per grade)
             for grade in hanziGrades:
-                cumulativesByGrades.get(grade, []).append(cumulativeByGrades.get(grade, 0))
+                cumulativesByGrades[grade] = cumulativeByGrade = cumulativesByGrades.get(grade, [])
+                cumulativeByGrade.append(cumulativeByGrades.get(grade, 0))
     
     return days, cumulativeTotals, cumulativesByGrades
 
@@ -111,12 +112,41 @@ if __name__ == "__main__":
     
     class HanziDailyStatsTest(unittest.TestCase):
         def testNoDays(self):
-            self.assertEquals(self.stats([(u"TODO", 1)], 2), "")
+            self.assertEquals(self.stats([], 0), [])
+        
+        def testSingleDay(self):
+            self.assertEquals(self.stats([(u"的", 0)], 1), [
+                (0, [1, 0, 1, 0, 0, 0])
+              ])
+        
+        def testComplex(self):
+            self.assertEquals(self.stats([
+                (u"的是", -1),
+                (u"轴", 0),
+                (u'暇TSHIRT', -3),
+                (u'失斯', -1),
+                (u'格捂Western Characters', -5),
+                (u'', -3),
+                (u'撞冒', -6),
+                (u'迅', -10),
+                (u'扛', -2)
+              ], 5), [
+                (-4, [5, 1, 1, 3, 0, 0]),
+                (-3, [6, 2, 1, 3, 0, 0]),
+                (-2, [7, 2, 1, 4, 0, 0]),
+                (-1, [11, 2, 3, 5, 1, 0]),
+                (0, [12, 3, 3, 5, 1, 0])
+              ])
             
         def stats(self, firstAnsweredValuesByDay, daysInRange):
-            firstAnsweredValues = [(value, 100 + time.time() - (firstAnsweredDay * 86400.0)) for value, firstAnsweredDay in firstAnsweredValuesByDay]
+            # Turn the day based time in the test into a seconds based one relative to the present
+            firstAnsweredValues = [(value, (time.time() - 100) + (firstAnsweredDay * 86400.0)) for value, firstAnsweredDay in firstAnsweredValuesByDay]
             
+            # Actually do the test
             days, cumulativeTotals, cumulativesByGrades = hanziDailyStats(firstAnsweredValues, daysInRange)
-            return zip(days, [utils.updated({ "Total" : cumulativeTotal }, cumulativeByGrades) for cumulativeTotal, cumulativeByGrades in zip(cumulativeTotals, cumulativesByGrades) ])
+            
+            # Munge the result into a format more amenable to assertion: a list of (day, grade) pairs, where the grades
+            # are presented in a list: total first, then by grade.
+            return [(day, [cumulativeTotals[n]] + [cumulativesByGrades[grade][n] for grade in hanziGrades]) for n, day in enumerate(days)]
     
     unittest.main()
