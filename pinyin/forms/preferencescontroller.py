@@ -39,6 +39,7 @@ class PreferencesController(object):
         # Set up the controls - one time only
         self.mappings = []
         self.setUpText()
+        self.setUpColors()
         self.setUpAudio()
 
         # Use the mappings to reflect the initial setting values into the controls and preview pane
@@ -256,9 +257,11 @@ class RadioMapping(Mapping):
         Mapping.__init__(self, model, key)
         self.radiobuttonswithvalues = radiobuttonswithvalues
         
-        buttongroup = QButtonGroup(self)
+        buttongroup = None
         for radiobutton, correspondingvalue in self.radiobuttonswithvalues.items():
             # Tiresome extra setup to ensure that exactly one button is ever checked
+            if buttongroup is None:
+                buttongroup = QButtonGroup(radiobutton.parent())
             buttongroup.addButton(radiobutton)
             
             # NB: default-argument indirection below to solve closure capture issues

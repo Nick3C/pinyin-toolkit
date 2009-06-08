@@ -7,6 +7,7 @@ import meanings
 import mocks
 import numbers
 import pinyin
+import statistics
 import transformations
 import utils
 import weakcache
