@@ -196,7 +196,7 @@ Visitor for all token objects.
 """
 class TokenVisitor(object):
     def visitText(self, text):
-        raise NotImplementedError("Got an unexpected text-like object %s", pinyin)
+        raise NotImplementedError("Got an unexpected text-like object %s", text)
 
     def visitPinyin(self, pinyin):
         raise NotImplementedError("Got an unexpected Pinyin object %s", pinyin)
