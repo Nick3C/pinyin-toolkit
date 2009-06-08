@@ -1,3 +1,6 @@
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Jekyll output
+_site/

@@ -1,7 +1,9 @@
+---
+---
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
   <head>
-    <title>Pinyin Toolkit - an Anki plugin for Chinese learners</title>
-    <link rel="stylesheet" type="text/css" href="styles/main.css" />
+    {% include header.html %}
   </head>
   <body>
     <div id="header">
@@ -9,96 +11,44 @@
     </div>
     
     <div id="content">
+      {% include linksheader.html %}
+      
       <img src="images/screenshots/overview.jpg" align="center" />
     
-      <div class="columns">
-        <div class="textcolumn">
-          <p class="pitch">
-            The Pinyin Toolkit is a plugin for the <a href="http://ichi2.net/anki/">Anki</a>
-            <a href="http://en.wikipedia.org/wiki/Spaced_repetition">spaced repetition system</a>, which adds
-            a ton of features useful to learners of Mandarin Chinese.
-          </p>
-    
-          <div class="feature">
-            <!-- A small screenshot showing the user what to expect -->
-            <img class="miniscreen" src="images/screenshots/colorisation.jpg" />
-            <!-- The high-level pitch: not too much detail, make them read the text for that -->
-            <h3>Make use of your visual memory</h3>
-            <!-- Only now explain what it's actually about -->
-            <p>
-              The Pinyin Toolkit can colorise LOREM IPSUM.
-            </p>
-          </div>
-        
-          <div class="feature">
-            <img class="miniscreen odd" src="images/screenshots/meanings.jpg" />
-            <h3>Definitions at your fingertips</h3>
-            <p>
-              The Pinyin Toolkit uses its extensive dictionary.
-            </p>
-          </div>
+      <p class="pitch">
+        The Pinyin Toolkit is a plugin for the <a href="http://ichi2.net/anki/">Anki</a>
+        <a href="http://en.wikipedia.org/wiki/Spaced_repetition">spaced repetition system</a>, which adds
+        a ton of features useful to learners of Mandarin Chinese.
+      </p>
 
-          <div class="feature">
-            <img class="miniscreen" src="images/screenshots/languages.jpg" />
-            <h3>Learn in any language of the world</h3>
-            <p>
-              German, French, Gogole Translate, LOREM IPSUM.
-            </p>
-          </div>
-        </div>
+      <div class="feature">
+        <!-- A small screenshot showing the user what to expect -->
+        <img class="miniscreen" src="images/screenshots/colorisation.jpg" />
+        <!-- The high-level pitch: not too much detail, make them read the text for that -->
+        <h3>Make use of your visual memory</h3>
+        <!-- Only now explain what it's actually about -->
+        <p>
+          The Pinyin Toolkit can colorise LOREM IPSUM.
+        </p>
+      </div>
     
-        <div class="linkscolumn">
-          <div class="linkentry">
-            <a href="getit.html">Get it!</a>
-          </div>
-          <br />
-          <div class="linkentry">
-            <a href="http://github.com/batterseapower/pinyin-toolkit/issues/">Report a bug</a>
-          </div>
-          <br />
-          <div class="linkentry">
-            <a href="http://groups.google.com/group/ankisrs/topics?pli=1">Discuss</a>
-          </div>
-          <br />
-          <div class="linkentry">
-            <a href="http://github.com/batterseapower/pinyin-toolkit">Get the source code</a>
-          </div>
-          <br />
-          <div class="linkentry">
-            <p>Email us at:</p>
-            <img src="images/address.png" />
-          </div>
-        </div>
+      <div class="feature">
+        <img class="miniscreen odd" src="images/screenshots/meanings.jpg" />
+        <h3>Definitions at your fingertips</h3>
+        <p>
+          The Pinyin Toolkit uses its extensive dictionary.
+        </p>
+      </div>
+
+      <div class="feature">
+        <img class="miniscreen" src="images/screenshots/languages.jpg" />
+        <h3>Learn in any language of the world</h3>
+        <p>
+          German, French, Gogole Translate, LOREM IPSUM.
+        </p>
       </div>
       
-      <div class="footer">
-        <p>
-          The authors of the Pinyin Toolkit are <a href="http://www.n-line.co.uk/">Nick Cook</a> and
-          <a href="http://blog.omega-prime.co.uk">Max Bolingbroke</a>.
-        </p>
-        
-        <p>
-          The project is open source and licensed under the <a href="http://www.gnu.org/licenses/gpl-3.0.html">GPLv3</a>.
-        </p>  
-          
-        <p>
-          Site design based on the <a href="http://getfirebug.com/">Firebug</a> website.
-        </p>
-        
-        <div id="legal">
-          <p>
-            <!-- Attribute author of source image <http://www.flickr.com/photos/27117418@N07/2795121881/sizes/o/> -->
-            The picture of Chinese calligraphy our banner is based on has been released under a
-            <a href="http://creativecommons.org/licenses/by-nc/2.0/">Creative Commons license</a> by
-            the author, <a href="http://www.flickr.com/photos/27117418@N07/">hto2008</a>.
-          </p>
-          
-          <p>
-            <!-- See http://www.google.com/permissions/guidelines.html -->
-            Google is a registered trademark of Google Inc.
-          </p>
-        </div>
-      </div>
+      {% include footer.html %}
     </div>
   </body>
 </html>

@@ -39,7 +39,7 @@ a:hover {
     text-decoration:underline;
 }
 
-img {
+img {;
     border: medium none;
 }
 
@@ -49,12 +49,23 @@ img[align="center"] {
     margin-right: auto;
 }
 
+/* Set the links header box up to space links vertically */
+table.linksheader {
+    width: 100%;
+}
+
+td {
+    vertical-align: middle;
+    text-align: center;
+}
+
 #content {
-    top: 169px;
+    /* Ensure the content appears below the header */
+    padding-top: 170px;
     
     /* Center the div */
     width: 753px;
-    margin: 180px auto 0 auto;
+    margin: 0 auto 0 auto;
 }
 
 .columns {
@@ -98,6 +109,8 @@ img[align="center"] {
     background-color: #888888;
     float: left;
     margin: 0 20px 10px 0;
+    width: 160px;
+    height: 141px;
 }
 
 .miniscreen.odd {
@@ -109,6 +122,16 @@ img[align="center"] {
 .footer {
     padding: 20px;
     text-align: center;
+}
+
+ol {
+    font-weight: bold;
+    font-size: 2em;
+}
+
+ol p {
+    /* Reset changes made by the ol tag. NB: font-size reset by p style */
+    font-weight: normal;
 }
 
 #legal {
