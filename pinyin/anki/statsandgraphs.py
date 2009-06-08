@@ -116,6 +116,10 @@ class HanziGraphHook(hooks.Hook):
             return None
         
         # Retrieve information about the card contents that were first answered on each day
+        # NB: the KanjiGraph uses information from ANY field (i.e. does not look at the fieldModels.name
+        # value at all). However, Nick was confused by this behaviour because he had some radicals in his
+        # deck, so his graph looked like he had `learnt' thousands of characters based on the listing of
+        # every character in the `examples' fields of his radical facts.
         return self.mw.deck.s.all("""
         select value, firstAnswered from cards, fields, fieldModels, facts
         where
