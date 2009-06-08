@@ -68,8 +68,7 @@ class HanziGraphHook(hooks.Hook):
     def addGraph(self, figure, graphwindow, days, xs, gradeys):
         # Create the graph we will fill with the cumulative total information
         graph = figure.add_subplot(111)
-        graph.set_xlim(xmin=-days, xmax=0)
-
+        
         # Build all the x-y pairs that we are going to display: we want to show
         # a stacked area graph of the number of characters from each grade learnt over time
         colors, xys = [], []
@@ -80,6 +79,16 @@ class HanziGraphHook(hooks.Hook):
             colors.append(self.gradeColors[grade])
             xys.append((xs, cumulative))
 
+        # Add the final cumulative graph to the window.
+        # NB: *reverse* lists to be displayed to get z-ordering correct
+        flatxys = sum([[xs, ys] for xs, ys in xys[::-1]], [])
+        graphwindow.dg.filledGraph(graph, days, colors[::-1], *flatxys)
+        
+        # NB: limits must be set AFTER we do filledGraph, or they aren't picked up.
+        
+        # Set the x values limits so we don't see the future or the far past
+        graph.set_xlim(xmin=-days, xmax=0)
+
         # Set the minimum y value to be the smallest number of characters
         # in the range. Otherwise, if the number of hanzi you know didn't go
         # up too much in the given range, you'll get pretty much a rectangle
@@ -88,16 +97,11 @@ class HanziGraphHook(hooks.Hook):
             firstcount = max([ys[0] for xs, ys in xys])
             lastcount = max([ys[len(ys) - 1] for xs, ys in xys])
             
-            # NB: add one to the ymax or else the graph stuff may throws a wobbly
-            # because the ymin and ymax are too close together if there hasn't been
-            # anything learned recently
-            padding = (lastcount - firstcount) / 10
-            graph.set_ylim(ymin=max(0, firstcount - padding), ymax=lastcount + padding + 1)
-
-        # Add the final cumulative graph to the window.
-        # NB: *reverse* lists to be displayed to get z-ordering correct
-        flatxys = sum([[xs, ys] for xs, ys in xys[::-1]], [])
-        graphwindow.dg.filledGraph(graph, days, colors[::-1], *flatxys)
+            # NB: add 10 to the padding or the graph stuff may throw a wobbly
+            # because the ymin and ymax are too close together (if there hasn't been
+            # anything learned recently).
+            padding = 10 + ((lastcount - firstcount) / 10)
+            graph.set_ylim(ymin=max(0, firstcount - padding), ymax=lastcount + padding)
 
     def prepareHanziData(self):
         log.info("Retrieving Hanzi graph data")
