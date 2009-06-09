@@ -72,21 +72,53 @@
             </a>
         
             <p>
-              Restart Anki. The Pinyin Toolkit is now installed! Now, you can either <a href="#settingup">
-              set up an existing deck</a> for use with the Toolkit or <a href="TODO">download the demo deck
-              (TODO)</a> that has been preconfigured to demonstrate the features of the Toolkit.
+              Restart Anki. The Pinyin Toolkit is now installed! However, we recommend that you take this opportunity to install
+              an audio pack for use with text-to-speech. If you don't want to use this feature, you can skip to the final step.
             </p>
         
             <p>
-              If you wish, you may also configure the Toolkit itself by choosing &quot;Tools&quot; &gt; &quot;Pinyin
-              Toolkit&quot; &gt; &quot;Preferences&quot;.
+              To begin, enter the Toolkit preferences by choosing &quot;Tools&quot; &gt; &quot;Pinyin Toolkit&quot; &gt; &quot;Preferences&quot;.
+            </p>
+        
+            <br style="clear:both" />
+          </li>
+          <li>
+            <a class="colorbox" href="images/installing/preferences-audio.png">
+              <img class="miniscreen odd" src="images/installing/preferences-audio-thumb.png" />
+            </a>
+        
+            <p>
+              To install the audio pack, click &quot;Install Free Mandarin Sounds Pack&quot; on the &quot;Audio&quot; tab of the
+              Pinyin Toolkit preferences. You can also use this opportunity to tweak some of the other settings, should you so wish.
+            </p>
+            
+            <p>
+              The Mandarin Sounds audio pack is a 14MB file, so the download process might take a while. Give it time!
+            </p>
+        
+            <br style="clear:both" />
+          </li>
+          <li>
+            <a class="colorbox" href="images/installing/fill-missing-data.png">
+              <img class="miniscreen odd" src="images/installing/fill-missing-data-thumb.png" />
+            </a>
+            
+            <p>
+              Now, you can either <a href="#settingup">set up an existing deck</a> for use with the Toolkit or
+              <a href="TODO">download the demo deck (TODO)</a> that has been preconfigured to demonstrate the features
+              of the Toolkit.
+            </p>
+            
+            <p>
+              For licensing and download size reasons, the demo deck is distributed without any media. For this reason,
+              we recommend using the &quot;Tools&quot; &gt; &quot;Pinyin Toolkit&quot; &gt; &quot;Fill missing card data&quot;
+              menu option the first time you open the demo deck after installing an audio pack.
             </p>
             
             <p>
               Once you've configured your deck you can start adding facts! Alternatively, you can get the Toolkit
-              to try and add missing information to existing facts using the &quot;Tools&quot; &gt; &quot;Pinyin
-              Toolkit&quot; &gt; &quot;Fill missing card data&quot; option. If you choose this option, it might
-              be wise to keep a backup of your deck around, in case you don't like the results!
+              to try and add missing information to existing facts using the &quot;Fill missing card data&quot; option discussed
+              above. If you choose this option, it might be wise to keep a backup of your deck around, in case you don't like the results!
             </p>
         
             <br style="clear:both" />
@@ -147,7 +179,7 @@
             </a>
             
             <p>
-              The last step is to make sure your deck has the right fields in it.  The Toolkit will attempt to guess
+              The penultimate step is to make sure your deck has the right fields in it.  The Toolkit will attempt to guess
               what a field is intended for by looking at its name, and if it can't find fields with the right names
               then various features won't work as intended.
             </p>
@@ -225,6 +257,30 @@
               It's perfectly OK for you not to add some (or even all!) of these fields to your deck - but the
               Toolkit will be less functional as a result of the omission.
             </p>
+          </li>
+          <li>
+            <a class="colorbox" href="images/installing/card-templates.png">
+              <img class="miniscreen odd" src="images/installing/card-templates-thumb.png" />
+            </a>
+            
+            <p>
+              The very last step is to edit your card templates to include references to the new fields we've just set up.
+              Go to the &quot;Card Templates&quot; and set up the substitutions to suit your taste. An example &quot;Answer&quot;
+              template might look as follows:
+            </p>
+            
+            <div class="embossed" style="float: left">
+              <p>
+                <code>
+                  %(Color)s: %(Reading)s&lt;br /&gt;<br />
+                  %(Meaning)s&lt;br /&gt;<br />
+                  %(Measure Word)s&lt;br /&gt;<br />
+                  %(Audio)s
+                </code>
+              </p>
+            </div>
+            
+            <br style="clear:both" />
           </li>
         </ol>
       </div>

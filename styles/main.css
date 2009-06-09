@@ -53,6 +53,10 @@ img[align="center"] {
     border: 4px solid #FFBBBB;
 }
 
+.embossed {
+    background-color: #FFBBBB;
+}
+
 /* Set the links header box up to space links vertically */
 table.linksheader {
     table-layout: fixed;
