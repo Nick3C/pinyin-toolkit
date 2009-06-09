@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt4 import QtGui, QtCore
+from ankiqt import mw, ui
 
 import anki.utils
 import ankiqt.ui.facteditor
@@ -57,11 +58,10 @@ class ColorShortcutKeysHook(Hook):
         focusededit = editor.focusedEdit()
         
         cursor = focusededit.textCursor()
-        focusededit.setTextColor(QColor((self.config.tonecolors + self.config.extraquickaccesscolors)[i - 1]))
+        focusededit.setTextColor(QtGui.QColor((self.config.tonecolors + self.config.extraquickaccesscolors)[i - 1]))
         cursor.clearSelection()
         focusededit.setTextCursor(cursor)
     
-    # TODO: this doesn't work yet. The setColor method is never fired.
     def setupShortcuts(self, editor):
         # Loop through the 8 F[x] keys, setting each one up
         # Note: Ctrl-F9 is the HTML editor. Don't do this as it causes a conflict
