@@ -15,12 +15,6 @@ from PyQt4 import QtGui
 
 import time
 
-try:
-    from matplotlib.figure import Figure
-except UnicodeEncodeError:
-    # haven't tracked down the cause of this yet, but reloading fixes it
-    from matplotlib.figure import Figure
-
 from ankiqt.ui.graphs import AdjustableFigure, GraphWindow
 import anki.utils
 
@@ -43,6 +37,16 @@ class HanziGraphHook(hooks.Hook):
     # Returns the Hanzi Figure object for the plot
     def calculateHanziData(self, graphwindow, hanzidata, days):
         log.info("Calculating %d days worth of Hanzi graph data", days)
+        
+        # NB: must lazy-load matplotlib to give Anki a chance to set up the paths
+        # to the data files, or we get an error like "Could not find the matplotlib
+        # data files" as documented at <http://www.py2exe.org/index.cgi/MatPlotLib>
+        try:
+            from matplotlib.figure import Figure
+        except UnicodeEncodeError:
+            # Haven't tracked down the cause of this yet, but reloading fixes it
+            log.warn("UnicodeEncodeError loading matplotlib - trying again")
+            from matplotlib.figure import Figure
         
         # Use the statistics engine to generate the data for graphing.
         # NB: should add one to the number of days because we want to
