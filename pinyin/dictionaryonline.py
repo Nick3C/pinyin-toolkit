@@ -13,14 +13,23 @@ import utils
 
 # Translate the parsed text from Chinese into target language using google translate:
 def gTrans(query, destlanguage='en'):
-    if query == None or query.strip() == u"":
-        # No meanings if we don't have a query
+    # No meanings if we don't have a query
+    if query == None:
+        return None
+    
+    # No meanings if our query is blank after stripping HTML out
+    query = utils.striphtml(query)
+    if query.strip() == u"":
         return None
 
     result = lookup(query, destlanguage)
     if result:
-        # The only meaning is the result with the source of the meaning
-        return result + '<br /><span style="color:gray"><small>[Google Translate]</small></span>'
+        if result == query:
+            # The result was, unhelpfully, what we queried. Give up:
+            return None
+        else:
+            # The only meaning is the result with the source of the meaning
+            return result + '<br /><span style="color:gray"><small>[Google Translate]</small></span>'
     else:
         # The only meaning should be an error
         return '<span style="color:gray">[Internet Error]</span>'
@@ -113,6 +122,15 @@ if __name__ == "__main__":
         
         def testTranslateFrench(self):
             self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), u'Bonjour, Vous \xeates mon ami?<br /><span style="color:gray"><small>[Google Translate]</small></span>')
+        
+        def testTranslateIdentity(self):
+            self.assertEquals(gTrans(u"canttranslatemefromchinese"), None)
+        
+        def testTranslateStripsHtml(self):
+            self.assertEquals(gTrans(u"你好，你<b>是我的</b>朋友吗？"), u'Hello, You are my friend?<br /><span style="color:gray"><small>[Google Translate]</small></span>')
+        
+        def testTranslateDealsWithDefinition(self):
+            self.assertEquals(gTrans(u"好"), "Hello!")
         
         def testCheck(self):
             self.assertEquals(gCheck(), True)

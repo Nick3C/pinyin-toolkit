@@ -213,7 +213,7 @@ class PinyinDictionary(object):
             return
         
         # Strip HTML
-        sentence = re.sub('<(?!(?:a\s|/a|!))[^>]*>', '', sentence)
+        sentence = striphtml(sentence)
         
         # Iterate through the text
         i = 0;

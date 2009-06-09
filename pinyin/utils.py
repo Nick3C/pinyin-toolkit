@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import sys
 import string
 import getpass
@@ -293,9 +294,11 @@ def urlescape(what):
     import urllib
     return urllib.quote(what.encode('utf-8'))
 
+def striphtml(what):
+    return re.sub('<(?!(?:a\s|/a|!))[^>]*>', '', what)
+
 if __name__=='__main__':
     import unittest
-    import re
     
     class UrlEscapeTest(unittest.TestCase):
         def testEscapeUrlEncode(self):
@@ -303,6 +306,13 @@ if __name__=='__main__':
         
         def testEscapeUTF8(self):
             self.assertEquals(urlescape(u"你"), "%E4%BD%A0")
+    
+    class StripHtmlTest(unittest.TestCase):
+        def testStripNothingFromText(self):
+            self.assertEquals(striphtml("Hello World"), "Hello World")
+        
+        def testStripTags(self):
+            self.assertEquals(striphtml("Hello <b>World</b>"), "Hello World")
     
     class CumulativeTest(unittest.TestCase):
         def testCumulativeEmpty(self):
