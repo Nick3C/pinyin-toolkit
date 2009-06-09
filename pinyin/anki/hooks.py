@@ -2,11 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from PyQt4 import QtGui, QtCore
-from ankiqt import mw, ui
 
 import anki.utils
-import ankiqt.ui.facteditor
-from anki.hooks import wrap,addHook
 
 import pinyin.forms.preferences
 import pinyin.forms.preferencescontroller
@@ -15,7 +12,6 @@ import pinyin.media
 import pinyin.utils
 
 import utils
-
 
 
 class Hook(object):
