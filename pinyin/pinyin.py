@@ -11,6 +11,8 @@ class Word(object):
     def __init__(self, token):
         self.token = token
     
+    iser = property(lambda self: self.token.iser)
+    
     def __eq__(self, other):
         if other is None:
             return False
@@ -38,10 +40,8 @@ class Word(object):
         tokens = TokenList()
         reading_tokens_count = len(reading_tokens)
         for n, reading_token in enumerate(reading_tokens):
-            # Don't add spaces if this is the first token or if we are at the
-            # last token and have an erhua
-            iser = hasattr(reading_token, "iser") and reading_token.iser
-            if n != 0 and (n != reading_tokens_count - 1 or not(iser)):
+            # Don't add spaces if this is the first token or if we have an erhua
+            if n != 0 and not(reading_token.iser):
                 tokens.append(Text(u' '))
 
             tokens.append(reading_token)
@@ -149,6 +149,11 @@ class Text(unicode):
         
         return unicode.__new__(cls, text)
 
+    iser = property(lambda self: False)
+
+    def __repr__(self):
+        return "Text(%s)" % unicode.__repr__(self)
+
     def accept(self, visitor):
         return visitor.visitText(self)
 
@@ -159,6 +164,8 @@ class TokenList(list):
     def __init__(self, items=[]):
         # Filter bad elements
         list.__init__(self, [item for item in items if item != None])
+    
+    iser = property(lambda self: len(self) == 1 and self[0].iser)
     
     def accept(self, visitor):
         return visitor.visitTokenList(self)
@@ -394,6 +401,16 @@ if __name__ == "__main__":
             self.assertFalse(Pinyin("ma5").endswith("a5"))
             self.assertTrue(Pinyin("hen3").endswith("en3"))
     
+    class TextTest(unittest.TestCase):
+        def testNonEmpty(self):
+            self.assertRaises(ValueError, lambda: Text(u""))
+        
+        def testRepr(self):
+            self.assertEquals(repr(Text(u"hello")), "Text(u'hello')")
+        
+        def testIsEr(self):
+            self.assertFalse(Text("r5").iser)
+    
     class WordTest(unittest.TestCase):
         def testAppendSingleReading(self):
             self.assertEquals(flatten(Word.spacedwordreading([Pinyin(u"hen3")])), u"hen3")
@@ -416,11 +433,15 @@ if __name__ == "__main__":
             self.assertNotEquals(Word(Text(u"hello")), Word(Text(u"hallo")))
         
         def testRepr(self):
-            self.assertEquals(repr(Word(Text(u"hello"))), 'Word(Text(u"hello"))')
+            self.assertEquals(repr(Word(Text(u"hello"))), "Word(Text(u'hello'))")
         
         def testStr(self):
             self.assertEquals(str(Word(Text(u"hello"))), u"<hello>")
             self.assertEquals(unicode(Word(Text(u"hello"))), u"<hello>")
+        
+        def testIsEr(self):
+            self.assertFalse(Word(Text("r5")).iser)
+            self.assertTrue(Word(Pinyin("r5")).iser)
     
     class TonedCharacterTest(unittest.TestCase):
         def testIsEr(self):
@@ -454,6 +475,14 @@ if __name__ == "__main__":
         def testEndsWith(self):
             self.assertTrue(TokenList([Text(u"hello")]).endswith(u"lo"))
             self.assertFalse(TokenList([Text(u"hello")]).endswith(u"ol"))
+        
+        def testIsEr(self):
+            self.assertFalse(TokenList([]).iser)
+            self.assertFalse(TokenList([Text("r5")]).iser)
+            self.assertTrue(TokenList([Pinyin("r5")]).iser)
+            self.assertFalse(TokenList([Pinyin("r5"), Text("r5")]).iser)
+            self.assertFalse(TokenList([Text("r5"), Pinyin("r5")]).iser)
+            self.assertFalse(TokenList([Pinyin("r5"), Pinyin("r5")]).iser)
 
     class PinyinTonifierTest(unittest.TestCase):
         def testEasy(self):

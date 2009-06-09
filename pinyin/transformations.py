@@ -10,44 +10,32 @@ from utils import *
 
 # Convenience wrapper around the TrimErhuaVisitor
 def trimerhua(token):
-    prefix, candidateer = token.accept(TrimErhuaVisitor())
-    # NB: either thing may be None, but the TokenList filters them out
-    return TokenList([prefix, candidateer])
+    token = token.accept(TrimErhuaVisitor())
+    return token or TokenList([])
 
-class TrimErhuaVisitor(TokenVisitor):
+class TrimErhuaVisitor(MapTokenVisitor):
     def visitText(self, text):
-        return text, None
+        return text
 
     def visitPinyin(self, pinyin):
         if pinyin.iser:
-            return None, pinyin
+            return None
         else:
-            return pinyin, None
+            return pinyin
 
     def visitTonedCharacter(self, tonedcharacter):
         if tonedcharacter.iser:
-            return None, tonedcharacter
+            return None
         else:
-            return tonedcharacter, None
+            return tonedcharacter
 
     def visitWord(self, word):
-        prefix, candidateer = word.token.accept(self)
+        token = word.token.accept(self)
         
-        if prefix:
-            # There was at least one non-er character, so return that only
-            return Word(prefix), None
+        if token:
+            return Word(token)
         else:
-            # OK, the word contained only an er: return that as the new candidate
-            return None, Word(candidateer)
-
-    def visitTokenList(self, tokens):
-        outputtokens, candidateer = TokenList(), None
-        for token in tokens:
-            outputtokens.append(candidateer) # NB: Nones are filtered by append
-            output, candidateer = token.accept(self)
-            outputtokens.append(output) # NB: Nones are filtered by append
-        
-        return outputtokens, candidateer
+            return None
 
 
 # Convenience wrapper around the ColorizerVisitor
@@ -360,25 +348,23 @@ if __name__=='__main__':
         def testTrimErhuaEmpty(self):
             self.assertEquals(flatten(trimerhua(TokenList([]))), u'')
 
-        def testTrimErhuaSingleErPinyin(self):
-            self.assertEquals(flatten(trimerhua(Pinyin(u'r5'))), u'r')
-            self.assertEquals(flatten(trimerhua(TonedCharacter(u'儿', 5))), u'儿')
-            self.assertEquals(flatten(trimerhua(Word(Pinyin(u'r5')))), u'r')
-            self.assertEquals(flatten(trimerhua(Word(TonedCharacter(u'儿', 5)))), u'儿')
-            self.assertEquals(flatten(trimerhua(TokenList([Pinyin(u'r5')]))), u'r')
-            self.assertEquals(flatten(trimerhua(TokenList([TonedCharacter(u'儿', 5)]))), u'儿')
-
         def testTrimErhuaCharacters(self):
             self.assertEquals(flatten(trimerhua(Word(TokenList([TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2), TonedCharacter(u"儿", 5)])))), u"一瓶")
 
         def testTrimErhuaPinyin(self):
             self.assertEquals(flatten(trimerhua(Word(TokenList([Pinyin(u"yi1"), Pinyin(u"ping2"), Pinyin(u"r5")])))), u"yi1ping2")
-
-        def testDontTrimErhuaOutsideWord(self):
-            self.assertEquals(flatten(trimerhua(TokenList([Pinyin(u"yi1"), Pinyin(u"ping2"), Pinyin(u"r5")]))), u"yi1ping2r")
+            self.assertEquals(flatten(trimerhua(TokenList([Pinyin(u"yi1"), Pinyin(u"ping2"), Pinyin(u"r5")]))), u"yi1ping2")
 
         def testDontTrimNonErhua(self):
             self.assertEquals(flatten(trimerhua(Word(TokenList([TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2)])))), u"一瓶")
+
+        def testTrimSingleErHua(self):
+            self.assertEquals(flatten(trimerhua(Pinyin(u'r5'))), u'')
+            self.assertEquals(flatten(trimerhua(TonedCharacter(u'儿', 5))), u'')
+            self.assertEquals(flatten(trimerhua(Word(Pinyin(u'r5')))), u'')
+            self.assertEquals(flatten(trimerhua(Word(TonedCharacter(u'儿', 5)))), u'')
+            self.assertEquals(flatten(trimerhua(TokenList([Pinyin(u'r5')]))), u'')
+            self.assertEquals(flatten(trimerhua(TokenList([TonedCharacter(u'儿', 5)]))), u'')
 
     class MaskHanziTest(unittest.TestCase):
         def testMaskText(self):
