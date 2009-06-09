@@ -297,6 +297,7 @@ def urlescape(what):
 def striphtml(what):
     return re.sub('<(?!(?:a\s|/a|!))[^>]*>', '', what)
 
+
 if __name__=='__main__':
     import unittest
     
