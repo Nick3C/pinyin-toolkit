@@ -15,10 +15,8 @@
     <div id="content">
       {% include linksheader.html %}
       
-      <img src="images/screenshots/overview.jpg" align="center" />
-      
       <div>
-        <h1>Installation</h1>
+        <h1><a name="installation">Installation</a></h1>
         <ol>
           <li>
             <a class="colorbox" href="images/installing/anki.jpg">
@@ -33,7 +31,7 @@
             </p>
       
             <p>
-              Anki (and Pinyin Toolkit) is available on all the major platforms: Windows, OS X and Linux.
+              Anki (and Pinyin Toolkit) is available on all the major platforms: Windows, Mac OS X and Linux.
             </p>
         
             <br style="clear:both" />
@@ -44,7 +42,8 @@
             </a>
         
             <p>
-              Open Anki, then choose &quot;File&quot; &gt; &quot;Download&quot; &gt; &quot;Shared Plugin&quot;.
+              We distribute the plugin via Anki's built-in mechanism for downloading plugins, so the next step is
+              to open Anki, and then choose &quot;File&quot; &gt; &quot;Download&quot; &gt; &quot;Shared Plugin&quot;.
             </p>
         
             <br style="clear:both" />
@@ -55,8 +54,14 @@
             </a>
         
             <p>
-              From the resulting list, search for &quot;Pinyin Toolkit&quot; and choose &quot;Install&quot;
+              You'll be presented with a huge list of available plugins. Search for &quot;Pinyin Toolkit&quot; and choose &quot;Install&quot;
               to download and install the plugin.
+            </p>
+            
+            <p>
+              If you haven't already, you might also be interested in installing the
+              &quot;Hanzi Stats&quot; plugin, which provides a handy summary of your progress towards the various
+              <a href="http://www.hsk.org.cn/english/default.aspx">HSK</a> levels.
             </p>
         
             <br style="clear:both" />
@@ -69,13 +74,19 @@
             <p>
               Restart Anki. The Pinyin Toolkit is now installed! Now, you can either <a href="#settingup">
               set up an existing deck</a> for use with the Toolkit or <a href="TODO">download the demo deck
-              (TODO)</a> that has been preconfigured to demonstrate the features of the Toolkit. TODO: describe
-              next steps.
+              (TODO)</a> that has been preconfigured to demonstrate the features of the Toolkit.
             </p>
         
             <p>
-              Optionally, you may configure the Toolkit by choosing &quot;Tools&quot; &gt; &quot;Pinyin
+              If you wish, you may also configure the Toolkit itself by choosing &quot;Tools&quot; &gt; &quot;Pinyin
               Toolkit&quot; &gt; &quot;Preferences&quot;.
+            </p>
+            
+            <p>
+              Once you've configured your deck you can start adding facts! Alternatively, you can get the Toolkit
+              to try and add missing information to existing facts using the &quot;Tools&quot; &gt; &quot;Pinyin
+              Toolkit&quot; &gt; &quot;Fill missing card data&quot; option. If you choose this option, it might
+              be wise to keep a backup of your deck around, in case you don't like the results!
             </p>
         
             <br style="clear:both" />
@@ -84,7 +95,7 @@
       </div>
   
       <div>
-        <h1>Setting Up A Deck</h1>
+        <h1><a name="settingup">Setting Up A Deck</a></h1>
         <ol>
           <li>
             <a class="colorbox" href="images/installing/deck-properties.jpg">
@@ -105,8 +116,13 @@
             </a>
         
             <p>
-              You should now be faced with the deck properties dialog. Choose the model you wish to use with the
+              You should now be faced with the Deck Properties dialog. Choose the model you wish to use with the
               Toolkit and then click &quot;Edit&quot;.
+            </p>
+            
+            <p>
+              It is perfectly possible to use more than one model with the Toolkit - just repeat the next steps
+              with every model you wish to be considered.
             </p>
         
             <br style="clear:both" />
@@ -117,17 +133,98 @@
             </a>
         
             <p>
-              Finally, add the tag to the deck by changing the value of the &quot;Tags&quot; field to 
-              &quot;Mandarin&quot;. If you want to add to an existing list of tags, you can put several tags
-              in this field by separating them using commas.
-            </p>
-        
-            <p>
-              If you are using standard names for the fields of your deck, that concludes the set-up process.
-              TODO: describe the standard names and configuration options.
+              Add the tag to the deck by changing the value of the &quot;Tags&quot; field to 
+              &quot;Mandarin&quot;. If you want to add to an existing list of tags, you may do so by separating
+              it from the previous tags using a space.
             </p>
         
             <br style="clear:both" />
+          </li>
+          
+          <li>
+            <a class="colorbox" href="images/installing/fields.png">
+              <img class="miniscreen odd" src="images/installing/fields-thumb.png" />
+            </a>
+            
+            <p>
+              The last step is to make sure your deck has the right fields in it.  The Toolkit will attempt to guess
+              what a field is intended for by looking at its name, and if it can't find fields with the right names
+              then various features won't work as intended.
+            </p>
+            
+            <p>
+              In order to let the Toolkit find your fields, you need to add new fields or modify existing ones in your
+              model so that they have one of the recognised names:
+            </p>
+        
+            <br style="clear:both" />
+            
+            <table>
+              <tr>
+                <th><h3>Purpose</h3></th>
+                <th><h3>Recognised Names</h3></th>
+              </tr>
+              <tr>
+                <td>
+                  <p><span class="purpose">Expression</span>: where you type Hanzi. Defines the subject of the card.</p>
+                </td>
+                <td>
+                  <p>&quot;Expression&quot;, &quot;Hanzi&quot;, &quot;Chinese&quot;, &quot;汉字&quot;, &quot;中文&quot;</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p><span class="purpose">Color</span>: where you want a colored version of your Hanzi to appear.</p>
+                </td>
+                <td>
+                  <p>&quot;Color&quot;, &quot;Colour&quot;, &quot;Colored Hanzi&quot;, &quot;彩色&quot;</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p><span class="purpose">Reading</span>: the pronunciation of the Hanzi in pinyin format.</p>
+                </td>
+                <td>
+                  <p>&quot;Reading&quot;, &quot;Pinyin&quot;, &quot;PY&quot;, &quot;拼音&quot;</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p><span class="purpose">Meaning</span>: your local-language equivalent of the Hanzi - the definition.</p>
+                </td>
+                <td>
+                  <p>&quot;Meaning&quot;, &quot;Definition&quot;, &quot;English&quot;, &quot;German&quot;, &quot;French&quot;, &quot;意思&quot;, &quot;翻译&quot;, &quot;英语&quot;, &quot;法语&quot;, &quot;德语&quot;</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p><span class="purpose">Measure word</span>: the word or words that are used to quantify the subject of this card.</p>
+                </td>
+                <td>
+                  <p>&quot;MW&quot;, &quot;Measure Word&quot;, &quot;Classifier&quot;, &quot;量词&quot;</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p><span class="purpose">Audio</span>: contains the audio-playing tags corresponding to the Hanzi on this card.</p>
+                </td>
+                <td>
+                  <p>&quot;Audio&quot;, &quot;Sound&quot;, &quot;Spoken&quot;, &quot;声音&quot;</p>
+                </td>
+              </tr>
+            </table>
+            
+            <!--
+              Not enabled:
+              
+              'weblinks'   : ["Links", "Link", "LinksBar", "Links Bar", "Link Bar", "LinkBar", "Web", "Dictionary", "URL", "URLs"],
+              'pos'        : ["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] 
+            -->
+        
+            <p>
+              It's perfectly OK for you not to add some (or even all!) of these fields to your deck - but the
+              Toolkit will be less functional as a result of the omission.
+            </p>
           </li>
         </ol>
       </div>

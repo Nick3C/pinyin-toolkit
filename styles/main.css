@@ -29,18 +29,18 @@ p {
     margin: 8px 0 0;
 }
 
-a {
+a[href] {
     color : #E00000;
     font-weight : bold;
     text-decoration : none;
 }
 
-a:hover {
+a[href]:hover {
     text-decoration:underline;
 }
 
-img {;
-    border: medium none;
+img {
+    border-style: none;
 }
 
 img[align="center"] {
@@ -49,12 +49,17 @@ img[align="center"] {
     margin-right: auto;
 }
 
+.outlined, .miniscreen {
+    border: 4px solid #FFBBBB;
+}
+
 /* Set the links header box up to space links vertically */
 table.linksheader {
+    table-layout: fixed;
     width: 100%;
 }
 
-td {
+table.linksheader td {
     vertical-align: middle;
     text-align: center;
 }
@@ -89,13 +94,6 @@ td {
     top: 15px;
     width: 200px;
 }
-
-/*
-.linkentry {
-    width: 180px;
-    margin: 0 auto;
-}
-*/
 
 /* Used for the pitch paragraph that describes what we do */
 .pitch {
@@ -132,6 +130,10 @@ ol {
 ol p {
     /* Reset changes made by the ol tag. NB: font-size reset by p style */
     font-weight: normal;
+}
+
+.purpose {
+    font-weight: bold;
 }
 
 #legal {
