@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from logger import log
 import utils
 
 
@@ -243,6 +244,30 @@ class EndsWithSpaceVisitor(TokenVisitor):
     
     def visitTonedCharacter(self, tonedcharacter):
         self.endswithspace = tonedcharacter.endswith(u" ")
+
+"""
+Makes some tokens that faithfully represent the given characters
+with tone information attached, if it is possible to extract it
+from the corresponding pinyin tokens.
+"""
+def tonedcharactersfromreading(characters, reading_tokens):
+    # If we can't associate characters with tokens on a one-to-one basis we had better give up
+    if len(characters) != len(reading_tokens):
+        log.warn("Couldn't produce toned characters for %s because there are a different number of reading tokens than characters", characters)
+        return [Text(characters)]
+
+    # Add characters to the tokens /without/ spaces between them, but with tone info
+    tokens = []
+    for character, reading_token in zip(characters, reading_tokens):
+        # Avoid making the numbers from the supplementary dictionary into toned
+        # things, because it confuses users :-)
+        if hasattr(reading_token, "tone") and not(character.isdecimal()):
+            tokens.append(TonedCharacter(character, reading_token.tone))
+        else:
+            # Sometimes the tokens do not have tones (e.g. in the translation for T-shirt)
+            tokens.append(Text(character))
+    
+    return tokens
 
 """
 Parser class to add diacritical marks to numbered pinyin.
@@ -506,5 +531,23 @@ if __name__ == "__main__":
             self.assertTrue(endswithspace([Word(Text("hello "))]))
             self.assertTrue(endswithspace([Word(Text("hello"), Text(" "), Text("World"), Text(" "))]))
             self.assertFalse(endswithspace([Word(Text("hello"))]))
+    
+    class TonedCharactersFromReadingTest(unittest.TestCase):
+        def testTonedTokens(self):
+            self.assertEquals(tonedcharactersfromreading(u"一个", [Pinyin("yi1"), Pinyin("ge4")]),
+                              [TonedCharacter(u"一", 1), TonedCharacter(u"个", 4)])
+
+        def testTonedTokensWithoutTone(self):
+            self.assertEquals(tonedcharactersfromreading(u"T恤", [Text("T"), Pinyin("zhi4")]),
+                              [Text(u"T"), TonedCharacter(u"恤", 4)])
+
+        def testTonedTokenNumbers(self):
+            self.assertEquals(tonedcharactersfromreading(u"1994", [Pinyin("yi1"), Pinyin("jiu3"), Pinyin("jiu3"), Pinyin("si4")]),
+                              [Text(u"1"), Text(u"9"), Text(u"9"), Text(u"4")])
+        
+        def testTonesDontMatchChars(self):
+            self.assertEquals(tonedcharactersfromreading(u"ABCD", [Pinyin("yi1"), Pinyin("shi2"), Pinyin("jiu3"), Pinyin("jiu3"), Pinyin("shi2"), Pinyin("si4")]),
+                              [Text(u"ABCD")])
+
     
     unittest.main()

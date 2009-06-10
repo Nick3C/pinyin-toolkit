@@ -61,9 +61,10 @@ class MeaningFormatter(object):
         
         if match.group(4) != None:
             # There was some pinyin for the character after it - include it
+            pinyintokens = tokenize(match.group(4))
             words.append(Word(Text(character)))
             words.append(Word(Text(" - ")))
-            words.append(Word.spacedwordfromunspacedtokens(tokenize(match.group(4))))
+            words.append(Word.spacedwordfromunspacedtokens(pinyintokens))
         else:
             if tonedchars_callback:
                 # Look up the tone for the character so we can display it more nicely, as in the other branch

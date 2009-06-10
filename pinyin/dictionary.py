@@ -80,7 +80,7 @@ class PinyinDictionary(object):
                 raw_definition = m.group(5)
                 
                 # Parse readings
-                pinyin = tokenize(raw_pinyin)
+                pinyintokens = tokenize(raw_pinyin)
                 
                 # Save meanings and readings
                 for characters in [lcharacters, rcharacters]:
@@ -88,7 +88,7 @@ class PinyinDictionary(object):
                     self.__maxcharacterlen = max(self.__maxcharacterlen, len(characters))
                     
                     # Always save the readings
-                    self.__readings[characters] = pinyin
+                    self.__readings[characters] = pinyintokens
                     
                     if needmeanings and raw_definition:
                         # We just save the raw definition into the dictionary, so we don't clean up meanings we never look at
@@ -131,26 +131,8 @@ class PinyinDictionary(object):
         log.info("Requested toned characters for %s", sentence)
         
         def addword(words, thing):
-            reading_tokens = self.__readings[thing]
-            
-            # If we can't associate characters with tokens on a one-to-one basis we had better give up
-            if len(thing) != len(reading_tokens):
-                log.warn("Couldn't produce toned characters for %s because there are a different number of reading tokens than characters", thing)
-                words.append(Word(Text(thing)))
-                return
-            
-            # Add characters to the tokens /without/ spaces between them, but with tone info
-            tokens = []
-            for character, reading_token in zip(thing, reading_tokens):
-                # Avoid making the numbers from the supplementary dictionary into toned
-                # things, because it confuses users :-)
-                if hasattr(reading_token, "tone") and not(character.isdecimal()):
-                    tokens.append(TonedCharacter(character, reading_token.tone))
-                else:
-                    # Sometimes the tokens do not have tones (e.g. in the translation for T-shirt)
-                    tokens.append(Text(character))
-            
-            words.append(Word(*tokens))
+            # Match up the reading data with the characters to produce toned characters
+            words.append(Word(*(tonedcharactersfromreading(thing, self.__readings[thing]))))
         
         return self.mapparsedtokens(sentence, addword)
 
