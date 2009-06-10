@@ -62,7 +62,7 @@ class MeaningFormatter(object):
         if match.group(4) != None:
             # There was some pinyin for the character after it - include it
             pinyintokens = tokenize(match.group(4))
-            words.append(Word(Text(character)))
+            words.append(Word(*(tonedcharactersfromreading(character, pinyintokens))))
             words.append(Word(Text(" - ")))
             words.append(Word.spacedwordfromunspacedtokens(pinyintokens))
         else:
@@ -134,6 +134,11 @@ if __name__=='__main__':
         def testCallback(self):
             means, mws = self.parse(1, "simp", self.shu_def, tonedchars_callback=lambda x: [Text(u"JUNK")])
             self.assertEquals(means, [u'JUNK', u'JUNK', u'JUNK JUNK JUNK JUNK JUNK JUNK'])
+    
+        def testColorsAttachedToBothHanziAndPinyin(self):
+            means, mws = self.parseunflat(1, "simp", u"/sound of breaking or snapping (onomatopoeia)/also written 喀嚓|喀嚓 [ka1 cha1]/")
+            self.assertEquals(flatten(means[0]), "sound of breaking or snapping (onomatopoeia)")
+            self.assertEquals(means[1][-3], Word(TonedCharacter(u"喀", 1), TonedCharacter(u"嚓", 1)))
     
         # Test helpers
         def parse(self, *args, **kwargs):
