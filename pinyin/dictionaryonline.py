@@ -64,10 +64,11 @@ def lookup(query, destlanguage):
     
     # Parse the response:
     try:
+        log.info("Parsing response %s from Google", literal)
         result = parsegoogleresponse(literal)
     except ValueError, e:
         # Give the exception a more precise error message for debugging
-        raise ValueError("Error while parsing Google response %s", literal)
+        raise ValueError("Error while parsing translation response from Google")
     
     # What sort of result did we get?
     if isinstance(result, basestring):
@@ -88,7 +89,7 @@ def lookup(query, destlanguage):
         #   ]
         # ]
         try:
-            return [[Word(Text(result[0]))] + [Word(Text(definition[0].capitalize() + ": " + ", ".join(definition[1:]))) for definition in result[1]]]
+            return [[Word(Text(result[0]))]] + [[Word(Text(definition[0].capitalize() + ": " + ", ".join(definition[1:])))] for definition in result[1]]
         except IndexError:
             raise ValueError("Result %s from Google Translate looked like a definition but was not in the expected format" % result)
     else:
@@ -267,13 +268,13 @@ if __name__ == "__main__":
             self.assertEquals(gTrans(u"你好，你<b>是我的</b>朋友吗？"), [[Word(Text(u'Hello, You are my friend?'))]])
         
         def testTranslateDealsWithDefinition(self):
-            self.assertEquals(gTrans(u"好"), [[
-                Word(Text("Well")),
-                Word(Text("Verb: like, love")),
-                Word(Text("Adjective: good")),
-                Word(Text("Adverb: fine, OK, okay, okey, okey dokey, well")),
-                Word(Text("Interjection: OK!, okay!, okey!"))
-              ]])
+            self.assertEquals(gTrans(u"好"), [
+                [Word(Text("Well"))],
+                [Word(Text("Verb: like, love"))],
+                [Word(Text("Adjective: good"))],
+                [Word(Text("Adverb: fine, OK, okay, okey, okey dokey, well"))],
+                [Word(Text("Interjection: OK!, okay!, okey!"))]
+              ])
         
         def testCheck(self):
             self.assertEquals(gCheck(), True)
