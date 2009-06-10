@@ -10,6 +10,13 @@ import utils
 #  * Words contain lists of Tokens
 #  * Tokens are either Text, Pinyin or TonedCharacters
 
+# NB: we support the following standard tones:
+#  1) Flat
+#  2) Rising
+#  3) Falling-rising
+#  4) Falling
+#  5) Neutral
+
 """
 Represents a purely textual token.
 """
