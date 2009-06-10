@@ -4,7 +4,7 @@
 import urllib2
 import re
 
-import pinyin
+from pinyin import *
 from logger import log
 import utils
 
@@ -29,11 +29,11 @@ def gTrans(query, destlanguage='en'):
     except urllib2.URLError, e:
         # The only 'meaning' should be an error telling the user that there was some problem
         log.exception("Error while trying to obtain Google response")
-        return [pinyin.Text('<span style="color:gray">[Internet Error]</span>')]
+        return [[Word(Text('<span style="color:gray">[Internet Error]</span>'))]]
     except ValueError, e:
         # Not an internet problem
         log.exception("Error while parsing Google response: %s" % repr(literal))
-        return [pinyin.Text('<span style="color:gray">[Error In Google Translate Response]</span>')]
+        return [[Word(Text('<span style="color:gray">[Error In Google Translate Response]</span>'))]]
 
 # This function will send a sample query to Google Translate and return true or false depending on success
 # It is used to determine connectivity for the Anki session (and thus whether Pinyin Toolkit should use online services or not)
@@ -76,7 +76,7 @@ def lookup(query, destlanguage):
             return None
         else:
             # Simple strings can be returned directly
-            return [pinyin.Text(result)]
+            return [[Word(Text(result))]]
     elif isinstance(result, list):
         # Otherwise, we get a result like this:
         # ["Well",
@@ -88,7 +88,7 @@ def lookup(query, destlanguage):
         #   ]
         # ]
         try:
-            return [pinyin.Text(result[0])] + [definition[0].capitalize() + ": " + ", ".join(definition[1:]) for definition in result[1]]
+            return [[Word(Text(result[0]))] + [Word(Text(definition[0].capitalize() + ": " + ", ".join(definition[1:]))) for definition in result[1]]]
         except IndexError:
             raise ValueError("Result %s from Google Translate looked like a definition but was not in the expected format" % result)
     else:
@@ -255,25 +255,25 @@ if __name__ == "__main__":
             self.assertEquals(gTrans(""), None)
         
         def testTranslateEnglish(self):
-            self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), [pinyin.Text(u'Hello, You are my friend?')])
+            self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), [[Word(Text(u'Hello, You are my friend?'))]])
         
         def testTranslateFrench(self):
-            self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), [pinyin.Text(u'Bonjour, Vous \xeates mon ami?')])
+            self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), [[Word(Text(u'Bonjour, Vous \xeates mon ami?'))]])
         
         def testTranslateIdentity(self):
             self.assertEquals(gTrans(u"canttranslatemefromchinese"), None)
         
         def testTranslateStripsHtml(self):
-            self.assertEquals(gTrans(u"你好，你<b>是我的</b>朋友吗？"), [pinyin.Text(u'Hello, You are my friend?')])
+            self.assertEquals(gTrans(u"你好，你<b>是我的</b>朋友吗？"), [[Word(Text(u'Hello, You are my friend?'))]])
         
         def testTranslateDealsWithDefinition(self):
-            self.assertEquals(gTrans(u"好"), [
-                pinyin.Text("Well"),
-                pinyin.Text("Verb: like, love"),
-                pinyin.Text("Adjective: good"),
-                pinyin.Text("Adverb: fine, OK, okay, okey, okey dokey, well"),
-                pinyin.Text("Interjection: OK!, okay!, okey!")
-              ])
+            self.assertEquals(gTrans(u"好"), [[
+                Word(Text("Well")),
+                Word(Text("Verb: like, love")),
+                Word(Text("Adjective: good")),
+                Word(Text("Adverb: fine, OK, okay, okey, okey dokey, well")),
+                Word(Text("Interjection: OK!, okay!, okey!"))
+              ]])
         
         def testCheck(self):
             self.assertEquals(gCheck(), True)

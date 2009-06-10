@@ -80,7 +80,7 @@ class PinyinDictionary(object):
                 raw_definition = m.group(5)
                 
                 # Parse readings
-                pinyin = TokenList.fromspacedstring(raw_pinyin)
+                pinyin = tokenize(raw_pinyin)
                 
                 # Save meanings and readings
                 for characters in [lcharacters, rcharacters]:
@@ -102,7 +102,7 @@ class PinyinDictionary(object):
     def reading(self, sentence):
         log.info("Requested reading for %s", sentence)
         
-        def addword(tokens, thing):
+        def addword(words, thing):
             readingtokens = self.__readings[thing]
             
             # If we already have some text building up, add a preceding space.
@@ -112,15 +112,15 @@ class PinyinDictionary(object):
             # also important for punctuation consistency, because Western
             # punctuation is typically followed by a space whereas the Chinese
             # equivalents are not.
-            have_some_text = len(tokens) > 0
+            have_some_text = len(words) > 0
             is_punctuation = ispunctuation(thing)
-            already_have_space = have_some_text and tokens[-1].endswith(u' ')
+            already_have_space = have_some_text and endswithspace(words[-1])
             reading_starts_with_er = len(readingtokens) > 0 and readingtokens[0].iser
             if have_some_text and not(is_punctuation) and not(already_have_space) and not(reading_starts_with_er):
-                tokens.append(Text(u' '))
+                words.append(Word(Text(u' ')))
             
             # Add this reading into the token list with nice formatting
-            tokens.append(Word.spacedwordreading(readingtokens))
+            words.append(Word.spacedwordfromunspacedtokens(readingtokens))
         
         return self.mapparsedtokens(sentence, addword)
 
@@ -130,45 +130,45 @@ class PinyinDictionary(object):
     def tonedchars(self, sentence):
         log.info("Requested toned characters for %s", sentence)
         
-        def addword(tokens, thing):
+        def addword(words, thing):
             reading_tokens = self.__readings[thing]
             
             # If we can't associate characters with tokens on a one-to-one basis we had better give up
             if len(thing) != len(reading_tokens):
                 log.warn("Couldn't produce toned characters for %s because there are a different number of reading tokens than characters", thing)
-                tokens.append(Text(thing))
+                words.append(Word(Text(thing)))
                 return
             
             # Add characters to the tokens /without/ spaces between them, but with tone info
-            wordtokens = TokenList([])
+            tokens = []
             for character, reading_token in zip(thing, reading_tokens):
                 # Avoid making the numbers from the supplementary dictionary into toned
                 # things, because it confuses users :-)
                 if hasattr(reading_token, "tone") and not(character.isdecimal()):
-                    wordtokens.append(TonedCharacter(character, reading_token.tone))
+                    tokens.append(TonedCharacter(character, reading_token.tone))
                 else:
                     # Sometimes the tokens do not have tones (e.g. in the translation for T-shirt)
-                    wordtokens.append(Text(character))
+                    tokens.append(Text(character))
             
-            tokens.append(Word(wordtokens))
+            words.append(Word(*tokens))
         
         return self.mapparsedtokens(sentence, addword)
 
     def mapparsedtokens(self, sentence, addword):
-        # Represents the resulting token stream
-        tokens = TokenList()
+        # Represents the resulting stream of words
+        words = []
         
         for recognised, thing in self.parse(sentence):
             if not recognised:
                 # A single unrecognised character: it's probably just whitespace or punctuation.
                 # Append it directly to the token list.
-                tokens.append(Text(thing))
+                words.append(Word(Text(thing)))
             else:
                 # Got a recognised token sequence! Hooray! Use the user-supplied function to add this
                 # thing to the output
-                addword(tokens, thing)
+                addword(words, thing)
         
-        return tokens
+        return words
 
     """
     Given a string of Hanzi, return definitions and measure words for the first recognisable thing in the string.
@@ -206,7 +206,7 @@ class PinyinDictionary(object):
         dictmeanings, dictmeasurewords = self.meanings(sentence, prefersimptrad)
         
         if dictmeanings != None or dictmeasurewords != None:
-            return (dictmeanings or []) + [TokenList([Text("MW: ")] + dictmeasureword) for dictmeasureword in (dictmeasurewords or [])]
+            return (dictmeanings or []) + [[Word(Text("MW: "))] + dictmeasureword for dictmeasureword in (dictmeasurewords or [])]
         else:
             return None
 
@@ -254,13 +254,13 @@ if __name__=='__main__':
         def testTonedTokens(self):
             toned = pinyindict.tonedchars(u"一个")
             self.assertEquals(flatten(toned), u"一个")
-            self.assertEquals(toned[0].token[0].tone, 1)
-            self.assertEquals(toned[0].token[1].tone, 4)
+            self.assertEquals(toned[0][0].tone, 1)
+            self.assertEquals(toned[0][1].tone, 4)
 
         def testTonedTokensWithoutTone(self):
             toned = pinyindict.tonedchars(u"T恤")
             self.assertEquals(flatten(toned), u"T恤")
-            self.assertEquals(toned[0].token[1].tone, 4)
+            self.assertEquals(toned[0][1].tone, 4)
 
         def testTonedTokenNumbers(self):
             # Although it kind of makes sense to return the arabic numbers with tone colors, users don't expect it :-)

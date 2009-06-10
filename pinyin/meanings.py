@@ -23,7 +23,7 @@ class MeaningFormatter(object):
             definition = definition.strip().replace("CL:", "MW:")
             
             # Detect measure-word ness
-            tokens = TokenList()
+            words = []
             if definition.startswith("MW:"):
                 ismeasureword = True
                 
@@ -34,21 +34,21 @@ class MeaningFormatter(object):
             
             for ismatch, thing in utils.regexparse(self.embeddedchineseregex, definition):
                 if ismatch:
-                    # A match - we can append a representation of the tokens it contains
-                    self.formatmatch(tokens, thing, tonedchars_callback)
+                    # A match - we can append a representation of the words it contains
+                    self.formatmatch(words, thing, tonedchars_callback)
                 else:
                     # Just a string: append it as-is
-                    tokens.append(Text(thing))
+                    words.append(Word(Text(thing)))
             
             # Add the tokens to the right pile
             if ismeasureword:
-                measurewords.append(tokens)
+                measurewords.append(words)
             else:
-                meanings.append(tokens)
+                meanings.append(words)
             
         return meanings, measurewords
     
-    def formatmatch(self, tokens, match, tonedchars_callback):
+    def formatmatch(self, words, match, tonedchars_callback):
         if match.group(3) != None:
             # A single character standing by itself, with no | - just use the character
             character = match.group(3)
@@ -61,16 +61,16 @@ class MeaningFormatter(object):
         
         if match.group(4) != None:
             # There was some pinyin for the character after it - include it
-            tokens.append(Text(character))
-            tokens.append(Text(" - "))
-            tokens.append(Word.spacedwordreading(TokenList.fromspacedstring(match.group(4))))
+            words.append(Word(Text(character)))
+            words.append(Word(Text(" - ")))
+            words.append(Word.spacedwordfromunspacedtokens(tokenize(match.group(4))))
         else:
             if tonedchars_callback:
                 # Look up the tone for the character so we can display it more nicely, as in the other branch
-                tokens.extend(tonedchars_callback(character))
+                words.extend(tonedchars_callback(character))
             else:
                 # No callback, so the best we can do is to include the characters verbatim
-                tokens.append(Text(character))
+                words.append(Word(Text(character)))
 
 if __name__=='__main__':
     import unittest
@@ -92,9 +92,8 @@ if __name__=='__main__':
             self.assertEquals(len(means), 2)
             self.assertEquals(mws, [])
             
-            interesting_tokens = [token for token in means[0] if token.strip() != u""]
-            self.assertEquals(interesting_tokens, [u"Jane", u"Austen", u"(1775-1817),", u"English", u"novelist"])
-            self.assertEquals([hasattr(token, "tone") for token in interesting_tokens], [False, False, False, False, False])
+            self.assertEquals(flatten(means[0]), u"Jane Austen (1775-1817), English novelist")
+            self.assertFalse(any([hasattr(token, "tone") for token in means[0]]))
         
         def testSplitNoMeasureWords(self):
             means, mws = self.parse(1, "simp", u"/morning/junk junk")

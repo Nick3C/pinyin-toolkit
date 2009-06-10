@@ -166,6 +166,9 @@ class HanziGraphHook(hooks.Hook):
         extragraph.addWidget(QtGui.QLabel("<h1>Unique Hanzi (Cumulative, By HSK Level)</h1>"))
         graphwindow.vbox.addWidget(extragraph)
         graphwindow.widgets.append(extragraph)
+        
+        # Add our graph to the name map - this is necessary to avoid exceptions when using show/hide
+        graphwindow.nameMap['hanzi'] = "Unique Hanzi (Cumulative, By HSK Level)"
     
     def install(self):
         from anki.hooks import wrap

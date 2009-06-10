@@ -297,9 +297,19 @@ def urlescape(what):
 def striphtml(what):
     return re.sub('<(?!(?:a\s|/a|!))[^>]*>', '', what)
 
+def concat(what):
+    return sum(what, [])
 
 if __name__=='__main__':
     import unittest
+    
+    class ConcatTest(unittest.TestCase):
+        def testConcatNothing(self):
+            self.assertEquals(concat([]), [])
+            self.assertEquals(concat([[], []]), [])
+        
+        def testConcat(self):
+            self.assertEquals(concat([[1, 2], [3, 4], [], [5]]), [1, 2, 3, 4, 5])
     
     class UrlEscapeTest(unittest.TestCase):
         def testEscapeUrlEncode(self):
