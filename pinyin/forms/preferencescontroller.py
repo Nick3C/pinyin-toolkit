@@ -326,6 +326,12 @@ class ColorChooserMapping(Mapping):
     def palette(self):
         return self.button.palette()
     
+    def setPalette(self, palette):
+        self.button.setPalette(palette)
+        
+        # Modifying the palette seems to require an explicit repaint
+        self.button.update()
+    
     def updateModel(self):
         color = self.pickcolor(self.palette().color(QPalette.ButtonText))
         
@@ -338,10 +344,7 @@ class ColorChooserMapping(Mapping):
     def updateViewValue(self, value):
         r, g, b = pinyin.utils.parseHtmlColor(value)
         
-        # I used to just set QPalette.ButtonText, but didn't show up on Windows. Try a larger hammer:
-        for paletteentry in [QPalette.ButtonText, QPalette.Text, QPalette.WindowText]:
-            self.palette().setColor(paletteentry, QColor(r, g, b))
-        
-        # Modifying the palette seems to require an explicit repaint
-        self.button.update()
+        palette = self.palette()
+        palette.setColor(QPalette.ButtonText, QColor(r, g, b))
+        self.setPalette(palette)
 
