@@ -147,6 +147,8 @@ class FieldUpdater(object):
   
         # Preload the meaning, but only if we absolutely have to
         if self.config.needmeanings:
+            # Start by asking the built-in dictionary what the meaning should be
+            dictmeaningssource = None
             if self.config.detectmeasurewords and "mw" in fact:
                 # Get measure words and meanings seperately
                 dictmeanings, dictmeasurewords = self.config.dictionary.meanings(expression, self.config.prefersimptrad)
@@ -161,14 +163,14 @@ class FieldUpdater(object):
             # This helps deal with small dictionaries (for example French)
             if dictmeanings == None and dictmeasurewords == None and self.config.shouldusegoogletranslate:
                 log.info("Using Google translate to determine the unknown meaning of %s", expression)
-                translation = dictionaryonline.gTrans(expression, self.config.dictlanguage)
-                
-                # Only fill out the meanings field if we get something useful back
-                if translation != None:
-                    dictmeanings = [pinyin.TokenList([pinyin.Text(translation)])]
+                dictmeanings = dictionaryonline.gTrans(expression, self.config.dictlanguage)
+                dictmeaningssource = '<br /><span style="color:gray"><small>[Google Translate]</small></span>'
 
             # NB: expression only used for Hanzi masking here
             meaning = self.generatemeanings(expression, dictmeanings)
+            if meaning and dictmeaningssource:
+                # Append attribution to the meaning if we have any
+                meaning = meaning + dictmeaningssource
             
             # DEBUG: Nick wants to do something with audio for measure words here?
             # yes, want the measure word to appear as:
@@ -356,12 +358,12 @@ if __name__ == "__main__":
         
         def testFallBackOnGoogleForPhrase(self):
             self.assertEquals(
-                self.updatefact(u"㝵㝵㝵㝵㝵", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                self.updatefact(u"你好，你是我的朋友吗", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
                     fallbackongoogletranslate = True,
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
                     tonedisplay = "numeric", audiogeneration = False, hanzimasking = False), {
-                        "reading" : u'de2 de2 de2 de2 de2',
-                        "meaning" : u'㝵㝵㝵㝵㝵<br /><span style="color:gray"><small>[Google Translate]</small></span>',
+                        "reading" : u'ni3 hao3, ni3 shi4 wo3 de peng2 you ma',
+                        "meaning" : u'Hello, you are right my friend<br /><span style="color:gray"><small>[Google Translate]</small></span>',
                         "mw" : "", "audio" : "", "color" : ""
                       })
         

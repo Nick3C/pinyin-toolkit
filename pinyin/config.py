@@ -94,6 +94,20 @@ defaultsettings = {
       },
     
     # Links occur in the order that they will be shown in the file
+    #
+    # Change MDBG submit to match:
+    # http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=1&insertsimpleentry_old_cedict=語言障礙+语言障碍+[yu3+yan2+zhang4+ai4]+/speech+defect/
+    # 
+    # Consider:
+    # Chinese wikipedia
+    # 
+    # need to deal with unicode encoding first
+    # great, add it       http://hmarty.free.fr/hanzi/
+    # alright but ugly    http://humanum.arts.cuhk.edu.hk/cgi-bin/agrep-lindict?query=test&category=full&boo=no&ignore=on&substr=on&order=all
+    # not so good         http://cdict.net/?q=%AD%FC
+    # 
+    # need to crack javascript:
+    # AMAZING         http://www.zdic.net/    [largest encyclopedia in china)
     "weblinks" : [
       ('e',       'Submit CC-CEDICT entry',  'http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified={searchTerms}'),
       ('Nckiu',   'Nckiu',                   'http://www.nciku.com/mini/all/{searchTerms}'),
@@ -102,7 +116,7 @@ defaultsettings = {
       ('Iciba',   'Iciba',                   'http://love.iciba.com//?{searchTerms}/?'),
       (u'互动百科',   'Hudong',                  'http://www.hudong.com/wiki/{searchTerms}'),
       ('Unihan',  'Unicode Unihan Database', 'http://www.unicode.org/cgi-bin/GetUnihanData.pl?codepoint={searchTerms}'),
-      ('WikiD',   'Wiktionary',              'http://en.wiktionary.org/wiki/{searchTerms}'), # Not that good yet
+      #('WikiD',   'Wiktionary',              'http://en.wiktionary.org/wiki/{searchTerms}'), # Not that good yet
       ('YellowB', 'Yellow Bridge',           'http://www.yellowbridge.com/chinese/charsearch.php?searchChinese=1&zi={searchTerms}'),
       (u'有道',     'Youdao',                  'http://dict.youdao.com/search?q={searchTerms}&btnindex=&ue=utf8&keyfrom=dict.index'),
       (u'雅虎',     'Zidian',                  'http://zidian.cn.yahoo.com/result_cn2en.html?p={searchTerms}')

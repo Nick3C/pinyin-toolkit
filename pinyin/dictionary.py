@@ -103,6 +103,8 @@ class PinyinDictionary(object):
         log.info("Requested reading for %s", sentence)
         
         def addword(tokens, thing):
+            readingtokens = self.__readings[thing]
+            
             # If we already have some text building up, add a preceding space.
             # However, if the word we got looks like punctuation, don't do it.
             # This ensures consistency in the treatment of Western and Chinese
@@ -113,11 +115,12 @@ class PinyinDictionary(object):
             have_some_text = len(tokens) > 0
             is_punctuation = ispunctuation(thing)
             already_have_space = have_some_text and tokens[-1].endswith(u' ')
-            if have_some_text and not(is_punctuation) and not(already_have_space):
+            reading_starts_with_er = len(readingtokens) > 0 and readingtokens[0].iser
+            if have_some_text and not(is_punctuation) and not(already_have_space) and not(reading_starts_with_er):
                 tokens.append(Text(u' '))
             
             # Add this reading into the token list with nice formatting
-            tokens.append(Word.spacedwordreading(self.__readings[thing]))
+            tokens.append(Word.spacedwordreading(readingtokens))
         
         return self.mapparsedtokens(sentence, addword)
 
@@ -213,7 +216,7 @@ class PinyinDictionary(object):
             return
         
         # Strip HTML
-        sentence = re.sub('<(?!(?:a\s|/a|!))[^>]*>', '', sentence)
+        sentence = striphtml(sentence)
         
         # Iterate through the text
         i = 0;
@@ -321,6 +324,9 @@ if __name__=='__main__':
         def testShortPinyin(self):
             self.assertEquals(flatten(englishdict.reading(u"股指")), "gu3 zhi3")
             self.assertEquals(self.flatmeanings(englishdict, u"股指"), [u"stock market index", u"share price index", u"abbr. for 股票指数 - gu3 piao4 zhi3 shu4"])
+        
+        def testErhuaNotSpacedInReadingEvenForUnknownWords(self):
+            self.assertEquals(flatten(englishdict.reading(u"土豆条儿")), "tu3 dou4 tiao2r")
     
         def testSimpMeanings(self):
             self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="simp"), [u"book", u"letter", u"same as 书经 Book of History", u"MW: 本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])
