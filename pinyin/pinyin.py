@@ -130,7 +130,7 @@ class Pinyin(object):
         # (e.g. proper names) and this screws with e.g. the tonification logic.
         self.word = text[:-1]
     
-    iser = property(lambda self: self.word == u"r" and self.tone == 5)
+    iser = property(lambda self: self.word.lower() == u"r" and self.tone == 5)
 
     def __str__(self):
         return self.__unicode__()
@@ -365,6 +365,7 @@ if __name__ == "__main__":
         
         def testIsEr(self):
             self.assertTrue(Pinyin(u"r5").iser)
+            self.assertTrue(Pinyin(u"R5").iser)
             self.assertFalse(Pinyin(u"r4").iser)
             self.assertFalse(Pinyin(u"er5").iser)
         
