@@ -120,14 +120,19 @@ class HanziGraphHook(hooks.Hook):
             return None
         
         # Retrieve information about the card contents that were first answered on each day
+        #
         # NB: the KanjiGraph uses information from ANY field (i.e. does not look at the fieldModels.name
         # value at all). However, Nick was confused by this behaviour because he had some radicals in his
         # deck, so his graph looked like he had `learnt' thousands of characters based on the listing of
         # every character in the `examples' fields of his radical facts.
+        #
+        # NB: the first answered time can be 0 but repeats > 1 due to a bug in an Anki feature which will
+        # have screwed up the data in old decks. Exclude such data: <http://github.com/batterseapower/pinyin-toolkit/issues/closed/#issue/48>
         return self.mw.deck.s.all("""
         select value, firstAnswered from cards, fields, fieldModels, facts
         where
         cards.reps > 0 and
+        cards.firstAnswered != 0 and
         cards.factId = fields.factId
         and cards.factId = facts.id
         and facts.modelId in %s
