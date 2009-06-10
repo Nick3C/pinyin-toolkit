@@ -34,7 +34,7 @@ class ToneSandhiVisitor(TokenVisitor):
     # with recursive value definitions (albeit it in a rather clunky format!)
     
     def visitText(self, text):
-        return False, lambda _a, _b, _c, _d: text
+        return lambda lw, ls, rs, rw: text
 
     def visitPinyin(self, pinyin):
         return self.visitToned(pinyin, lambda tone: Pinyin(pinyin.word + str(tone)))
@@ -65,25 +65,14 @@ class ToneSandhiVisitor(TokenVisitor):
         return True, do
 
     def visitWord(self, word):
-        ismono, doer = word.token.accept(self)
-        return ismono, lambda monobefore, _, islastinword, monoafter: doer(monobefore, ismono, True, monoafter)
+        return lambda lw, ls, rs, rw: word.token.accept(self)(lw, [], [], rw)
 
     def visitTokenList(self, tokens):
-        ismonos = []
-        doers = []
-        for token in tokens:
-            ismono, doer = token.accept(self)
-            ismonos.append(ismono)
-            doers.append(doer)
+        def do(lw, ls, rs, rw):
+            for n, token in enumerate(tokens):
+                token.accept(self)(n == 0 and lw or token[n - 1], )
         
-        def do(monobefore, ismono, islastinword, monoafter):
-            newtokens = TokenList()
-            for n, doer in enumerate(doers):
-                newtokens.append(doer(n >= 1 and ismono and ismonos[n - 1], ismono, islastinword and n == len(doers) - 1, n < len(doers) - 1 and ismono and ismonos[n + 1]))
-            
-            return newtokens
-        
-        return (len(ismonos) == 1) and ismonos[0], do
+        return do
 
 
 # Convenience wrapper around the TrimErhuaVisitor
@@ -432,6 +421,26 @@ if __name__=='__main__':
         
         def testMonoMulti(self):
             self.assertSandhi(Word(Pinyin("lao3")), Word(TokenList([Pinyin("bao3"), Pinyin("guan3")])), "lao3bao2guan3")
+        
+        def testYiFollowedByFour(self):
+            self.assertSandhi(Pinyin("yi1"), Pinyin("ding4"), "yi2ding4")
+        
+        def testYiFollowedByOther(self):
+            self.assertSandhi(Pinyin("yi1"), Pinyin("tian1"), "yi4tian1")
+            self.assertSandhi(Pinyin("yi1"), Pinyin("nian2"), "yi4nian2")
+            self.assertSandhi(Pinyin("yi1"), Pinyin("qi3"), "yi4qi3")
+        
+        def testYiBetweenTwoWords(self):
+            self.assertSandhi(Word(Pinyin("kan4")), Word(Pinyin("yi1")), Word(Pinyin("kan4")), "kan4yikan4")
+        
+        # NB: don't bother to implement yi1 sandhi that depends on context such as whether we are
+        # counting sequentially or using yi1 as an ordinal number
+        
+        def testBuFollowedByFourth(self):
+            self.assertSandhi(Pinyin("bu4"), Pinyin("shi4"), "bu2shi4")
+        
+        def testBuBetweenTwoWords(self):
+            self.assertSandhi(Word(Pinyin("shi4")), Word(Pinyin("bu4")), Word(Pinyin("shi4")), "shi4bushi4")
         
         # Test helpers
         def assertSandhi(self, *args):
