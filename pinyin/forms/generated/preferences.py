@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'designer/preferences.ui'
 #
-# Created: Wed Jun 10 23:51:42 2009
+# Created: Wed Jun 10 23:56:48 2009
 #      by: PyQt4 UI code generator 4.4.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -306,11 +306,11 @@ class Ui_Preferences(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.textTab), QtGui.QApplication.translate("Preferences", "Text", None, QtGui.QApplication.UnicodeUTF8))
         self.toneColorsSettingsFrame.setTitle(QtGui.QApplication.translate("Preferences", "Tone Colors", None, QtGui.QApplication.UnicodeUTF8))
         self.colorizeCheck.setText(QtGui.QApplication.translate("Preferences", "Colorize Pinyin and Hanzi with tones", None, QtGui.QApplication.UnicodeUTF8))
-        self.tone1Button.setText(QtGui.QApplication.translate("Preferences", "1 (ā)", None, QtGui.QApplication.UnicodeUTF8))
-        self.tone2Button.setText(QtGui.QApplication.translate("Preferences", "2 (á)", None, QtGui.QApplication.UnicodeUTF8))
+        self.tone1Button.setText(QtGui.QApplication.translate("Preferences", "1 (ū)", None, QtGui.QApplication.UnicodeUTF8))
+        self.tone2Button.setText(QtGui.QApplication.translate("Preferences", "2 (ú)", None, QtGui.QApplication.UnicodeUTF8))
         self.tone3Button.setText(QtGui.QApplication.translate("Preferences", "3 (ǔ)", None, QtGui.QApplication.UnicodeUTF8))
-        self.tone4Button.setText(QtGui.QApplication.translate("Preferences", "4 (à)", None, QtGui.QApplication.UnicodeUTF8))
-        self.tone5Button.setText(QtGui.QApplication.translate("Preferences", "5 (a)", None, QtGui.QApplication.UnicodeUTF8))
+        self.tone4Button.setText(QtGui.QApplication.translate("Preferences", "4 (ù)", None, QtGui.QApplication.UnicodeUTF8))
+        self.tone5Button.setText(QtGui.QApplication.translate("Preferences", "5 (u)", None, QtGui.QApplication.UnicodeUTF8))
         self.quickAccessColorsSettingsFrame.setTitle(QtGui.QApplication.translate("Preferences", "Quick Access Colors", None, QtGui.QApplication.UnicodeUTF8))
         self.quickAccess1Button.setText(QtGui.QApplication.translate("Preferences", "6", None, QtGui.QApplication.UnicodeUTF8))
         self.quickAccess2Button.setText(QtGui.QApplication.translate("Preferences", "7", None, QtGui.QApplication.UnicodeUTF8))
