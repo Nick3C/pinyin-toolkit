@@ -4,64 +4,108 @@
 import utils
 
 
+# The basic data model is as follows:
+#  * Text is represented as lists of Words
+#  * Words contain lists of Tokens
+#  * Tokens are either Text, Pinyin or TonedCharacters
+
 """
 Represents a word boundary in the system, where the tokens inside represent a complete Chinese word.
 """
-class Word(object):
-    def __init__(self, token):
-        self.token = token
-    
-    iser = property(lambda self: self.token.iser)
-    
-    def __eq__(self, other):
-        if other is None:
-            return False
-        
-        return self.token == other.token
-    
-    def __ne__(self, other):
-        return not(self == other)
+class Word(list):
+    def __init__(self, *items):
+        # Filter bad elements
+        list.__init__(self, [item for item in items if item != None])
     
     def __repr__(self):
-        return u"Word(%s)" % repr(self.token)
+        return u"Word(%s)" % list.__repr__(self)[1:-1]
     
     def __str__(self):
         return unicode(self)
     
     def __unicode__(self):
-        return u"<%s>" % unicode(self.token)
+        output = u"<"
+        for n, token in enumerate(self):
+            if n != 0:
+                output += u", "
+            output += unicode(token)
+        
+        return output + u">"
+    
+    def append(self, what):
+        # Filter bad elements
+        if what != None:
+            list.append(self, what)
     
     def accept(self, visitor):
-        return visitor.visitWord(self)
+        for token in self:
+            token.accept(visitor)
+    
+    def map(self, visitor):
+        word = Word()
+        for token in self:
+            word.append(token.accept(visitor))
+        return word
+    
+    def concatmap(self, visitor):
+        word = Word()
+        for token in self:
+            for newtoken in token.accept(visitor):
+                word.append(newtoken)
+        return word
     
     @classmethod
-    def spacedwordreading(cls, reading_tokens):
-        # Add the tokens to the tokens, with spaces between the components
-        tokens = TokenList()
+    def spacedwordfromunspacedtokens(cls, reading_tokens):
+        # Add the tokens to the word, with spaces between the components
+        word = Word()
         reading_tokens_count = len(reading_tokens)
         for n, reading_token in enumerate(reading_tokens):
             # Don't add spaces if this is the first token or if we have an erhua
             if n != 0 and not(reading_token.iser):
-                tokens.append(Text(u' '))
+                word.append(Text(u' '))
 
-            tokens.append(reading_token)
+            word.append(reading_token)
         
-        # Put the tokens together along with a Word marker
-        return Word(tokens)
-    
-    # String compatability method
-    def endswith(self, what):
-        return self.token.endswith(what)
+        return word
 
+"""
+Turns a space-seperated string of pinyin and English into a list of tokens,
+as best we can.
+"""
+def tokenize(text):
+    # Read the pinyin into the array: sometimes this field contains
+    # english (e.g. in the pinyin for 'T shirt') so we better handle that
+    tokens = []
+    for possible_token in text.split():
+        try:
+            tokens.append(Pinyin(possible_token))
+        except ValueError:
+            tokens.append(Text(possible_token))
+
+    return tokens
+
+"""
+Represents a purely textual token.
+"""
+class Text(unicode):
+    def __new__(cls, text):
+        if len(text) == 0:
+            raise ValueError("All Text tokens must be non-empty")
+        
+        return unicode.__new__(cls, text)
+
+    iser = property(lambda self: False)
+
+    def __repr__(self):
+        return "Text(%s)" % unicode.__repr__(self)
+
+    def accept(self, visitor):
+        return visitor.visitText(self)
 
 """
 Represents a single Pinyin character in the system.
 """
 class Pinyin(object):
-    # Controls whether the neutral tone is hidden in the representation of a pinyin
-    # that comes out of __str__. Used to e.g. hide the tone on an 'r' suffix pinyin
-    hideneutraltone = True
-    
     """
     Constructs a Pinyin object from text representing a single character and numeric tone mark.
     
@@ -92,7 +136,7 @@ class Pinyin(object):
         return self.__unicode__()
     
     def __unicode__(self):
-        return self.numericformat(hideneutraltone=self.hideneutraltone)
+        return self.numericformat(hideneutraltone=True)
     
     def __repr__(self):
         return "Pinyin(%s)" % repr(self.numericformat())
@@ -140,65 +184,6 @@ class TonedCharacter(unicode):
         return visitor.visitTonedCharacter(self)
 
 """
-Represents a purely textual token.
-"""
-class Text(unicode):
-    def __new__(cls, text):
-        if len(text) == 0:
-            raise ValueError("All Text tokens must be non-empty")
-        
-        return unicode.__new__(cls, text)
-
-    iser = property(lambda self: False)
-
-    def __repr__(self):
-        return "Text(%s)" % unicode.__repr__(self)
-
-    def accept(self, visitor):
-        return visitor.visitText(self)
-
-"""
-Represents some pinyin and unknown text tokens as a list of strings and Pinyin objects.
-"""
-class TokenList(list):
-    def __init__(self, items=[]):
-        # Filter bad elements
-        list.__init__(self, [item for item in items if item != None])
-    
-    iser = property(lambda self: len(self) == 1 and self[0].iser)
-    
-    def accept(self, visitor):
-        return visitor.visitTokenList(self)
-    
-    def append(self, what):
-        # Filter bad elements
-        if what != None:
-            list.append(self, what)
-    
-    @classmethod
-    def fromspacedstring(cls, raw_pinyin):
-        # Read the pinyin into the array: sometimes this field contains
-        # english (e.g. in the pinyin for 'T shirt') so we better handle that
-        tokens = TokenList()
-        for the_raw_pinyin in raw_pinyin.split():
-            try:
-                tokens.append(Pinyin(the_raw_pinyin))
-            except ValueError:
-                tokens.append(Text(the_raw_pinyin))
-
-        # Special treatment for the erhua suffix: never show the tone in the string representation.
-        # NB: currently hideneutraltone defaults to True, so this is sort of pointless.
-        last_token = tokens[-1]
-        if type(last_token) == Pinyin and last_token.iser:
-            last_token.hideneutraltone = True
-
-        return tokens
-
-    # String compatability method
-    def endswith(self, what):
-        return self[-1].endswith(what)
-
-"""
 Visitor for all token objects.
 """
 class TokenVisitor(object):
@@ -211,46 +196,16 @@ class TokenVisitor(object):
     def visitTonedCharacter(self, tonedcharacter):
         raise NotImplementedError("Got an unexpected TonedCharacter object %s", tonedcharacter)
 
-    def visitWord(self, word):
-        raise NotImplementedError("Got an unexpected Word object %s", word)
-
-    def visitTokenList(self, tokens):
-        raise NotImplementedError("Got an unexpected TokenList object %s", tokens)
-
-"""
-Visitor for token objects that looks through Words and TokenLists.
-"""
-class LeafTokenVisitor(TokenVisitor):
-    def visitWord(self, word):
-        return word.token.accept(self)
-    
-    def visitTokenList(self, tokens):
-        for token in tokens:
-            token.accept(self)
-
-"""
-Visitor for token objects that looks through and rebuilds Words and TokenLists.
-"""
-class MapTokenVisitor(TokenVisitor):
-    def visitWord(self, word):
-        return Word(word.token.accept(self))
-    
-    def visitTokenList(self, tokens):
-        newtokens = TokenList()
-        for token in tokens:
-            newtokens.append(token.accept(self))
-        return newtokens
-
-# Convenience wrapper around the FlattenTokensVisitor
-def flatten(token, tonify=False):
-    visitor = FlattenTokensVisitor(tonify)
-    token.accept(visitor)
-    return visitor.output
-
 """
 Flattens the supplied tokens down into a single string.
 """
-class FlattenTokensVisitor(LeafTokenVisitor):
+def flatten(words, tonify=False):
+    visitor = FlattenTokensVisitor(tonify)
+    for word in words:
+        word.accept(visitor)
+    return visitor.output
+
+class FlattenTokensVisitor(TokenVisitor):
     def __init__(self, tonify):
         self.output = u""
         self.tonify = tonify
@@ -267,6 +222,27 @@ class FlattenTokensVisitor(LeafTokenVisitor):
     def visitTonedCharacter(self, tonedcharacter):
         self.output += unicode(tonedcharacter)
 
+"""
+Report whether the supplied list of words ends with a space
+character. Used for producing pretty formatted output.
+"""
+def endswithspace(words):
+    visitor = EndsWithSpaceVisitor()
+    [word.accept(visitor) for word in words]
+    return visitor.endswithspace
+
+class EndsWithSpaceVisitor(TokenVisitor):
+    def __init__(self):
+        self.endswithspace = False
+    
+    def visitText(self, text):
+        self.endswithspace = text.endswith(u" ")
+    
+    def visitPinyin(self, pinyin):
+        self.endswithspace = False
+    
+    def visitTonedCharacter(self, tonedcharacter):
+        self.endswithspace = tonedcharacter.endswith(u" ")
 
 """
 Parser class to add diacritical marks to numbered pinyin.
@@ -373,10 +349,6 @@ if __name__ == "__main__":
         def testStrNeutralTone(self):
             py = Pinyin(u"ma5")
             self.assertEquals(str(py), u"ma")
-            
-            # Since the default is to hide neutral tones, this doesn't do anything yet
-            py.hideneutraltone = True
-            self.assertEquals(str(py), u"ma")
         
         def testNumericFormat(self):
             self.assertEquals(Pinyin(u"hen3").numericformat(), u"hen3")
@@ -413,20 +385,16 @@ if __name__ == "__main__":
     
     class WordTest(unittest.TestCase):
         def testAppendSingleReading(self):
-            self.assertEquals(flatten(Word.spacedwordreading([Pinyin(u"hen3")])), u"hen3")
+            self.assertEquals(flatten([Word.spacedwordfromunspacedtokens([Pinyin(u"hen3")])]), u"hen3")
 
         def testAppendMultipleReadings(self):
-            self.assertEquals(flatten(Word.spacedwordreading([Pinyin(u"hen3"), Pinyin(u"ma5")])), u"hen3 ma")
+            self.assertEquals(flatten([Word.spacedwordfromunspacedtokens([Pinyin(u"hen3"), Pinyin(u"ma5")])]), u"hen3 ma")
         
         def testAppendSingleReadingErhua(self):
-            self.assertEquals(flatten(Word.spacedwordreading([Pinyin(u"r5")])), u"r")
+            self.assertEquals(flatten([Word.spacedwordfromunspacedtokens([Pinyin(u"r5")])]), u"r")
 
         def testAppendMultipleReadingsErhua(self):
-            self.assertEquals(flatten(Word.spacedwordreading([Pinyin(u"hen3"), Pinyin(u"ma5"), Pinyin("r5")])), u"hen3 mar")
-    
-        def testEndsWith(self):
-            self.assertTrue(Word(Text(u"hello")).endswith(u"lo"))
-            self.assertFalse(Word(Text(u"hello")).endswith(u"ol"))
+            self.assertEquals(flatten([Word.spacedwordfromunspacedtokens([Pinyin(u"hen3"), Pinyin(u"ma5"), Pinyin("r5")])]), u"hen3 mar")
         
         def testEquality(self):
             self.assertEquals(Word(Text(u"hello")), Word(Text(u"hello")))
@@ -438,10 +406,57 @@ if __name__ == "__main__":
         def testStr(self):
             self.assertEquals(str(Word(Text(u"hello"))), u"<hello>")
             self.assertEquals(unicode(Word(Text(u"hello"))), u"<hello>")
+            
+        def testFilterNones(self):
+            self.assertEquals(Word(None, Text("yes"), None, Text("no")), Word(Text("yes"), Text("no")))
         
-        def testIsEr(self):
-            self.assertFalse(Word(Text("r5")).iser)
-            self.assertTrue(Word(Pinyin("r5")).iser)
+        def testAppendNoneFiltered(self):
+            word = Word(Text("yes"), Text("no"))
+            word.append(None)
+            self.assertEquals(word, Word(Text("yes"), Text("no")))
+        
+        def testAccept(self):
+            output = []
+            class Visitor(object):
+                def visitText(self, text):
+                    output.append(text)
+                
+                def visitPinyin(self, pinyin):
+                    output.append(pinyin)
+                
+                def visitTonedCharacter(self, tonedcharacter):
+                    output.append(tonedcharacter)
+            
+            Word(Text("Hi"), Pinyin("hen3"), TonedCharacter("a", 2), Text("Bye")).accept(Visitor())
+            self.assertEqual(output, [Text("Hi"), Pinyin("hen3"), TonedCharacter("a", 2), Text("Bye")])
+        
+        def testMap(self):
+            class Visitor(object):
+                def visitText(self, text):
+                    return Text("MEH")
+                
+                def visitPinyin(self, pinyin):
+                    return Pinyin("meh3")
+                
+                def visitTonedCharacter(self, tonedcharacter):
+                    return TonedCharacter("M", 2)
+            
+            self.assertEqual(Word(Text("Hi"), Pinyin("hen3"), TonedCharacter("a", 2), Text("Bye")).map(Visitor()),
+                             Word(Text("MEH"), Pinyin("meh3"), TonedCharacter("M", 2), Text("MEH")))
+        
+        def testConcatMap(self):
+            class Visitor(object):
+                def visitText(self, text):
+                    return []
+                
+                def visitPinyin(self, pinyin):
+                    return [pinyin, pinyin]
+                
+                def visitTonedCharacter(self, tonedcharacter):
+                    return [TonedCharacter("M", 2)]
+            
+            self.assertEqual(Word(Text("Hi"), Pinyin("hen3"), TonedCharacter("a", 2), Text("Bye")).concatmap(Visitor()),
+                             Word(Pinyin("hen3"), Pinyin("hen3"), TonedCharacter("M", 2)))
     
     class TonedCharacterTest(unittest.TestCase):
         def testIsEr(self):
@@ -449,40 +464,15 @@ if __name__ == "__main__":
             self.assertTrue(TonedCharacter(u"兒", 5).iser)
             self.assertFalse(TonedCharacter(u"化", 2).iser)
 
-    class TokenListTest(unittest.TestCase):
-        def testFilterNones(self):
-            self.assertEquals(TokenList([None, Text("yes"), None, Text("no")]), TokenList([Text("yes"), Text("no")]))
-        
-        def testAppendNoneFiltered(self):
-            tokens = TokenList([Text("yes"), Text("no")])
-            tokens.append(None)
-            self.assertEquals(tokens, TokenList([Text("yes"), Text("no")]))
-
-        # TODO: test handling of erhua in append
-
+    class TokenizeTest(unittest.TestCase):
         def testFromSingleSpacedString(self):
-            self.assertEquals(TokenList([Pinyin(u"hen3")]), TokenList.fromspacedstring(u"hen3"))
+            self.assertEquals([Pinyin(u"hen3")], tokenize(u"hen3"))
 
         def testFromMultipleSpacedString(self):
-            self.assertEquals(TokenList([Pinyin(u"hen3"), Pinyin(u"hao3")]), TokenList.fromspacedstring(u"hen3 hao3"))
+            self.assertEquals([Pinyin(u"hen3"), Pinyin(u"hao3")], tokenize(u"hen3 hao3"))
 
         def testFromSpacedStringWithEnglish(self):
-            self.assertEquals(TokenList([Text(u"T"), Pinyin(u"xu4")]), TokenList.fromspacedstring(u"T xu4"))
-
-        def testEmpty(self):
-            self.assertEquals(TokenList(), TokenList([]))
-        
-        def testEndsWith(self):
-            self.assertTrue(TokenList([Text(u"hello")]).endswith(u"lo"))
-            self.assertFalse(TokenList([Text(u"hello")]).endswith(u"ol"))
-        
-        def testIsEr(self):
-            self.assertFalse(TokenList([]).iser)
-            self.assertFalse(TokenList([Text("r5")]).iser)
-            self.assertTrue(TokenList([Pinyin("r5")]).iser)
-            self.assertFalse(TokenList([Pinyin("r5"), Text("r5")]).iser)
-            self.assertFalse(TokenList([Text("r5"), Pinyin("r5")]).iser)
-            self.assertFalse(TokenList([Pinyin("r5"), Pinyin("r5")]).iser)
+            self.assertEquals([Text(u"T"), Pinyin(u"xu4")], tokenize(u"T xu4"))
 
     class PinyinTonifierTest(unittest.TestCase):
         def testEasy(self):
@@ -501,11 +491,20 @@ if __name__ == "__main__":
     
     class FlattenTest(unittest.TestCase):
         def testFlatten(self):
-            self.assertEquals(flatten(TokenList([Text(u'a '), Pinyin(u"hen3"), Text(u' b'), Word(Text(u"junk")), Pinyin(u"ma5")])),
+            self.assertEquals(flatten([Word(Text(u'a ')), Word(Pinyin(u"hen3"), Text(u' b')), Word(Text(u"junk")), Word(Pinyin(u"ma5"))]),
                               u"a hen3 bjunkma")
             
         def testFlattenTonified(self):
-            self.assertEquals(flatten(TokenList([Text(u'a '), Pinyin(u"hen3"), Text(u' b'), Word(Text(u"junk")), Pinyin(u"ma5")]), tonify=True),
+            self.assertEquals(flatten([Word(Text(u'a ')), Word(Pinyin(u"hen3"), Text(u' b')), Word(Text(u"junk")), Word(Pinyin(u"ma5"))], tonify=True),
                               u"a hěn bjunkma")
+
+    class EndsWithSpaceTest(unittest.TestCase):
+        def testEmptyDoesntEndWithSpace(self):
+            self.assertFalse(endswithspace([]))
+        
+        def testEndsWithSpace(self):
+            self.assertTrue(endswithspace([Word(Text("hello "))]))
+            self.assertTrue(endswithspace([Word(Text("hello"), Text(" "), Text("World"), Text(" "))]))
+            self.assertFalse(endswithspace([Word(Text("hello"))]))
     
     unittest.main()

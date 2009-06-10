@@ -76,52 +76,42 @@ class ToneSandhiVisitor(TokenVisitor):
 
 
 # Convenience wrapper around the TrimErhuaVisitor
-def trimerhua(token):
-    token = token.accept(TrimErhuaVisitor())
-    return token or TokenList([])
+def trimerhua(words):
+    return [word.concatmap(TrimErhuaVisitor()) for word in words]
 
-class TrimErhuaVisitor(MapTokenVisitor):
+class TrimErhuaVisitor(TokenVisitor):
     def visitText(self, text):
-        return text
+        return [text]
 
     def visitPinyin(self, pinyin):
         if pinyin.iser:
-            return None
+            return []
         else:
-            return pinyin
+            return [pinyin]
 
     def visitTonedCharacter(self, tonedcharacter):
         if tonedcharacter.iser:
-            return None
+            return []
         else:
-            return tonedcharacter
-
-    def visitWord(self, word):
-        token = word.token.accept(self)
-        
-        if token:
-            return Word(token)
-        else:
-            return None
+            return [tonedcharacter]
 
 
 # Convenience wrapper around the ColorizerVisitor
-def colorize(colorlist, token):
-    value = token.accept(ColorizerVisitor(colorlist))
-    return value
+def colorize(colorlist, words):
+    return [word.concatmap(ColorizerVisitor(colorlist)) for word in words]
 
 """
 Colorize readings according to the reading in the Pinyin.
 * 2009 rewrites by Max Bolingbroke <batterseapower@hotmail.com>
 * 2009 original version by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
 """
-class ColorizerVisitor(MapTokenVisitor):
+class ColorizerVisitor(TokenVisitor):
     def __init__(self, colorlist):
         self.colorlist = colorlist
         log.info("Using color list %s", self.colorlist)
         
     def visitText(self, text):
-        return text
+        return [text]
 
     def visitPinyin(self, pinyin):
         return self.colorize(pinyin)
@@ -130,11 +120,11 @@ class ColorizerVisitor(MapTokenVisitor):
         return self.colorize(tonedcharacter)
     
     def colorize(self, token):
-        return TokenList([
+        return [
             Text(u'<span style="color:' + self.colorlist[token.tone - 1] + u'">'),
             token,
             Text(u'</span>')
-          ])
+          ]
 
 """
 Output audio reading corresponding to a textual reading.
@@ -173,12 +163,12 @@ class PinyinAudioReadings(object):
             return None, [], True
 
 # Simple wrapper around the PinyinAudioReadingsVisitor
-def audioreadingforpack(mediapack, audioextensions, tokens):
+def audioreadingforpack(mediapack, audioextensions, words):
     visitor = PinyinAudioReadingsVisitor(mediapack, audioextensions)
-    tokens.accept(visitor)
+    [word.accept(visitor) for word in trimerhua(words)]
     return (visitor.output, visitor.mediamissingcount)
 
-class PinyinAudioReadingsVisitor(LeafTokenVisitor):
+class PinyinAudioReadingsVisitor(TokenVisitor):
     def __init__(self, mediapack, audioextensions):
         self.mediapack = mediapack
         self.audioextensions = audioextensions
@@ -216,14 +206,11 @@ class PinyinAudioReadingsVisitor(LeafTokenVisitor):
     def visitTonedCharacter(self, tonedcharacter):
         pass
 
-    def visitWord(self, word):
-        trimerhua(word.token).accept(self)
-
 # Wrapper around the MaskHanziVisitor
-def maskhanzi(expression, maskingcharacter, token):
-    return token.accept(MaskHanziVisitor(expression, maskingcharacter))
+def maskhanzi(expression, maskingcharacter, words):
+    return [word.map(MaskHanziVisitor(expression, maskingcharacter)) for word in words]
 
-class MaskHanziVisitor(MapTokenVisitor):
+class MaskHanziVisitor(TokenVisitor):
     def __init__(self, expression, maskingcharacter):
         self.expression = expression
         self.maskingcharacter = maskingcharacter
@@ -239,7 +226,6 @@ class MaskHanziVisitor(MapTokenVisitor):
             return Text(self.maskingcharacter)
         else:
             return tonedcharacter
-
 
 # Testsuite
 if __name__=='__main__':
@@ -448,33 +434,33 @@ if __name__=='__main__':
     
     class TrimErhuaTest(unittest.TestCase):
         def testTrimErhuaEmpty(self):
-            self.assertEquals(flatten(trimerhua(TokenList([]))), u'')
+            self.assertEquals(flatten(trimerhua([])), u'')
 
         def testTrimErhuaCharacters(self):
-            self.assertEquals(flatten(trimerhua(Word(TokenList([TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2), TonedCharacter(u"儿", 5)])))), u"一瓶")
+            self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2), TonedCharacter(u"儿", 5))])), u"一瓶")
 
         def testTrimErhuaPinyin(self):
-            self.assertEquals(flatten(trimerhua(Word(TokenList([Pinyin(u"yi1"), Pinyin(u"ping2"), Pinyin(u"r5")])))), u"yi1ping2")
-            self.assertEquals(flatten(trimerhua(TokenList([Pinyin(u"yi1"), Pinyin(u"ping2"), Pinyin(u"r5")]))), u"yi1ping2")
+            self.assertEquals(flatten(trimerhua([Word(Pinyin(u"yi1"), Pinyin(u"ping2"), Pinyin(u"r5"))])), u"yi1ping2")
+            self.assertEquals(flatten(trimerhua([Word(Pinyin(u"yi1")), Word(Pinyin(u"ping2"), Pinyin(u"r5"))])), u"yi1ping2")
 
         def testDontTrimNonErhua(self):
-            self.assertEquals(flatten(trimerhua(Word(TokenList([TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2)])))), u"一瓶")
+            self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2))])), u"一瓶")
 
         def testTrimSingleErHua(self):
-            self.assertEquals(flatten(trimerhua(Pinyin(u'r5'))), u'')
-            self.assertEquals(flatten(trimerhua(TonedCharacter(u'儿', 5))), u'')
-            self.assertEquals(flatten(trimerhua(Word(Pinyin(u'r5')))), u'')
-            self.assertEquals(flatten(trimerhua(Word(TonedCharacter(u'儿', 5)))), u'')
-            self.assertEquals(flatten(trimerhua(TokenList([Pinyin(u'r5')]))), u'')
-            self.assertEquals(flatten(trimerhua(TokenList([TonedCharacter(u'儿', 5)]))), u'')
+            self.assertEquals(flatten(trimerhua([Word(Pinyin(u'r5'))])), u'')
+            self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u'儿', 5))])), u'')
+            self.assertEquals(flatten(trimerhua([Word(Pinyin(u'r5'))])), u'')
+            self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u'儿', 5))])), u'')
+            self.assertEquals(flatten(trimerhua([Word(Pinyin(u'r5'))])), u'')
+            self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u'儿', 5))])), u'')
 
     class MaskHanziTest(unittest.TestCase):
         def testMaskText(self):
-            self.assertEquals(maskhanzi("ello", "mask", TokenList([Text("World"), Word(Text("Hello!")), Text(" "), Text("Jello")])),
-                              TokenList([Text("World"), Word(Text("Hmask!")), Text(" "), Text("Jmask")]))
+            self.assertEquals(maskhanzi("ello", "mask", [Word(Text("World")), Word(Text("Hello!")), Word(Text(" "), Text("Jello"))]),
+                              [Word(Text("World")), Word(Text("Hmask!")), Word(Text(" "), Text("Jmask"))])
         
         def testMaskCharacter(self):
-            self.assertEquals(maskhanzi("hen", "chicken", TokenList([Pinyin("hen3"), Word(TonedCharacter("hen", 3)), TonedCharacter("mhh", 2)])),
-                              TokenList([Pinyin("hen3"), Word(Text("chicken")), TonedCharacter("mhh", 2)]))
+            self.assertEquals(maskhanzi("hen", "chicken", [Word(Pinyin("hen3")), Word(TonedCharacter("hen", 3)), Word(TonedCharacter("mhh", 2))]),
+                              [Word(Pinyin("hen3")), Word(Text("chicken")), Word(TonedCharacter("mhh", 2))])
 
     unittest.main()
