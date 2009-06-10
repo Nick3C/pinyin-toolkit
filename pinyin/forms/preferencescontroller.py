@@ -344,6 +344,8 @@ class ColorChooserMapping(Mapping):
     def updateViewValue(self, value):
         r, g, b = pinyin.utils.parseHtmlColor(value)
         
+        # NB: modifying the palette inplace works fine on windows, but fails miserably
+        # on Windows. To be cross-platform, make sure we save the `modified' palette back.
         palette = self.palette()
         palette.setColor(QPalette.ButtonText, QColor(r, g, b))
         self.setPalette(palette)
