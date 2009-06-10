@@ -11,81 +11,6 @@ import utils
 #  * Tokens are either Text, Pinyin or TonedCharacters
 
 """
-Represents a word boundary in the system, where the tokens inside represent a complete Chinese word.
-"""
-class Word(list):
-    def __init__(self, *items):
-        # Filter bad elements
-        list.__init__(self, [item for item in items if item != None])
-    
-    def __repr__(self):
-        return u"Word(%s)" % list.__repr__(self)[1:-1]
-    
-    def __str__(self):
-        return unicode(self)
-    
-    def __unicode__(self):
-        output = u"<"
-        for n, token in enumerate(self):
-            if n != 0:
-                output += u", "
-            output += unicode(token)
-        
-        return output + u">"
-    
-    def append(self, what):
-        # Filter bad elements
-        if what != None:
-            list.append(self, what)
-    
-    def accept(self, visitor):
-        for token in self:
-            token.accept(visitor)
-    
-    def map(self, visitor):
-        word = Word()
-        for token in self:
-            word.append(token.accept(visitor))
-        return word
-    
-    def concatmap(self, visitor):
-        word = Word()
-        for token in self:
-            for newtoken in token.accept(visitor):
-                word.append(newtoken)
-        return word
-    
-    @classmethod
-    def spacedwordfromunspacedtokens(cls, reading_tokens):
-        # Add the tokens to the word, with spaces between the components
-        word = Word()
-        reading_tokens_count = len(reading_tokens)
-        for n, reading_token in enumerate(reading_tokens):
-            # Don't add spaces if this is the first token or if we have an erhua
-            if n != 0 and not(reading_token.iser):
-                word.append(Text(u' '))
-
-            word.append(reading_token)
-        
-        return word
-
-"""
-Turns a space-seperated string of pinyin and English into a list of tokens,
-as best we can.
-"""
-def tokenize(text):
-    # Read the pinyin into the array: sometimes this field contains
-    # english (e.g. in the pinyin for 'T shirt') so we better handle that
-    tokens = []
-    for possible_token in text.split():
-        try:
-            tokens.append(Pinyin(possible_token))
-        except ValueError:
-            tokens.append(Text(possible_token))
-
-    return tokens
-
-"""
 Represents a purely textual token.
 """
 class Text(unicode):
@@ -196,6 +121,88 @@ class TokenVisitor(object):
 
     def visitTonedCharacter(self, tonedcharacter):
         raise NotImplementedError("Got an unexpected TonedCharacter object %s", tonedcharacter)
+
+"""
+Turns a space-seperated string of pinyin and English into a list of tokens,
+as best we can.
+"""
+def tokenize(text):
+    # Read the pinyin into the array: sometimes this field contains
+    # english (e.g. in the pinyin for 'T shirt') so we better handle that
+    tokens = []
+    for possible_token in text.split():
+        try:
+            tokens.append(Pinyin(possible_token))
+        except ValueError:
+            tokens.append(Text(possible_token))
+
+    return tokens
+
+"""
+Represents a word boundary in the system, where the tokens inside represent a complete Chinese word.
+"""
+class Word(list):
+    ACCEPTABLE_TOKEN_TYPES = [Text, Pinyin, TonedCharacter]
+    
+    def __init__(self, *items):
+        for item in items:
+            assert item is None or type(item) in Word.ACCEPTABLE_TOKEN_TYPES
+        
+        # Filter bad elements
+        list.__init__(self, [item for item in items if item != None])
+    
+    def __repr__(self):
+        return u"Word(%s)" % list.__repr__(self)[1:-1]
+    
+    def __str__(self):
+        return unicode(self)
+    
+    def __unicode__(self):
+        output = u"<"
+        for n, token in enumerate(self):
+            if n != 0:
+                output += u", "
+            output += unicode(token)
+        
+        return output + u">"
+    
+    def append(self, item):
+        assert item is None or type(item) in Word.ACCEPTABLE_TOKEN_TYPES
+        
+        # Filter bad elements
+        if item != None:
+            list.append(self, item)
+    
+    def accept(self, visitor):
+        for token in self:
+            token.accept(visitor)
+    
+    def map(self, visitor):
+        word = Word()
+        for token in self:
+            word.append(token.accept(visitor))
+        return word
+    
+    def concatmap(self, visitor):
+        word = Word()
+        for token in self:
+            for newtoken in token.accept(visitor):
+                word.append(newtoken)
+        return word
+    
+    @classmethod
+    def spacedwordfromunspacedtokens(cls, reading_tokens):
+        # Add the tokens to the word, with spaces between the components
+        word = Word()
+        reading_tokens_count = len(reading_tokens)
+        for n, reading_token in enumerate(reading_tokens):
+            # Don't add spaces if this is the first token or if we have an erhua
+            if n != 0 and not(reading_token.iser):
+                word.append(Text(u' '))
+
+            word.append(reading_token)
+        
+        return word
 
 """
 Flattens the supplied tokens down into a single string.
