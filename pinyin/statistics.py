@@ -39,9 +39,9 @@ def hanziGrade(hanzi):
     return hanziByGrades[-1][0]
 
 # This function takes three arguments (firstAnsweredValues, daysInRange) where:
-#  * 'firstAnsweredValues' is a list of (string, date) tuples where each string
+#  * 'firstAnsweredValues' is a list of (string, date, date) tuples where each string
 #    value that has been answered occurs exactly once, and is paired with the date
-#    at which it was first answered by the user.
+#    at which it was first answered by the user and the date at which the card was created.
 #  * 'daysInRange' is an integer expressing how many days of data should be returned.
 #
 # This function returns a tuple (days, cumulativeTotal, cumulativesByGrade) where:
@@ -56,7 +56,12 @@ def hanziDailyStats(firstAnsweredValues, daysInRange):
     firstLearnedByDay = {}
     firstDay = 0
     endOfDay = time.time()
-    for (value, firstAnswered) in firstAnsweredValues:
+    for (value, firstAnswered, createdTime) in firstAnsweredValues:
+        # To work around a former bug in Anki, if the answered date was 0 then use the card creation
+        # date instead: <http://github.com/batterseapower/pinyin-toolkit/issues/closed/#issue/48>
+        if firstAnswered == 0:
+            firstAnswered = createdTime
+        
         # FIXME: this doesn't account for midnightOffset
         day = int((firstAnswered - endOfDay) / 86400.0)
         firstLearnedByDay[day] = utils.updated(firstLearnedByDay.get(day, set()), set(value))
@@ -112,15 +117,15 @@ if __name__ == "__main__":
     
     class HanziDailyStatsTest(unittest.TestCase):
         def testNoDays(self):
-            self.assertEquals(self.stats([], 0), [])
+            self.assertEquals(self.statsByDay([], 0), [])
         
         def testSingleDay(self):
-            self.assertEquals(self.stats([(u"的", 0)], 1), [
+            self.assertEquals(self.statsByDay([(u"的", 0)], 1), [
                 (0, [1, 1, 0, 0, 0, 0])
               ])
         
         def testComplex(self):
-            self.assertEquals(self.stats([
+            self.assertEquals(self.statsByDay([
                 (u"的是斯", -1),
                 (u"轴", 0),
                 (u'暇TSHIRT', -3),
@@ -137,16 +142,32 @@ if __name__ == "__main__":
                 (-1, [11, 3, 5, 1, 0, 2]),
                 (0, [12, 3, 5, 1, 0, 3])
               ])
-            
-        def stats(self, firstAnsweredValuesByDay, daysInRange):
+        
+        def testZeroFirstAnsweredTreatedAsCreatedDate(self):
+            self.assertEquals(self.stats([
+                (u"的是斯", 0, self.nDaysAgo(-0)),
+                (u"轴", self.nDaysAgo(0), self.nDaysAgo(30)),
+                (u'暇', 0, self.nDaysAgo(-3))
+              ], 2), [
+                (-1, [1, 0, 0, 0, 0, 1]),
+                (0, [5, 2, 0, 1, 0, 2])
+              ])
+        
+        def statsByDay(self, firstAnsweredValuesByDay, daysInRange):
             # Turn the day based time in the test into a seconds based one relative to the present
-            firstAnsweredValues = [(value, (time.time() - 100) + (firstAnsweredDay * 86400.0)) for value, firstAnsweredDay in firstAnsweredValuesByDay]
+            # Zero out the created date because we will never need it
+            firstAnsweredValues = [(value, self.nDaysAgo(firstAnsweredDay), 0) for value, firstAnsweredDay in firstAnsweredValuesByDay]
+            return self.stats(firstAnsweredValues, daysInRange)
             
+        def stats(self, firstAnsweredValues, daysInRange):
             # Actually do the test
             days, cumulativeTotals, cumulativesByGrades = hanziDailyStats(firstAnsweredValues, daysInRange)
             
             # Munge the result into a format more amenable to assertion: a list of (day, grade) pairs, where the grades
             # are presented in a list: total first, then by grade.
             return [(day, [cumulativeTotals[n]] + [cumulativesByGrades[grade][n] for grade in hanziGrades]) for n, day in enumerate(days)]
+        
+        def nDaysAgo(self, n):
+            return (time.time() - 100) + (n * 86400.0)
     
     unittest.main()
