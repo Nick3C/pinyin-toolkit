@@ -79,7 +79,12 @@ def hanziDailyStats(firstAnsweredValues, daysInRange):
     days, cumulativeTotals, cumulativesByGrades = [], [], {}
     
     # The core of the algorithm. Run time forward:
-    for day in xrange(firstDay, 1):
+    # NB: be careful to start at -daysInRange if we don't have data for
+    # later times. This is to ensure we get an initial 0 when working out
+    # what the graph x range should be later on, which is important to ensure
+    # all the graph gets displayed on e.g. decks with large initial imports.
+    # See <http://github.com/batterseapower/pinyin-toolkit/issues/#issue/69>
+    for day in xrange(min(firstDay, -daysInRange), 1):
         for hanzi in firstLearnedByDay.get(day, set()):
             # First check: if we have already learnt this thing, we don't care
             if hanzi in alreadyLearnt:
@@ -151,6 +156,15 @@ if __name__ == "__main__":
               ], 2), [
                 (-1, [1, 0, 0, 0, 0, 1]),
                 (0, [5, 2, 0, 1, 0, 2])
+              ])
+        
+        def testGetZeroesForDaysWithNoData(self):
+            self.assertEquals(self.statsByDay([
+                (u"的", -1),
+              ], 3), [
+                (-2, [0, 0, 0, 0, 0, 0]),
+                (-1, [1, 1, 0, 0, 0, 0]),
+                (0, [1, 1, 0, 0, 0, 0])
               ])
         
         def statsByDay(self, firstAnsweredValuesByDay, daysInRange):

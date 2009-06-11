@@ -231,7 +231,7 @@ if __name__ == "__main__":
                     audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False), {
                         "reading" : u'<span style="color:#ff0000">shū</span>',
                         "meaning" : u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History',
-                        "mw" : u'本 - <span style="color:#00aa00">běn</span>, 册 - <span style="color:#0000ff">cè</span>, 部 - <span style="color:#0000ff">bù</span>, 丛 - <span style="color:#ffaa00">cóng</span>',
+                        "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
                         "audio" : u"[sound:" + os.path.join("Test", "shu1.mp3") + "]",
                         "color" : u'<span style="color:#ff0000">书</span>'
                       })
@@ -278,7 +278,7 @@ if __name__ == "__main__":
                     colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
                     tonedisplay = "tonified", meaningnumbering = "circledArabic", colormeaningnumbers = False, meaningseperator = "custom", custommeaningseperator = " | ", prefersimptrad = "simp",
                     audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = True, hanzimaskingcharacter = "MASKED"), {
-                        "meaning" : u'① book | ② letter | ③ same as MASKED<span style="color:#ff0000">\u7ecf</span> Book of History | ④ MW: 本 - <span style="color:#00aa00">běn</span>, 册 - <span style="color:#0000ff">cè</span>, 部 - <span style="color:#0000ff">bù</span>, 丛 - <span style="color:#ffaa00">cóng</span>',
+                        "meaning" : u'① book | ② letter | ③ same as MASKED<span style="color:#ff0000">\u7ecf</span> Book of History | ④ MW: <span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
                       })
 
         def testUpdateReadingOnly(self):
@@ -296,7 +296,7 @@ if __name__ == "__main__":
                     meaningnumbering = "arabicParens", colormeaningnumbers = True, meaningnumberingcolor = "#123456", meaningseperator = "commas", prefersimptrad = "trad",
                     audiogeneration = False, tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False), {
                         "reading" : u'<span style="color:#ffaa00">de2</span>',
-                        "meaning" : u'<span style="color:#123456">(1)</span> to obtain, <span style="color:#123456">(2)</span> archaic variant of 得 - <span style="color:#ffaa00">de2</span>, <span style="color:#123456">(3)</span> component in 礙 - <span style="color:#0000ff">ai4</span> and 鍀 - <span style="color:#ffaa00">de2</span>',
+                        "meaning" : u'<span style="color:#123456">(1)</span> to obtain, <span style="color:#123456">(2)</span> archaic variant of <span style="color:#ffaa00">得</span> - <span style="color:#ffaa00">de2</span>, <span style="color:#123456">(3)</span> component in <span style="color:#0000ff">礙</span> - <span style="color:#0000ff">ai4</span> and <span style="color:#ffaa00">鍀</span> - <span style="color:#ffaa00">de2</span>',
                         "mw" : "", "audio" : "", "color" : "", "weblinks" : ""
                       })
         

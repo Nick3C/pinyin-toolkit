@@ -85,6 +85,8 @@ class PreferencesController(object):
             
             self.registerCheckMapping("detectmeasurewords", self.view.controls.seperateMeasureWordCheck)
             
+            self.registerCheckMapping("hanzimasking", self.view.controls.hanziMaskingCheck)
+            
             self.registerComboMapping("dictlanguage", self.view.controls.languageCombo)
             
             self.registerCheckMapping("fallbackongoogletranslate", self.view.controls.googleTranslateCheck)
@@ -110,7 +112,7 @@ class PreferencesController(object):
     def setUpColors(self):
         # The Tone Colors panel
         def setUpToneColors():
-            self.registerCheckMapping("colorizedpinyingeneration", self.view.controls.colorizeCheck)
+            self.registerCheckMapping("colorizedpinyingeneration", self.view.controls.colorizePinyinCheck)
             
             for tone in range(1, 6):
                 self.registerColorChooserMapping("tone%dcolor" % tone, getattr(self.view.controls, "tone%dButton" % tone))
@@ -120,8 +122,14 @@ class PreferencesController(object):
             for shortcut in range(1, 4):
                 self.registerColorChooserMapping("extraquickaccess%dcolor" % shortcut, getattr(self.view.controls, "quickAccess%dButton" % shortcut))
         
+        # The Meaning Numbering Color panel
+        def setUpMeaningNumberingColor():
+            self.registerCheckMapping("colormeaningnumbers", self.view.controls.colorizeMeaningNumberingCheck)
+            self.registerColorChooserMapping("meaningnumberingcolor", self.view.controls.meaningNumberingColorButton)
+        
         setUpToneColors()
         setUpQuickAccessColors()
+        setUpMeaningNumberingColor()
     
     def setUpAudio(self):
         self.registerCheckMapping("audiogeneration", self.view.controls.enableAudioCheck)
@@ -326,6 +334,12 @@ class ColorChooserMapping(Mapping):
     def palette(self):
         return self.button.palette()
     
+    def setPalette(self, palette):
+        self.button.setPalette(palette)
+        
+        # Modifying the palette seems to require an explicit repaint
+        self.button.update()
+    
     def updateModel(self):
         color = self.pickcolor(self.palette().color(QPalette.ButtonText))
         
@@ -338,8 +352,9 @@ class ColorChooserMapping(Mapping):
     def updateViewValue(self, value):
         r, g, b = pinyin.utils.parseHtmlColor(value)
         
-        self.palette().setColor(QPalette.ButtonText, QColor(r, g, b))
-        
-        # Modifying the palette seems to require an explicit repaint
-        self.button.update()
+        # NB: modifying the palette inplace works fine on windows, but fails miserably
+        # on Windows. To be cross-platform, make sure we save the `modified' palette back.
+        palette = self.palette()
+        palette.setColor(QPalette.ButtonText, QColor(r, g, b))
+        self.setPalette(palette)
 

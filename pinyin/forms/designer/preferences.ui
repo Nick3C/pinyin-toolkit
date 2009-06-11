@@ -33,6 +33,16 @@
      </layout>
     </widget>
    </item>
+   <item row="1" column="1">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="1">
     <widget class="QTabWidget" name="tabWidget">
      <property name="sizePolicy">
@@ -48,7 +58,7 @@
       </size>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="textTab">
       <attribute name="title">
@@ -138,17 +148,17 @@
           <string>Meanings</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="2" column="0">
+          <item row="3" column="0">
            <widget class="QLabel" name="languageLabel">
             <property name="text">
              <string>Language:</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
+          <item row="4" column="0">
            <widget class="QComboBox" name="languageCombo"/>
           </item>
-          <item row="4" column="0">
+          <item row="5" column="0">
            <widget class="QCheckBox" name="googleTranslateCheck">
             <property name="text">
              <string>Fall back on Google Translate for unknown words</string>
@@ -162,7 +172,7 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
+          <item row="6" column="0">
            <layout class="QGridLayout" name="gridLayout_5">
             <item row="0" column="0">
              <widget class="QLabel" name="numberingLabel">
@@ -246,6 +256,13 @@
             </item>
            </layout>
           </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="hanziMaskingCheck">
+            <property name="text">
+             <string>Mask occurrences of the expression in the meaning</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
@@ -276,7 +293,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="4" column="0">
-           <widget class="QCheckBox" name="colorizeCheck">
+           <widget class="QCheckBox" name="colorizePinyinCheck">
             <property name="text">
              <string>Colorize Pinyin and Hanzi with tones</string>
             </property>
@@ -294,7 +311,7 @@
                </font>
               </property>
               <property name="text">
-               <string>1 (ā)</string>
+               <string>1 (ū)</string>
               </property>
              </widget>
             </item>
@@ -308,7 +325,7 @@
                </font>
               </property>
               <property name="text">
-               <string>2 (á)</string>
+               <string>2 (ú)</string>
               </property>
              </widget>
             </item>
@@ -322,7 +339,7 @@
                </font>
               </property>
               <property name="text">
-               <string>3 (ǎ)</string>
+               <string>3 (ǔ)</string>
               </property>
              </widget>
             </item>
@@ -336,7 +353,7 @@
                </font>
               </property>
               <property name="text">
-               <string>4 (à)</string>
+               <string>4 (ù)</string>
               </property>
              </widget>
             </item>
@@ -350,7 +367,7 @@
                </font>
               </property>
               <property name="text">
-               <string>5 (a)</string>
+               <string>5 (u)</string>
               </property>
              </widget>
             </item>
@@ -369,6 +386,12 @@
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
              <widget class="QPushButton" name="quickAccess1Button">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="font">
                <font>
                 <pointsize>15</pointsize>
@@ -428,9 +451,42 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="meaningNumberingSettingsFrame">
+         <property name="title">
+          <string>Meaning Numbering Color</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="1" column="1">
+           <widget class="QPushButton" name="meaningNumberingColorButton">
+            <property name="font">
+             <font>
+              <pointsize>15</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Meaning Numbering Color</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QCheckBox" name="colorizeMeaningNumberingCheck">
+            <property name="text">
+             <string>Colorize meaning numbering</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::MinimumExpanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -512,16 +568,6 @@
      </widget>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
   </layout>
  </widget>
  <resources/>
@@ -559,10 +605,4 @@
    </hints>
   </connection>
  </connections>
- <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup_4"/>
-  <buttongroup name="buttonGroup"/>
- </buttongroups>
 </ui>

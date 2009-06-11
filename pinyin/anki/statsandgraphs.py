@@ -16,6 +16,7 @@ from PyQt4 import QtGui
 import time
 
 from ankiqt.ui.graphs import AdjustableFigure, GraphWindow
+from anki.hooks import wrap
 import anki.utils
 
 import hooks
@@ -34,8 +35,14 @@ class HanziGraphHook(hooks.Hook):
         u'Non-HSK'          : (u'#3300FF', "Non-HSK")
       }
     
+    def __init__(self, *args, **kwargs):
+        hooks.Hook.__init__(self, *args, **kwargs)
+        
+        # Initialize the cache
+        self.__hanzidatacache = None
+    
     # Returns the Hanzi Figure object for the plot
-    def calculateHanziData(self, graphwindow, hanzidata, days):
+    def calculateHanziData(self, graphwindow, days):
         log.info("Calculating %d days worth of Hanzi graph data", days)
         
         # NB: must lazy-load matplotlib to give Anki a chance to set up the paths
@@ -51,7 +58,7 @@ class HanziGraphHook(hooks.Hook):
         # Use the statistics engine to generate the data for graphing.
         # NB: should add one to the number of days because we want to
         # return e.g. 8 days of data for a 7 day plot (the extra day is "today").
-        xs, _totaly, gradeys = pinyin.statistics.hanziDailyStats(hanzidata, days + 1)
+        xs, _totaly, gradeys = pinyin.statistics.hanziDailyStats(self.hanziData(), days + 1)
         
         # Set up the figure into which we will add all our graphs
         figure = Figure(figsize=(graphwindow.dg.width, graphwindow.dg.height), dpi=graphwindow.dg.dpi)
@@ -110,14 +117,17 @@ class HanziGraphHook(hooks.Hook):
             padding = 10 + ((lastcount - firstcount) / 10)
             graph.set_ylim(ymin=max(0, firstcount - padding), ymax=lastcount + padding)
 
-    def prepareHanziData(self):
-        log.info("Retrieving Hanzi graph data")
-        
+    def suitableModelIds(self):
         # Find models in this deck with the correct tag. NB: must do a 'like' because we want
         # to match tags like "Vocab Mandarin" as well as plain "Mandarin"
-        mids = self.mw.deck.s.column0('select id from models where tags like "%%%s%%"' % self.config.modelTag)
-        if len(mids) == 0:
-            return None
+        return self.mw.deck.s.column0('select id from models where tags like "%%%s%%"' % self.config.modelTag)
+
+    def hanziData(self):
+        # If we have some data already, just give up
+        if self.__hanzidatacache is not None:
+            return self.__hanzidatacache
+        
+        log.info("Updating Hanzi graph data")
         
         # Retrieve information about the card contents that were first answered on each day
         #
@@ -129,7 +139,7 @@ class HanziGraphHook(hooks.Hook):
         # NB: the first answered time can be 0 but repeats > 1 due to a bug in an Anki feature which will
         # have screwed up the data in old decks. We select the created date for use in such cases:
         # <http://github.com/batterseapower/pinyin-toolkit/issues/closed/#issue/48>
-        return self.mw.deck.s.all("""
+        self.__hanzidatacache = self.mw.deck.s.all("""
         select fields.value, cards.firstAnswered, cards.created from cards, fields, fieldModels, facts
         where
         cards.reps > 0 and
@@ -139,7 +149,12 @@ class HanziGraphHook(hooks.Hook):
         and fields.fieldModelId = fieldModels.id
         and fieldModels.name in %s
         order by firstAnswered
-        """ % (anki.utils.ids2str(mids), self.toSqlLiteral(self.config.candidateFieldNamesByKey['expression'])))
+        """ % (anki.utils.ids2str(self.suitableModelIds()), self.toSqlLiteral(self.config.candidateFieldNamesByKey['expression'])))
+        return self.__hanzidatacache
+
+    def invalidateHanziData(self):
+        # Used when refreshing
+        self.__hanzidatacache = None
 
     def toSqlLiteral(self, thing):
         if isinstance(thing, list):
@@ -155,23 +170,28 @@ class HanziGraphHook(hooks.Hook):
     def setupHanziGraph(self, graphwindow):
         log.info("Beginning setup of Hanzi graph on the graph window")
         
-        # Preload data
-        hanzidata = self.prepareHanziData()
-        if hanzidata is None:
-            # Don't add a graph if the deck doesn't have a Mandarin tag
+        # Don't add a graph if the deck doesn't have a Mandarin tag. This might be too conservative (the user
+        # could add a Mandarin tag and then refresh) but in general it's going to work well to hide it from the
+        # user on their non-Mandarin decks.
+        if len(self.suitableModelIds()) == 0:
             return
         
+        # NB: we used to preload the Hanzi data at this point, but that makes the ``refresh'' button not work,
+        # because we have no means of clearing the preloaded data, so now it lives on the class. We also used to
+        # avoid adding the graph if the current deck was not 
+        
         # Append our own graph at the end
-        extragraph = AdjustableFigure(graphwindow.parent, 'hanzi', lambda days: self.calculateHanziData(graphwindow, hanzidata, days), graphwindow.range)
+        extragraph = AdjustableFigure(graphwindow.parent, 'hanzi', lambda days: self.calculateHanziData(graphwindow, days), graphwindow.range)
         extragraph.addWidget(QtGui.QLabel("<h1>Unique Hanzi (Cumulative, By HSK Level)</h1>"))
         graphwindow.vbox.addWidget(extragraph)
         graphwindow.widgets.append(extragraph)
         
         # Add our graph to the name map - this is necessary to avoid exceptions when using show/hide
         graphwindow.nameMap['hanzi'] = "Unique Hanzi (Cumulative, By HSK Level)"
+        
+        # To allow refreshing to work properly, we have to intercept the call to updateFigure() made by Ankis onRefresh code
+        extragraph.updateFigure = wrap(extragraph.updateFigure, self.invalidateHanziData, "before")
     
     def install(self):
-        from anki.hooks import wrap
-        
         log.info("Installing Hanzi graph hook")
         GraphWindow.setupGraphs = wrap(GraphWindow.setupGraphs, self.setupHanziGraph, "after")

@@ -41,7 +41,7 @@ class PinyinToolkit(object):
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
-        hookbuilders = [hooks.PreferencesHook, hooks.FocusHook, hooks.MissingInformationHook, hooks.ColorShortcutKeysHook, statsandgraphs.HanziGraphHook]
+        hookbuilders = [hooks.PreferencesHook, hooks.FocusHook, hooks.MissingInformationHook, hooks.ColorShortcutKeysHook, statsandgraphs.HanziGraphHook, hooks.HelpHook]
         self.hooks = [hookbuilder(self.mw, thenotifier, themediamanager, config, updater) for hookbuilder in hookbuilders]
     
     def installhooks(self):
@@ -51,3 +51,36 @@ class PinyinToolkit(object):
     
         # Tell Anki about the plugin
         self.mw.registerPlugin("Mandarin Chinese Pinyin Toolkit", 4)
+        self.registerStandardModels()
+    
+    def registerStandardModels(self):
+        # This code was added at the request of Damien: one of the changes in the next
+        # Anki version will be to make language-specific toolkits into plugins.
+        #
+        # The code sets up a 'template' model for users. We probably want to customize
+        # this eventually, but for now it's a duplicate of the old code from Anki.
+        
+        import anki.stdmodels
+        from anki.models import Model, CardModel, FieldModel
+
+        # Mandarin
+        ##########################################################################
+
+        def MandarinModel():
+           m = Model(_("Mandarin"))
+           f = FieldModel(u'Expression')
+           f.quizFontSize = 72
+           m.addFieldModel(f)
+           m.addFieldModel(FieldModel(u'Meaning', False, False))
+           m.addFieldModel(FieldModel(u'Reading', False, False))
+           m.addCardModel(CardModel(u"Recognition",
+                                    u"%(Expression)s",
+                                    u"%(Reading)s<br>%(Meaning)s"))
+           m.addCardModel(CardModel(u"Recall",
+                                    u"%(Meaning)s",
+                                    u"%(Expression)s<br>%(Reading)s",
+                                    active=False))
+           m.tags = u"Mandarin"
+           return m
+
+        anki.stdmodels.models['Mandarin'] = MandarinModel

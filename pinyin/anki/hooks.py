@@ -90,14 +90,6 @@ class ColorShortcutKeysHook(Hook):
 class MenuHook(Hook):
     pinyinToolkitMenu = None
     
-    def __init__(self, *args, **kwargs):
-        Hook.__init__(self, *args, **kwargs)
-        
-        # Store the action on the class.  Storing a reference to it is necessary to avoid it getting garbage collected.
-        self.action = QtGui.QAction(self.__class__.menutext, self.mw)
-        self.action.setStatusTip(self.__class__.menutooltip)
-        self.action.setEnabled(True)
-    
     def install(self):
         # Install menu item
         log.info("Installing a menu hook (%s)", type(self))
@@ -107,9 +99,25 @@ class MenuHook(Hook):
             MenuHook.pinyinToolkitMenu = QtGui.QMenu("Pinyin Toolkit", self.mw.mainWin.menuTools)
             self.mw.mainWin.menuTools.addMenu(MenuHook.pinyinToolkitMenu)
         
+        # Store the action on the class.  Storing a reference to it is necessary to avoid it getting garbage collected.
+        self.action = QtGui.QAction(self.__class__.menutext, self.mw)
+        self.action.setStatusTip(self.__class__.menutooltip)
+        self.action.setEnabled(True)
+        
         # HACK ALERT: must use lambda here, or the signal never gets raised! I think this is due to garbage collection...
         self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: self.triggered())
         MenuHook.pinyinToolkitMenu.addAction(self.action)
+
+class HelpHook(Hook):
+    def install(self):
+        # Store the action on the class.  Storing a reference to it is necessary to avoid it getting garbage collected.
+        self.action = QtGui.QAction("Pinyin Toolkit", self.mw)
+        self.action.setStatusTip("Help for the Pinyin Toolkit available at our website")
+        self.action.setEnabled(True)
+        
+        helpUrl = QtCore.QUrl(u"http://batterseapower.github.com/pinyin-toolkit/")
+        self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: QtGui.QDesktopServices.openUrl(helpUrl))
+        self.mw.mainWin.menuHelp.addAction(self.action)
 
 class PreferencesHook(MenuHook):
     menutext = "Preferences"
