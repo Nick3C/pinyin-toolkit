@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import re
+import unicodedata
+
 from logger import log
 import utils
 
@@ -49,6 +52,8 @@ class Pinyin(object):
     hen3
     """
     def __init__(self, text):
+        # TODO: normalise u: and v into umlauted version at this stage
+        
         # Length check (yes, you can get 7 character pinyin, such as zhuang1)
         if len(text) < 2 or len(text) > 7:
             raise ValueError("The text '%s' was not the right length to be Pinyin - should be in the range 2 to 7 characters" % text)
@@ -296,43 +301,25 @@ class PinyinTonifier(object):
     
     # map (final) constanant+tone to tone+constanant
     constTone2ToneConst = {
-        'n1':'1n',   'n2':'2n',   'n3':'3n',   'n4':'4n',
-        'ng1':'1ng', 'ng2':'2ng', 'ng3':'3ng', 'ng4':'4ng',
-        'r1':'1r',   'r2':'2r',   'r3':'3r',   'r4':'4r'
+        u'([nNrR])([1234])'  : ur'\g<2>\g<1>',
+        u'([nN][gG])([1234])': ur'\g<2>\g<1>'
     }
 
     #
     # map vowel+vowel+tone to vowel+tone+vowel
     vowelVowelTone2VowelToneVowel = {
-        'ai1':'a1i', 'ai2':'a2i', 'ai3':'a3i', 'ai4':'a4i',
-        'ao1':'a1o', 'ao2':'a2o', 'ao3':'a3o', 'ao4':'a4o',
-        'ei1':'e1i', 'ei2':'e2i', 'ei3':'e3i', 'ei4':'e4i',
-        'ou1':'o1u', 'ou2':'o2u', 'ou3':'o3u', 'ou4':'o4u'
+        u'([aA])([iIoO])([1234])' : ur'\g<1>\g<3>\g<2>',
+        u'([eE])([iI])([1234])'   : ur'\g<1>\g<3>\g<2>',
+        u'([oO])([uU])([1234])'   : ur'\g<1>\g<3>\g<2>'
     }
 
-    # don't want "5"'s in output for neutral tone
-    remove5thToneNumber = {
-        'a5':u'a',
-        'e5':u'e',
-        'i5':u'i',
-        'o5':u'o',
-        'u5':u'u',
-        'v5':u'\u01D6',
-        'u:5':u'\u01D6',
-        'n5':u'n',
-        'g5':u'g',
-        'r5':u'r'
-    }
-
-    # map vowel-number combination to unicode hex equivalent
-    vowelTone2Unicode = {
-        'a1':u'\u0101',  'a2':u'\u00e1',  'a3':u'\u01ce',  'a4':u'\u00e0',
-        'e1':u'\u0113',  'e2':u'\u00e9',  'e3':u'\u011b',  'e4':u'\u00e8',
-        'i1':u'\u012b',  'i2':u'\u00ed',  'i3':u'\u01d0',  'i4':u'\u00ec',
-        'o1':u'\u014d',  'o2':u'\u00f3',  'o3':u'\u01d2',  'o4':u'\u00f2',
-        'u1':u'\u016b',  'u2':u'\u00fa',  'u3':u'\u01d4',  'u4':u'\u00f9',
-        'v1':u'\u01db',  'v2':u'\u01d8',  'v3':u'\u01da',  'v4':u'\u01dc',
-        'u:1':u'\u01db', 'u:2':u'\u01d8', 'u:3':u'\u01da', 'u:4':u'\u01dc'
+    # map tones to Unicode combining diacritical marks <http://en.wikipedia.org/wiki/Combining_diacritical_mark>
+    tone2Unicode = {
+        u'1':u'\u0304', # Macron
+        u'2':u'\u0301', # Acute
+        u'3':u'\u030C', # Caron
+        u'4':u'\u0300', # Grave
+        u'5':u''
     }
 
     """
@@ -349,27 +336,25 @@ class PinyinTonifier(object):
     def tonify(self, line):
         assert type(line)==unicode
         
-        # TODO: make the tonifier work for mixed case characters too
-        #line = line.lower()
+        # Zeroth transform: rewrite u: and v to version with umlaut (TODO: do this in Pinyin class?)
+        line = line.replace(u"u:", u"ü").replace(u"U:", u"Ü").replace(u"v", u"ü").replace(u"V:", u"Ü")
         
         # First transform: commute tone numbers over finals containing only constants
         for (x,y) in self.constTone2ToneConst.items():
-            line = line.replace(x,y)
+            line = re.sub(x, y, line)
 
         # Second transform: for runs of two vowels with a following tone mark, move
         # the tone mark so it occurs directly afterwards the first vowel
         for (x,y) in self.vowelVowelTone2VowelToneVowel.items():
-            line = line.replace(x,y)
+            line = re.sub(x, y, line)
 
-        # Third transform: remove neutral tones ("5"s) for, e.g. qing sheng
-        for (x,y) in self.remove5thToneNumber.items():
-            line = line.replace(x,y)
+        # Third transform: map tones to the Unicode equivalent
+        for (x,y) in self.tone2Unicode.items():
+            line = line.replace(x, y)
 
-        # Fourth transform: map vowel-tone mark combinations to the Unicode equivalents
-        for (x,y) in self.vowelTone2Unicode.items():
-            line = line.replace(x,y)
-
-        return line
+        # Turn combining marks into real characters - saves us doing this in all the test (Python
+        # unicode string comparison does not appear to normalise!! Very bad!)
+        return unicodedata.normalize('NFC', line)
 
 
 if __name__ == "__main__":
@@ -523,6 +508,7 @@ if __name__ == "__main__":
 
         def testUpperCase(self):
             self.assertEquals(PinyinTonifier().tonify(u"Huai4"), u"Huài")
+            self.assertEquals(PinyinTonifier().tonify(u"An1 hui1 sheng3"), u"Ān huī shěng")
         
         def testGreeting(self):
             self.assertEquals(PinyinTonifier().tonify(u"ni3 hao3, wo3 xi3 huan xue2 xi2 Han4 yu3. wo3 de Han4 yu3 shui3 ping2 hen3 di1."),
