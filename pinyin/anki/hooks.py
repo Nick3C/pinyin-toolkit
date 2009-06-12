@@ -39,12 +39,20 @@ class FocusHook(Hook):
     
     def install(self):
         from anki.hooks import addHook, removeHook
-        from anki.features.chinese import onFocusLost as oldHook
-
+        
         # Install hook into focus event of Anki: we regenerate the model information when
         # the cursor moves from the Expression field to another field
         log.info("Installing focus hook")
-        removeHook('fact.focusLost', oldHook)
+        
+        try:
+            # On versions of Anki that still had Chinese support baked in, remove the
+            # provided hook from this event before we replace it with our own:
+            from anki.features.chinese import onFocusLost as oldHook
+            removeHook('fact.focusLost', oldHook)
+        except ImportError:
+            pass
+        
+        # Unconditionally add our new hook to Anki
         addHook('fact.focusLost', self.onFocusLost)
 
 # Shrunk version of color shortcut plugin merged with Pinyin Toolkit to give that functionality without the seperate download.
