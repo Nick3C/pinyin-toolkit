@@ -41,11 +41,10 @@ def suppressexceptions(action):
             log.exception("Had to suppress an exception")
 
 """
-Utility function that reports whether a string consists of a single punctuation
-character
+Utility function that reports whether a string consists only of punctuation character
 """
-def ispunctuation(what):
-    return len(what) == 1 and unicodedata.category(unicode(what[0])) == 'Po';
+def ispunctuation(text):
+    return all([unicodedata.category(unicode(char)) == 'Po' for char in text])
 
 
 """

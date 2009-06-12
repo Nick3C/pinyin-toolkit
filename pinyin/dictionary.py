@@ -162,6 +162,10 @@ class PinyinDictionary(object):
         isfirstparsedthing = True
         foundmeanings, foundmeasurewords = None, None
         for recognised, word in self.parse(sentence):
+            if not(recognised) and (ispunctuation(word.strip()) or word.strip() == u""):
+                # Discard punctuation and whitespace from consideration, or we don't return a reading for e.g. 你好!
+                continue
+            
             if not (isfirstparsedthing):
                 # This is a phrase with more than one word - let someone else translate it
                 # NB: apply this even if the first thing was an unrecognised bit of English,
@@ -237,7 +241,7 @@ if __name__=='__main__':
     englishdict = Thunk(lambda: PinyinDictionary.load('en', True))
     germandict = Thunk(lambda: PinyinDictionary.load('de', True))
     
-    class TestPinyinDictionary(unittest.TestCase):
+    class PinyinDictionaryTest(unittest.TestCase):
         def testTonedTokens(self):
             toned = pinyindict.tonedchars(u"一个")
             self.assertEquals(flatten(toned), u"一个")
@@ -264,6 +268,11 @@ if __name__=='__main__':
         def testPhraseMeanings(self):
             self.assertEquals(self.flatmeanings(englishdict, u"一杯啤酒"), None)
             self.assertEquals(self.flatmeanings(englishdict, u"U盘"), None)
+        
+        def testPhraseMeaningsNotFoundBecauseOfWhitespacePunctuation(self):
+            self.assertNotEquals(self.flatmeanings(englishdict, u"你好!"), None)
+            self.assertNotEquals(self.flatmeanings(englishdict, u"你好!!!"), None)
+            self.assertNotEquals(self.flatmeanings(englishdict, u"  你好  "), None)
 
         # Invalidated by fix to issue #71
         # def testMeaningsWithTrailingJunk(self):
