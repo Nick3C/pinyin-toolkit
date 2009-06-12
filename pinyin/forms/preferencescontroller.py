@@ -115,12 +115,12 @@ class PreferencesController(object):
             self.registerCheckMapping("colorizedpinyingeneration", self.view.controls.colorizePinyinCheck)
             
             for tone in range(1, 6):
-                self.registerColorChooserMapping("tone%dcolor" % tone, getattr(self.view.controls, "tone%dButton" % tone))
+                self.registerColorChooserMapping("tonecolors[%d]" % (tone - 1), getattr(self.view.controls, "tone%dButton" % tone))
         
         # The Quick Access Colors panel
         def setUpQuickAccessColors():
             for shortcut in range(1, 4):
-                self.registerColorChooserMapping("extraquickaccess%dcolor" % shortcut, getattr(self.view.controls, "quickAccess%dButton" % shortcut))
+                self.registerColorChooserMapping("extraquickaccesscolors[%d]" % (shortcut - 1), getattr(self.view.controls, "quickAccess%dButton" % shortcut))
         
         # The Meaning Numbering Color panel
         def setUpMeaningNumberingColor():
@@ -253,11 +253,10 @@ class Mapping(object):
         self.modelchanged = Event()
 
     def updateView(self):
-        self.updateViewValue(getattr(self.model, self.key))
+        self.updateViewValue(eval("model." + self.key, { "model" : self.model }))
 
     def updateModelValue(self, value):
-        setattr(self.model, self.key, value)
-        
+        exec ("model." + self.key + " = value") in { "model" : self.model, "value" : value }
         self.modelchanged.fire()
 
 class RadioMapping(Mapping):
