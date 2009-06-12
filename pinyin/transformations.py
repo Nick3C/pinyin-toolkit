@@ -2,13 +2,101 @@
 # -*- coding: utf-8 -*-
 
 import random
+import re
+import cStringIO
 
 from logger import log
 from pinyin import *
 from utils import *
 
 
-# Convenience wrapper around the TrimErhuaVisitor
+# TODO: apply tone sandhi at the dictionary stage, to save having to do it in 3 places in the updater?
+# Only thing to worry about is loss of accuracy due to the decreased amount of context...
+
+"""
+Apply tone sandhi rules to rewrite the tones in the given string. For the rules
+see: <http://en.wikipedia.org/wiki/Standard_Mandarin#Tone_sandhi>
+
+NB: we don't implement this very well yet. Give it time..
+"""
+def tonesandhi(words):
+    # 1) Gather the tone contour into a string
+    tonecontourio = cStringIO.StringIO()
+    gathervisitor = GatherToneContourVisitor(tonecontourio)
+    for word in words:
+        word.accept(gathervisitor)
+        tonecontourio.write("~")
+    tonecontour = tonecontourio.getvalue()
+    tonecontourio.close()
+    
+    # 2) Rewrite it (ewww!)
+    
+    log.info("Rewriting tone sandhi for contour %s", tonecontour)
+    
+    # NB: must match strings of ~ in the following in order to ignore words
+    # which consist entirely of blank space. Tian'a, this is unbelievably horrible!
+    
+    # Top priority:
+    #  33~3 -> 22~3
+    #  3~33 -> 3~23
+    # (and the more general sandhi effect with strings of length > 3)
+    def dealWithThrees(match):
+        wordcontours = (match.group(1) or "").split("~")[:-1] + [match.group(2)]
+        maketwosifpoly = lambda what: len(what) == 1 and what or '2' * len(what)
+        makeprefixtwos = lambda what: '2' * (len(what) - 1) + '3'
+        return "~".join([maketwosifpoly(wordcontour) for wordcontour in wordcontours[:-1]] + [makeprefixtwos(wordcontours[-1])])
+    tonecontour = re.sub(r"((?:3+)\~+)*(3+)", dealWithThrees, tonecontour)
+    
+    # Low priority (let others take effect first):
+    #  33  -> 23 (though this is already caught by the code above, actually)
+    #  3~3 -> 2~3
+    tonecontour = re.sub(r"3(\~*)3", r"2\g<1>3", tonecontour)
+    
+    log.info("Final contour computed as %s", tonecontour)
+    
+    # 3) Apply the new contour to the words
+    finalwords = []
+    tonecontourqueue = list(tonecontour[::-1])
+    applyvisitor = ApplyToneContourVisitor(tonecontourqueue)
+    for word in words:
+        finalwords.append(word.map(applyvisitor))
+        assert tonecontourqueue.pop() == "~"
+    
+    return finalwords
+
+class GatherToneContourVisitor(TokenVisitor):
+    def __init__(self, tonecontourio):
+        self.tonecontourio = tonecontourio
+    
+    def visitText(self, text):
+        if len(text.strip()) != 0:
+            self.tonecontourio.write("_")
+
+    def visitPinyin(self, pinyin):
+        self.tonecontourio.write(str(pinyin.toneinfo.written))
+        
+    def visitTonedCharacter(self, tonedcharacter):
+        self.tonecontourio.write(str(tonedcharacter.toneinfo.written))
+
+class ApplyToneContourVisitor(TokenVisitor):
+    def __init__(self, tonecontourqueue):
+        self.tonecontourqueue = tonecontourqueue
+    
+    def visitText(self, text):
+        if len(text.strip()) != 0:
+            assert self.tonecontourqueue.pop() in "_"
+        return text
+
+    def visitPinyin(self, pinyin):
+        return Pinyin(pinyin.word, ToneInfo(written=pinyin.toneinfo.written, spoken=int(self.tonecontourqueue.pop())))
+    
+    def visitTonedCharacter(self, tonedcharacter):
+        return TonedCharacter(unicode(tonedcharacter), ToneInfo(written=tonedcharacter.toneinfo.written, spoken=int(self.tonecontourqueue.pop())))
+
+
+"""
+Remove all r5 characters from the supplied words.
+"""
 def trimerhua(words):
     return [word.concatmap(TrimErhuaVisitor()) for word in words]
 
@@ -29,15 +117,14 @@ class TrimErhuaVisitor(TokenVisitor):
             return [tonedcharacter]
 
 
-# Convenience wrapper around the ColorizerVisitor
-def colorize(colorlist, words):
-    return [word.concatmap(ColorizerVisitor(colorlist)) for word in words]
-
 """
 Colorize readings according to the reading in the Pinyin.
 * 2009 rewrites by Max Bolingbroke <batterseapower@hotmail.com>
 * 2009 original version by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
 """
+def colorize(colorlist, words):
+    return [word.concatmap(ColorizerVisitor(colorlist)) for word in words]
+
 class ColorizerVisitor(TokenVisitor):
     def __init__(self, colorlist):
         self.colorlist = colorlist
@@ -53,11 +140,31 @@ class ColorizerVisitor(TokenVisitor):
         return self.colorize(tonedcharacter)
     
     def colorize(self, token):
+        # Colors should always be based on the written tone, but they will be
+        # made lighter if a sandhi applies
+        color = self.colorlist[token.toneinfo.written - 1]
+        if token.toneinfo.spoken != token.toneinfo.written:
+            color = sandhifycolor(color)
+        
         return [
-            Text(u'<span style="color:' + self.colorlist[token.tone - 1] + u'">'),
+            Text(u'<span style="color:' + color + u'">'),
             token,
             Text(u'</span>')
           ]
+
+def sandhifycolor(color):
+    # Lighten up the color by halving saturation and increasing value
+    # by 20%. This was chosen to match Nicks choice of how to change green
+    # (tone 3) when sandhi applies: he wanted to go:
+    #  from 00AA00 = (120, 100, 67)
+    #  to   66CC66 = (120, 50,  80)
+    r, g, b = parseHtmlColor(color)
+    h, s, v = rgbToHSV(r, g, b)
+    r, g, b = hsvToRGB(h, s * 0.5, min(v * 1.2, 1.0))
+    finalcolor = toHtmlColor(r, g, b)
+    
+    log.info("Sandhified %s to %s", color, finalcolor)
+    return finalcolor
 
 """
 Output audio reading corresponding to a textual reading.
@@ -114,13 +221,13 @@ class PinyinAudioReadingsVisitor(TokenVisitor):
 
     def visitPinyin(self, pinyin):
         # Find possible base sounds we could accept
-        possiblebases = [pinyin.numericformat(hideneutraltone=False)]
-        if pinyin.tone == 5:
+        possiblebases = [pinyin.numericformat(hideneutraltone=False, tone="spoken")]
+        if pinyin.toneinfo.spoken == 5:
             # Sometimes we can replace tone 5 with 4 in order to deal with lack of '[xx]5.ogg's
             possiblebases.extend([pinyin.word, pinyin.word + '4'])
         elif u"u:" in pinyin.word:
             # Typically u: is written as v in filenames
-            possiblebases.append(pinyin.word.replace(u"u:", u"v") + str(pinyin.tone))
+            possiblebases.append(pinyin.word.replace(u"u:", u"v") + str(pinyin.toneinfo.spoken))
     
         # Find path to first suitable media in the possibilty list
         for possiblebase in possiblebases:
@@ -139,7 +246,9 @@ class PinyinAudioReadingsVisitor(TokenVisitor):
     def visitTonedCharacter(self, tonedcharacter):
         pass
 
-# Wrapper around the MaskHanziVisitor
+"""
+Replace occurences of the expression in the words with the masking character.
+"""
 def maskhanzi(expression, maskingcharacter, words):
     return [word.map(MaskHanziVisitor(expression, maskingcharacter)) for word in words]
 
@@ -197,6 +306,10 @@ if __name__=='__main__':
             self.assertEqual(self.colorize(u'小小!'),
                 '<span style="color:#00aa00">xiao3</span> <span style="color:#00aa00">xiao3</span>!')
     
+        def testUseSpokenToneRatherThanWrittenOne(self):
+            self.assertEqual(flatten(colorize(colorlist, [Word(Pinyin("xiao", ToneInfo(written=3, spoken=2)))])),
+                '<span style="color:#66cc66">xiao3</span>')
+    
         # Test helpers
         def colorize(self, what):
             return flatten(colorize(colorlist, englishdict.reading(what)))
@@ -215,6 +328,10 @@ if __name__=='__main__':
         def testPunctuation(self):
             self.assertEqual(self.colorize(u'小小!'),
                 u'<span style="color:#00aa00">小</span><span style="color:#00aa00">小</span>!')
+    
+        def testUseSpokenToneRatherThanWrittenOne(self):
+            self.assertEqual(flatten(colorize(colorlist, [Word(TonedCharacter(u"小", ToneInfo(written=3, spoken=2)))])),
+                u'<span style="color:#66cc66">小</span>')
     
         # Test helpers
         def colorize(self, what):
@@ -298,6 +415,13 @@ if __name__=='__main__':
             self.assertTrue(pack1 in gotpacks)
             self.assertTrue(pack2 in gotpacks)
     
+        def testUseSpokenToneRatherThanWrittenOne(self):
+            mediapacks = [MediaPack("Foo", { "ma2.mp3" : "ma2.mp3", "ma3.mp3" : "ma3.mp3" })]
+            mediapack, output, mediamissing = PinyinAudioReadings(mediapacks, [".mp3"]).audioreading([Word(Pinyin("ma", ToneInfo(written=2, spoken=3)))])
+            self.assertEquals(mediapack, mediapacks[0])
+            self.assertFalse(mediamissing)
+            self.assertEquals(output, ["ma3.mp3"])
+    
         # Test helpers
         def assertHasReading(self, what, shouldbe, **kwargs):
             bestpackshouldbe, mediapack, output, mediamissing = self.audioreading(what, **kwargs)
@@ -330,6 +454,67 @@ if __name__=='__main__':
                 pack = MediaPack("Test", dict([(filename, filename) for filename in raw_available_media]))
                 return pack, [pack]
     
+    class ToneSandhiTest(unittest.TestCase):
+        def testDoesntAffectWrittenTones(self):
+            self.assertEquals(flatten(tonesandhi([Word(Pinyin.parse("hen3")), Word(Pinyin.parse("hao3"))])), "hen3hao3")
+        
+        def testText(self):
+            self.assertSandhi(Word(Text("howdy")), "howdy")
+        
+        def testSingleThirdTone(self):
+            self.assertSandhi(Word(Pinyin.parse("hen3")), "hen3")
+        
+        def testSimple(self):
+            self.assertSandhi(Word(Pinyin.parse("hen3")), Word(Pinyin.parse("hao3")), "hen2hao3")
+            self.assertSandhi(Word(Pinyin.parse("hen3"), Pinyin.parse("hao3")), "hen2hao3")
+        
+        def testIgnoresWhitespace(self):
+            self.assertSandhi(Word(Pinyin.parse("hen3")), Word(Text(" ")), Word(Pinyin.parse("hao3")), "hen2 hao3")
+            self.assertSandhi(Word(Pinyin.parse("hen3"), Text(" "), Pinyin.parse("hao3")), "hen2 hao3")
+        
+        def testMultiMono(self):
+            self.assertSandhi(Word(Pinyin.parse("bao3"), Pinyin.parse("guan3")), Word(Pinyin.parse("hao3")), "bao2guan2hao3")
+        
+        def testMonoMulti(self):
+            self.assertSandhi(Word(Pinyin.parse("lao3")), Word(Pinyin.parse("bao3"), Pinyin.parse("guan3")), "lao3bao2guan3")
+        
+        # def testYiFollowedByFour(self):
+        #     self.assertSandhi(Word(Pinyin.parse("yi1")), Word(Pinyin.parse("ding4")), "yi2ding4")
+        # 
+        # def testYiFollowedByOther(self):
+        #     self.assertSandhi(Word(Pinyin.parse("yi1")), Word(Pinyin.parse("tian1")), "yi4tian1")
+        #     self.assertSandhi(Word(Pinyin.parse("yi1")), Word(Pinyin.parse("nian2")), "yi4nian2")
+        #     self.assertSandhi(Word(Pinyin.parse("yi1")), Word(Pinyin.parse("qi3")), "yi4qi3")
+        # 
+        # def testYiBetweenTwoWords(self):
+        #     self.assertSandhi(Word(Pinyin.parse("kan4")), Word(Pinyin.parse("yi1")), Word(Pinyin.parse("kan4")), "kan4yikan4")
+        # 
+        # # NB: don't bother to implement yi1 sandhi that depends on context such as whether we are
+        # # counting sequentially or using yi1 as an ordinal number
+        # 
+        # def testBuFollowedByFourth(self):
+        #     self.assertSandhi(Word(Pinyin.parse("bu4")), Word(Pinyin.parse("shi4")), "bu2shi4")
+        # 
+        # def testBuBetweenTwoWords(self):
+        #     self.assertSandhi(Word(Pinyin.parse("shi4")), Word(Pinyin.parse("bu4")), Word(Pinyin.parse("shi4")), "shi4bushi4")
+        
+        # Test helpers
+        def assertSandhi(self, *args):
+            self.assertEquals(flatten(self.copySpokenToWritten(tonesandhi(args[:-1]))), args[-1])
+        
+        def copySpokenToWritten(self, words):
+            class CopySpokenToWrittenVisitor(TokenVisitor):
+                def visitText(self, text):
+                    return text
+                
+                def visitPinyin(self, pinyin):
+                    return Pinyin(pinyin.word, ToneInfo(written=pinyin.toneinfo.spoken))
+                
+                def visitTonedCharacter(self, tonedcharacter):
+                    return TonedCharacter(unicode(tonedcharacter), ToneInfo(written=tonedcharacter.toneinfo.spoken))
+            
+            return [word.map(CopySpokenToWrittenVisitor()) for word in words]
+    
     class TrimErhuaTest(unittest.TestCase):
         def testTrimErhuaEmpty(self):
             self.assertEquals(flatten(trimerhua([])), u'')
@@ -338,18 +523,18 @@ if __name__=='__main__':
             self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2), TonedCharacter(u"儿", 5))])), u"一瓶")
 
         def testTrimErhuaPinyin(self):
-            self.assertEquals(flatten(trimerhua([Word(Pinyin(u"yi1"), Pinyin(u"ping2"), Pinyin(u"r5"))])), u"yi1ping2")
-            self.assertEquals(flatten(trimerhua([Word(Pinyin(u"yi1")), Word(Pinyin(u"ping2"), Pinyin(u"r5"))])), u"yi1ping2")
+            self.assertEquals(flatten(trimerhua([Word(Pinyin.parse(u"yi1"), Pinyin.parse(u"ping2"), Pinyin.parse(u"r5"))])), u"yi1ping2")
+            self.assertEquals(flatten(trimerhua([Word(Pinyin.parse(u"yi1")), Word(Pinyin.parse(u"ping2"), Pinyin.parse(u"r5"))])), u"yi1ping2")
 
         def testDontTrimNonErhua(self):
             self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u"一", 1), TonedCharacter(u"瓶", 2))])), u"一瓶")
 
         def testTrimSingleErHua(self):
-            self.assertEquals(flatten(trimerhua([Word(Pinyin(u'r5'))])), u'')
+            self.assertEquals(flatten(trimerhua([Word(Pinyin.parse(u'r5'))])), u'')
             self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u'儿', 5))])), u'')
-            self.assertEquals(flatten(trimerhua([Word(Pinyin(u'r5'))])), u'')
+            self.assertEquals(flatten(trimerhua([Word(Pinyin.parse(u'r5'))])), u'')
             self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u'儿', 5))])), u'')
-            self.assertEquals(flatten(trimerhua([Word(Pinyin(u'r5'))])), u'')
+            self.assertEquals(flatten(trimerhua([Word(Pinyin.parse(u'r5'))])), u'')
             self.assertEquals(flatten(trimerhua([Word(TonedCharacter(u'儿', 5))])), u'')
 
     class MaskHanziTest(unittest.TestCase):
@@ -358,7 +543,7 @@ if __name__=='__main__':
                               [Word(Text("World")), Word(Text("Hmask!")), Word(Text(" "), Text("Jmask"))])
         
         def testMaskCharacter(self):
-            self.assertEquals(maskhanzi("hen", "chicken", [Word(Pinyin("hen3")), Word(TonedCharacter("hen", 3)), Word(TonedCharacter("mhh", 2))]),
-                              [Word(Pinyin("hen3")), Word(Text("chicken")), Word(TonedCharacter("mhh", 2))])
+            self.assertEquals(maskhanzi("hen", "chicken", [Word(Pinyin.parse("hen3")), Word(TonedCharacter("hen", 3)), Word(TonedCharacter("mhh", 2))]),
+                              [Word(Pinyin.parse("hen3")), Word(Text("chicken")), Word(TonedCharacter("mhh", 2))])
 
     unittest.main()

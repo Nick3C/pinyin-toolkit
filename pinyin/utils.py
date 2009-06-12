@@ -300,6 +300,75 @@ def striphtml(what):
 def concat(what):
     return sum(what, [])
 
+#
+# Color conversion appropriated from <http://code.activestate.com/recipes/576554/>
+# We can replace this with a use of the colorsys module when Anki uses Python 2.6
+#
+# NB: have slightly modified the routines so that V is returned between 0 and 1, like
+# the H and S values already were.
+#
+
+def hsvToRGB(h, s, v):
+    """Convert HSV color space to RGB color space
+    
+    @param h: Hue
+    @param s: Saturation
+    @param v: Value
+    return (r, g, b)  
+    """
+    import math
+    v = int(round(v * 255.0))
+    hi = math.floor(h / 60.0) % 6
+    f =  (h / 60.0) - math.floor(h / 60.0)
+    p = v * (1.0 - s)
+    q = v * (1.0 - (f*s))
+    t = v * (1.0 - ((1.0 - f) * s))
+    return {
+        0: (v, t, p),
+        1: (q, v, p),
+        2: (p, v, t),
+        3: (p, q, v),
+        4: (t, p, v),
+        5: (v, p, q),
+    }[hi]
+
+def rgbToHSV(r, g, b):
+    """Convert RGB color space to HSV color space
+    
+    @param r: Red
+    @param g: Green
+    @param b: Blue
+    return (h, s, v)  
+    """
+    maxc = max(r, g, b)
+    minc = min(r, g, b)
+    colorMap = {
+        id(r): 'r',
+        id(g): 'g',
+        id(b): 'b'
+    }
+    if colorMap[id(maxc)] == colorMap[id(minc)]:
+        h = 0
+    elif colorMap[id(maxc)] == 'r':
+        h = ((g - b) * 60.0 / (maxc - minc)) % 360
+    elif colorMap[id(maxc)] == 'g':
+        h = ((b - r) * 60.0 / (maxc - minc)) + 120
+    elif colorMap[id(maxc)] == 'b':
+        h = ((r - g) * 60.0 / (maxc - minc)) + 240
+    v = (maxc / 255.0)
+    if maxc == 0.0:
+        s = 0.0
+    else:
+        s = 1 - (minc * 1.0 / maxc)
+    return (h, s, v)
+
+#
+# End code from ActiveState recipe
+#
+
+def isosx():
+    return os.uname()[0].lower() == "darwin"
+
 if __name__=='__main__':
     import unittest
     

@@ -265,30 +265,6 @@ class Config(object):
         return self.__googletranslateworking
 
     shouldusegoogletranslate = property(getshouldusegoogletranslate)
-    
-    #
-    # Color accessors
-    #
-    
-    def arrayproperty(attr, n):
-        def setter(self, value):
-            getattr(self, attr)[n] = value
-        
-        return property(lambda self: getattr(self, attr)[n], setter)
-    
-    tone1color = arrayproperty("tonecolors", 0)
-    tone2color = arrayproperty("tonecolors", 1)
-    tone3color = arrayproperty("tonecolors", 2)
-    tone4color = arrayproperty("tonecolors", 3)
-    tone5color = arrayproperty("tonecolors", 4)
-    
-    extraquickaccess1color = arrayproperty("extraquickaccesscolors", 0)
-    extraquickaccess2color = arrayproperty("extraquickaccesscolors", 1)
-    extraquickaccess3color = arrayproperty("extraquickaccesscolors", 2)
-    # extraquickaccess4color = arrayproperty("extraquickaccesscolors", 3)
-    # extraquickaccess5color = arrayproperty("extraquickaccesscolors", 4)
-    # extraquickaccess6color = arrayproperty("extraquickaccesscolors", 5)
-    # extraquickaccess7color = arrayproperty("extraquickaccesscolors", 6)
 
 
 if __name__=='__main__':
@@ -337,20 +313,6 @@ if __name__=='__main__':
         def testPrivateStuffStaysPrivate(self):
             for key in Config({}).settings.keys():
                 self.assertFalse("__" in key, "Private stuff called %s leaked" % key)
-        
-        def testToneAccessors(self):
-            config = Config({ "tonecolors" : ["1", "2"]})
-            self.assertEquals(config.tone1color, "1")
-            
-            config.tone1color = "hi"
-            self.assertEquals(config.tone1color, "hi")
-        
-        def testExtraQuickAccessAcessors(self):
-            config = Config({ "extraquickaccesscolors" : ["1", "2"] })
-            self.assertEquals(config.extraquickaccess2color, "2")
-            
-            config.extraquickaccess2color = "bye"
-            self.assertEquals(config.extraquickaccess2color, "bye")
         
         def testDictionary(self):
             self.assertEquals(Config({ "dictlanguage" : "en", "meaninggeneration" : True }).dictionary, dictionary.PinyinDictionary.load("en", True))

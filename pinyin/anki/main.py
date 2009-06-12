@@ -41,7 +41,7 @@ class PinyinToolkit(object):
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
-        hookbuilders = [hooks.PreferencesHook, hooks.FocusHook, hooks.MissingInformationHook, hooks.ColorShortcutKeysHook, statsandgraphs.HanziGraphHook]
+        hookbuilders = [hooks.PreferencesHook, hooks.FocusHook, hooks.MissingInformationHook, hooks.ColorShortcutKeysHook, statsandgraphs.HanziGraphHook, hooks.HelpHook]
         self.hooks = [hookbuilder(self.mw, thenotifier, themediamanager, config, updater) for hookbuilder in hookbuilders]
     
     def installhooks(self):

@@ -437,7 +437,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="quickAccessLabel">
             <property name="text">
-             <string>These colors, along with the tone colors, are available in the fact editor by pressing Ctrl+F1 to Ctrl+F8 while some text is selected:</string>
+             <string>Set at runtime.</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignJustify|Qt::AlignVCenter</set>

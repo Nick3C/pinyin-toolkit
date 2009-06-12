@@ -236,13 +236,13 @@ if __name__=='__main__':
         def testTonedTokens(self):
             toned = pinyindict.tonedchars(u"一个")
             self.assertEquals(flatten(toned), u"一个")
-            self.assertEquals(toned[0][0].tone, 1)
-            self.assertEquals(toned[0][1].tone, 4)
+            self.assertEquals(toned[0][0].toneinfo, ToneInfo(written=1))
+            self.assertEquals(toned[0][1].toneinfo, ToneInfo(written=4))
 
         def testTonedTokensWithoutTone(self):
             toned = pinyindict.tonedchars(u"T恤")
             self.assertEquals(flatten(toned), u"T恤")
-            self.assertEquals(toned[0][1].tone, 4)
+            self.assertEquals(toned[0][1].toneinfo, ToneInfo(written=4))
 
         def testTonedTokenNumbers(self):
             # Although it kind of makes sense to return the arabic numbers with tone colors, users don't expect it :-)

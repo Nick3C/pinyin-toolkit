@@ -87,6 +87,9 @@ class FieldUpdater(object):
             # We didn't get any meanings, don't update the field
             return None
         
+        # Consider sandhi in meanings - you never know, there might be some!
+        dictmeanings = [transformations.tonesandhi(dictmeaning) for dictmeaning in dictmeanings]
+        
         if self.config.hanzimasking:
             # Hanzi masking is on: scan through the meanings and remove the expression itself
             dictmeanings = [transformations.maskhanzi(expression, self.config.hanzimaskingcharacter, dictmeaning) for dictmeaning in dictmeanings]
@@ -110,7 +113,7 @@ class FieldUpdater(object):
         return self.preparetokens(dictmeasurewords[0])
     
     def generatecoloredcharacters(self, expression):
-        return pinyin.flatten(transformations.colorize(self.config.tonecolors, self.config.dictionary.tonedchars(expression)))
+        return pinyin.flatten(transformations.colorize(self.config.tonecolors, transformations.tonesandhi(self.config.dictionary.tonedchars(expression))))
     
     def weblinkgeneration(self, expression):
         # Generate a list of links to online dictionaries, etc to query the expression
@@ -142,8 +145,8 @@ class FieldUpdater(object):
             if 'mw' in fact and len(fact['mw']) < 12: 
                 fact['mw'] = u""
     
-        # Figure out the reading for the expression field
-        dictreading = self.config.dictionary.reading(expression)
+        # Figure out the reading for the expression field, with sandhi considered
+        dictreading = transformations.tonesandhi(self.config.dictionary.reading(expression))
   
         # Preload the meaning, but only if we absolutely have to
         if self.config.needmeanings:
@@ -366,6 +369,18 @@ if __name__ == "__main__":
                         "meaning" : u'Hello, you are right my friend<br /><span style="color:gray"><small>[Google Translate]</small></span>',
                         "mw" : "", "audio" : "", "color" : ""
                       })
+
+        def testUpdateReadingAndColoredHanziAndAudioWithSandhi(self):
+            self.assertEquals(
+                self.updatefact(u"很好", { "reading" : "", "color" : "", "audio" : "" },
+                    colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = False,
+                    detectmeasurewords = False, audiogeneration = True, audioextensions = [".mp3"], tonedisplay = "numeric",
+                    tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False), {
+                        "reading" : u'<span style="color:#66cc66">hen3</span> <span style="color:#00aa00">hao3</span>',
+                        "color" : u'<span style="color:#66cc66">很</span><span style="color:#00aa00">好</span>',
+                        "audio" : u"[sound:" + os.path.join("Test", "hen2.mp3") + "]" +
+                                  u"[sound:" + os.path.join("Test", "hao3.mp3") + "]"
+                      })
         
         # Test helpers
         def updatefact(self, *args, **kwargs):
@@ -377,7 +392,8 @@ if __name__ == "__main__":
             
             if mediapacks == None:
                 mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
-                                                        "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3" })]
+                                                        "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
+                                                        "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
             mediamanager = MockMediaManager(mediapacks)
             
             factclone = copy.deepcopy(fact)
