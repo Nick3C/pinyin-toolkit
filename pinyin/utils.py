@@ -44,7 +44,12 @@ def suppressexceptions(action):
 Utility function that reports whether a string consists only of punctuation character
 """
 def ispunctuation(text):
-    return all([unicodedata.category(unicode(char)) == 'Po' for char in text])
+    # NB: can't use "all" because it's not in Python 2.4 and below, which Anki uses
+    for char in text:
+        if unicodedata.category(unicode(char)) != 'Po':
+            return False
+    
+    return True
 
 
 """

@@ -92,7 +92,7 @@ class FieldUpdater(object):
         
         if self.config.hanzimasking:
             # Hanzi masking is on: scan through the meanings and remove the expression itself
-            dictmeanings = [transformations.maskhanzi(expression, self.config.hanzimaskingcharacter, dictmeaning) for dictmeaning in dictmeanings]
+            dictmeanings = [transformations.maskhanzi(expression, self.config.formathanzimaskingcharacter(), dictmeaning) for dictmeaning in dictmeanings]
 
         # Prepare all the meanings by flattening them and removing empty entries
         meanings = [meaning for meaning in [self.preparetokens(dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
@@ -279,9 +279,9 @@ if __name__ == "__main__":
             self.assertEquals(
                 self.updatefact(u"书", { "meaning" : "" },
                     colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
-                    tonedisplay = "tonified", meaningnumbering = "circledArabic", colormeaningnumbers = False, meaningseperator = "custom", custommeaningseperator = " | ", prefersimptrad = "simp",
+                    tonedisplay = "tonified", meaningnumbering = "circledArabic", colormeaningnumbers = True, meaningnumberingcolor="#123456", meaningseperator = "custom", custommeaningseperator = " | ", prefersimptrad = "simp",
                     audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = True, hanzimaskingcharacter = "MASKED"), {
-                        "meaning" : u'① book | ② letter | ③ same as MASKED<span style="color:#ff0000">\u7ecf</span> Book of History | ④ MW: <span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
+                        "meaning" : u'<span style="color:#123456">①</span> book | <span style="color:#123456">②</span> letter | <span style="color:#123456">③</span> same as <span style="color:#123456">MASKED</span><span style="color:#ff0000">\u7ecf</span> Book of History | <span style="color:#123456">④</span> MW: <span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
                       })
 
         def testUpdateReadingOnly(self):

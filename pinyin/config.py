@@ -247,6 +247,12 @@ class Config(object):
         # Use the seperator to join the meanings together
         return self.meaningseperatorstring.join(meanings)
     
+    def formathanzimaskingcharacter(self):
+        if self.colormeaningnumbers:
+            return '<span style="color:' + self.meaningnumberingcolor + '">' + self.hanzimaskingcharacter + '</span>'
+        else:
+            return self.hanzimaskingcharacter
+    
     def getshouldusegoogletranslate(self):
         # Fail fast if the user has turned Google off:
         if not self.fallbackongoogletranslate:
@@ -345,6 +351,12 @@ if __name__=='__main__':
         def testFormatTooManyMeanings(self):
             self.assertEquals(Config({ "meaningnumbering" : "circledChinese", "meaningseperator" : "commas", "colormeaningnumbers" : False }).formatmeanings([str(n) for n in range(1, 22)]),
                               u"㊀ 1, ㊁ 2, ㊂ 3, ㊃ 4, ㊄ 5, ㊅ 6, ㊆ 7, ㊇ 8, ㊈ 9, ㊉ 10, ⑪ 11, ⑫ 12, ⑬ 13, ⑭ 14, ⑮ 15, ⑯ 16, ⑰ 17, ⑱ 18, ⑲ 19, ⑳ 20, (21) 21")
+    
+        def testFormatHanziMaskingCharacter(self):
+            self.assertEquals(Config({ "hanzimasking" : True, "hanzimaskingcharacter": "MASKED", "colormeaningnumbers" : True, "meaningnumberingcolor" : "#abcdef" }).formathanzimaskingcharacter(),
+                              u'<span style="color:#abcdef">MASKED</span>')
+            self.assertEquals(Config({ "hanzimasking" : True, "hanzimaskingcharacter": "MASKED", "colormeaningnumbers" : False }).formathanzimaskingcharacter(),
+                              u'MASKED')
     
         def testShouldUseGoogleTranslateDontUse(self):
             self.assertFalse(Config({ "fallbackongoogletranslate" : False }).shouldusegoogletranslate)

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'designer/preferences.ui'
 #
-# Created: Fri Jun 12 18:03:09 2009
+# Created: Fri Jun 12 19:08:09 2009
 #      by: PyQt4 UI code generator 4.4.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -299,7 +299,7 @@ class Ui_Preferences(object):
         self.gridLayout.addWidget(self.tabWidget, 0, 1, 1, 1)
 
         self.retranslateUi(Preferences)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), Preferences.accept)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), Preferences.reject)
         QtCore.QMetaObject.connectSlotsByName(Preferences)
@@ -341,9 +341,9 @@ class Ui_Preferences(object):
         self.quickAccess2Button.setText(QtGui.QApplication.translate("Preferences", "7", None, QtGui.QApplication.UnicodeUTF8))
         self.quickAccess3Button.setText(QtGui.QApplication.translate("Preferences", "8", None, QtGui.QApplication.UnicodeUTF8))
         self.quickAccessLabel.setText(QtGui.QApplication.translate("Preferences", "Set at runtime.", None, QtGui.QApplication.UnicodeUTF8))
-        self.meaningNumberingSettingsFrame.setTitle(QtGui.QApplication.translate("Preferences", "Meaning Numbering Color", None, QtGui.QApplication.UnicodeUTF8))
-        self.meaningNumberingColorButton.setText(QtGui.QApplication.translate("Preferences", "Meaning Numbering Color", None, QtGui.QApplication.UnicodeUTF8))
-        self.colorizeMeaningNumberingCheck.setText(QtGui.QApplication.translate("Preferences", "Colorize meaning numbering", None, QtGui.QApplication.UnicodeUTF8))
+        self.meaningNumberingSettingsFrame.setTitle(QtGui.QApplication.translate("Preferences", "Meaning Numbering / Mask Color", None, QtGui.QApplication.UnicodeUTF8))
+        self.meaningNumberingColorButton.setText(QtGui.QApplication.translate("Preferences", "Meaning Numbering && Mask Color", None, QtGui.QApplication.UnicodeUTF8))
+        self.colorizeMeaningNumberingCheck.setText(QtGui.QApplication.translate("Preferences", "Colorize meaning numbering and mask", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.colorsTab), QtGui.QApplication.translate("Preferences", "Colors", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox.setTitle(QtGui.QApplication.translate("Preferences", "Audio Packs", None, QtGui.QApplication.UnicodeUTF8))
         self.enableAudioCheck.setText(QtGui.QApplication.translate("Preferences", "Enable automatic text-to-speech generation", None, QtGui.QApplication.UnicodeUTF8))
