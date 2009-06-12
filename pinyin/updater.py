@@ -65,8 +65,8 @@ class FieldUpdater(object):
         mediapacks = self.mediamanager.discovermediapacks()
         if len(mediapacks) == 0:
             # Show a warning the first time we detect that we're missing a sound pack
-            self.notifier.infoOnce("The Pinyin Toolkit cannot find an audio pack for text-to-speech.  We reccomend you either disable the audio "
-                                   + "functionality or install the free Mandarin Sounds audio pack using the Audio tab in Tool > Preferences.")
+            self.notifier.infoOnce("The Pinyin Toolkit cannot find an audio pack for text-to-speech.  We reccomend you either disable the audio functionality "
+                                   + "or install the free Chinese-Lessons.com Mandarin Sounds audio pack using the Audio tab in Tool > Preferences.")
             
             # There is no way we can generate an audio reading with no packs - give up
             return None
@@ -133,8 +133,8 @@ class FieldUpdater(object):
             # DEBUG Me - Auto generated pinyin should be at least "[sound:" + ".xxx]" (12 characters) plus pinyin (max 6). i.e. 18
             # DEBUG - Split string around "][" to get the audio of each sound in an array. Blank the field unless any one string is longer than 20 characters
             # Exploit the fact that pinyin text-to-speech pinyin should be no longer than 18 characters to guess that anything longer is user generated
-            # MaxB comment: I don't think that will work, because we import the Mandarin Sounds into anki and it gives them /long/ names.  Instead, how
-            # about we check if all of the audio files referenced are files in the format pinyin<tone>.mp3?
+            # MaxB comment: I don't think that will work, because we import the Chinese-Lessons.com Mandarin Sounds into anki and it gives them /long/ names.
+            # Instead, how about we check if all of the audio files referenced are files in the format pinyin<tone>.mp3?
             if 'audio' in fact and len(fact['audio']) < 40:
                 fact['audio'] = u""
             

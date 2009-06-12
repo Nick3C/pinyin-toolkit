@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'designer/preferences.ui'
 #
-# Created: Thu Jun 11 00:50:25 2009
+# Created: Fri Jun 12 18:03:09 2009
 #      by: PyQt4 UI code generator 4.4.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -340,7 +340,7 @@ class Ui_Preferences(object):
         self.quickAccess1Button.setText(QtGui.QApplication.translate("Preferences", "6", None, QtGui.QApplication.UnicodeUTF8))
         self.quickAccess2Button.setText(QtGui.QApplication.translate("Preferences", "7", None, QtGui.QApplication.UnicodeUTF8))
         self.quickAccess3Button.setText(QtGui.QApplication.translate("Preferences", "8", None, QtGui.QApplication.UnicodeUTF8))
-        self.quickAccessLabel.setText(QtGui.QApplication.translate("Preferences", "These colors, along with the tone colors, are available in the fact editor by pressing Ctrl+F1 to Ctrl+F8 while some text is selected:", None, QtGui.QApplication.UnicodeUTF8))
+        self.quickAccessLabel.setText(QtGui.QApplication.translate("Preferences", "Set at runtime.", None, QtGui.QApplication.UnicodeUTF8))
         self.meaningNumberingSettingsFrame.setTitle(QtGui.QApplication.translate("Preferences", "Meaning Numbering Color", None, QtGui.QApplication.UnicodeUTF8))
         self.meaningNumberingColorButton.setText(QtGui.QApplication.translate("Preferences", "Meaning Numbering Color", None, QtGui.QApplication.UnicodeUTF8))
         self.colorizeMeaningNumberingCheck.setText(QtGui.QApplication.translate("Preferences", "Colorize meaning numbering", None, QtGui.QApplication.UnicodeUTF8))
@@ -348,7 +348,7 @@ class Ui_Preferences(object):
         self.groupBox.setTitle(QtGui.QApplication.translate("Preferences", "Audio Packs", None, QtGui.QApplication.UnicodeUTF8))
         self.enableAudioCheck.setText(QtGui.QApplication.translate("Preferences", "Enable automatic text-to-speech generation", None, QtGui.QApplication.UnicodeUTF8))
         self.installedAudioPacksLabel.setText(QtGui.QApplication.translate("Preferences", "Installed text-to-speech audio packs:", None, QtGui.QApplication.UnicodeUTF8))
-        self.installMandarinSoundsButton.setText(QtGui.QApplication.translate("Preferences", "Install Free Mandarin Sounds Pack", None, QtGui.QApplication.UnicodeUTF8))
+        self.installMandarinSoundsButton.setText(QtGui.QApplication.translate("Preferences", "Install Chinese-Lessons.com Mandarin Sounds Pack", None, QtGui.QApplication.UnicodeUTF8))
         self.openAudioPackDirectoryButton.setText(QtGui.QApplication.translate("Preferences", "Open Audio Pack Directory", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.audioTab), QtGui.QApplication.translate("Preferences", "Audio", None, QtGui.QApplication.UnicodeUTF8))
 

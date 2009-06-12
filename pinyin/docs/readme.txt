@@ -87,7 +87,7 @@ This allows you to understand how to best use the new features.
     * You can use "Tools" > "Download Mandarin sound samples" to automatically install a sample set
   - better quality audio can be found online. See the file "getaudio.txt" for instructions
   - these files should be placed in "[AnkiPluginDirectory]/pinyin/media/[ChooseAName]".
-    If you use the builtin option to download the Mandarin Sounds they will be automatically installed here.
+    If you use the builtin option to download the Chinese-Lessons.com Mandarin Sounds they will be automatically installed here.
   - finally, add your field to your card template  model %(Audio)s to the HTML generated from your model
 
 
@@ -302,8 +302,8 @@ Licensing of EDICT is Createive Commons Attribut-Share Alike 3.0 Unported <http:
 
                                == Audio Files ==
                                
-Mandarin Sounds, available at: <http://www.chinese-lessons.com/download.htm>
-Licensing of Mandarin Sounds is Creative Commons Attribution-Noncommercial-No Derivative Works 3.0 United States <http://creativecommons.org/licenses/by-nc-nd/3.0/us/>
+Chinese-Lessons.com Mandarin Sounds, available at: <http://www.chinese-lessons.com/download.htm>
+Licensing of Chinese-Lessons.com Mandarin Sounds is Creative Commons Attribution-Noncommercial-No Derivative Works 3.0 United States <http://creativecommons.org/licenses/by-nc-nd/3.0/us/>
 
 SWAC Audio Collection, available at: <http://creativecommons.org/licenses/by/2.0/fr/deed.en_US>
 Licensing is Creative Commons Attribution 2.0 France <http://creativecommons.org/licenses/by/2.0/fr/deed.en_US>

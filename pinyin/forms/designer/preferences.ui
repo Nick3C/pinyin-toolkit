@@ -546,7 +546,7 @@
               <item>
                <widget class="QPushButton" name="installMandarinSoundsButton">
                 <property name="text">
-                 <string>Install Free Mandarin Sounds Pack</string>
+                 <string>Install Chinese-Lessons.com Mandarin Sounds Pack</string>
                 </property>
                </widget>
               </item>

@@ -18,7 +18,7 @@ def downloadAndInstallMandarinSounds(notifier, mediamanager, config):
     try:
         # Download ZIP, using cache if necessary
         downloader = MediaDownloader(mediamanager.mediadir())
-        the_media = downloader.download("Mandarin Sounds", config.mandarinsoundsurl,
+        the_media = downloader.download("Chinese-Lessons.com Mandarin Sounds", config.mandarinsoundsurl,
                                         lambda: notifier.info("Downloading the sounds - this might take a while!"))
     except IOError, e:
         notifier.exception("Error while downloading the sound pack: are you connected to the internet?", e)
