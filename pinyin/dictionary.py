@@ -159,16 +159,21 @@ class PinyinDictionary(object):
     def meanings(self, sentence, prefersimptrad):
         log.info("Requested meanings for %s", sentence)
         
+        isfirstparsedthing = True
         foundmeanings, foundmeasurewords = None, None
         for recognised, word in self.parse(sentence):
+            if not (isfirstparsedthing):
+                # This is a phrase with more than one word - let someone else translate it
+                # NB: apply this even if the first thing was an unrecognised bit of English,
+                # see <http://github.com/batterseapower/pinyin-toolkit/issues/unreads#issue/71>.
+                # We want to translate things like U盘 using Google rather than just returning "tray".
+                log.info("We found a phrase, so returning no meanings")
+                return None, None
+            
+            isfirstparsedthing = False
+            
             if recognised:
-                # A recognised thing! Did we recognise something else already?
-                if foundmeanings != None or foundmeasurewords != None:
-                    # This is a phrase with more than one word - let someone else translate it
-                    log.info("We found a phrase, so returning no meanings")
-                    return None, None
-                
-                # Find the definition in the dictionary
+                # A recognised thing!  Find the definition in the dictionary:
                 definition = self.__definition.get(word)
                 if definition == None:
                     # NB: we return None if there is no meaning in the codomain. This case can
@@ -248,18 +253,21 @@ if __name__=='__main__':
             # Although it kind of makes sense to return the arabic numbers with tone colors, users don't expect it :-)
             toned = pinyindict.tonedchars(u"1994")
             self.assertEquals(flatten(toned), u"1994")
-            self.assertEquals([hasattr(token, "tone") for token in toned], [False, False])
+            self.assertFalse(any([hasattr(token, "tone") for token in toned]))
 
         def testNumbersWherePinyinLengthDoesntMatchCharacters(self):
             self.assertEquals(flatten(englishdict.tonedchars(u"1000000000")), u"1000000000")
-            self.assertEquals(flatten(englishdict.reading(u"1000000000")), u"yi1 shi2 yi4")
+            # Invalidated by removal of numbers from the dictionary:
+            # self.assertEquals(flatten(englishdict.reading(u"1000000000")), u"yi1 shi2 yi4")
             self.assertEquals(self.flatmeanings(englishdict, u"1000000000"), None)
 
         def testPhraseMeanings(self):
             self.assertEquals(self.flatmeanings(englishdict, u"一杯啤酒"), None)
+            self.assertEquals(self.flatmeanings(englishdict, u"U盘"), None)
 
-        def testMeaningsWithTrailingJunk(self):
-            self.assertEquals(self.flatmeanings(englishdict, u"鼓聲 (junk!!)"), ["sound of a drum", "drumbeat"])
+        # Invalidated by fix to issue #71
+        # def testMeaningsWithTrailingJunk(self):
+        #             self.assertEquals(self.flatmeanings(englishdict, u"鼓聲 (junk!!)"), ["sound of a drum", "drumbeat"])
         
         def testMeaningless(self):
             self.assertEquals(self.flatmeanings(englishdict, u"English"), None)
