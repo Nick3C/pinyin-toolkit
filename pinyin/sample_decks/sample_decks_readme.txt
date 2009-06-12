@@ -11,3 +11,5 @@ See: http://www.supermemo.com/articles/20rules.htm#minimum information principle
 Text-to-speech audio will be added automatically once you set it up as per the readme file.
 
 You should wipe the sample cards before use (9 and 21 cards respectively).
+
+The zip file contains the original copies of the decks in case you make accidental changes.
