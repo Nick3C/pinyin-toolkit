@@ -367,7 +367,7 @@ def rgbToHSV(r, g, b):
 #
 
 def isosx():
-    return os.uname()[0].lower() == "darwin"
+    return sys.platform.lower().startswith("darwin")
 
 if __name__=='__main__':
     import unittest
