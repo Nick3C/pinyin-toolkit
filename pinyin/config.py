@@ -16,6 +16,11 @@ from logger import log
 # * link generator (and a list of the links to be generated)
 
 defaultsettings = {
+    # The idea here is that we can mark the version of the configuration
+    # information that the config was last processed by, so that we can
+    # upgrade it over time. TODO: implement the actual upgrade logic.
+    "version" : 1,
+
     "dictlanguage" : "en",
 
     "colorizedpinyingeneration"    : True, # Should we try and write readings and measure words that include colorized pinyin?
