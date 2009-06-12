@@ -24,7 +24,7 @@ A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-pinyin_toolkit="0.05 dev feature complete 0.1"
+pinyin_toolkit="0.05"
 # Dictionary's last updated: 2009-06-06
 
 CEDICT_Ver="2009-06-05 03:55:19 GMT "

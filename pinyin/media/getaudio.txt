@@ -1,0 +1,70 @@
+﻿=================================================================================
+= Instructions for Preparing Audio Files for Anki Pinyin Toolkit Text-to Speech =
+=================================================================================
+Document Version:   0.05 (2 June 2009)
+Written by:         Nick Cook [www.n-line.co.uk]    pinyintoolkit@gmail.com
+=== About =======================================================================
+These instructions explain how to generate optimium audio files for use with the Pinyin Toolkit's text-to-speech feature.
+We will use Audacity (free&open source) to make batch change to make the files suitable for text-to-speech.
+Upon completion you will notice a *huge* improvement in text-to-speech compared to the default audio.
+
+=== Finding Materials ===========================================================
+
+First download some audio files to work with! The following files are options:
+ChineseLessons.com                  [n=1,189]   .mp3    [average quality]          http://www.chinese-lessons.com/download.htm
+ChinesePod.com free pinyin tool     [n=1,627]   .mp3    [licensing restrictions]   http://chinesepod.com/resources/pronunciation
+SWAC Audio Files                    [n=1,000]   .ogg    [need renaming script]     http://swac-collections.org/download.php
+WenLin Audio Files                  [n=1,675]   .wav    [commercial license]       http://www.wenlin.com/
+
+You can get Anki to download the audio files fro ChineseLessons.com from the preferences window.
+These files are free and can be used immediately but are not necessarily the best files to use.
+
+The author uses the ChinesePod audio files as they are high quality and include all possible pinyin.
+You are free to use any audio files you like but take care of licesnsing restrictions (especially redistribution)
+
+Please email us if you know of better audio files <pinyintoolkit@gmail.com>
+
+= Instructions =
+0) Download Audacity (1.3.7 Beta)   http://audacity.sourceforge.net/
+        - Install and run it
+        - click file - edit chains
+        - Click Add
+        - Name your new processor something like "Pinyin for Anki"
+1) double click on no1 in the chain
+    select ChangeTempo
+        - select edit parameters
+        - change value to 40% (chose your own, this is a suggested value, faster makes text-to-speech more natural)
+2) double click on no2 in the chain
+        - double click on TruncateSilence
+        - double click on edit parameters
+        - duation:10, threshold -25
+        - click ok
+3) double click on No5 in the chain
+        - select exporOGG (don't use MP3; OGG is much better)
+        - click ok
+4) Click ok and confirm you want to save the chain
+5) Click File->Apply Chain
+        - Select your chain ("Pinyin for Anki")
+        - click on "Apply to Files..."
+        - select the .mp3 files downloaded
+    
+Audacity will now go through each of your MP3 files and prepare them to be used with the Pinyin Toolkit.
+It will take about 10 minutes to complete as it goes through each audio file and makes the changes (around 1,000)
+
+6) The files will appear in a subdirectory from where your .mp3 files were located.
+    Simply copy the .ogg filesinto the directory: "[yourankiplugindir]\pinyin\media\ChinesePodModified" and you are finished!
+
+You will now have optimium text-to-speech convesion for Anki!
+
+Congratulations & Enjoy!
+
+=== Troubleshooting =============================================================
+If you have trouble with exporting to OGG or MP3 see this page:
+http://audacity.sourceforge.net/manual-1.2/exportmp3.html
+
+In case you wondered...
+You probably we can't make much impvorement with noise reducer or nomialize so we don't bother.
+
+=== Feedback ====================================================================
+Please let me know if you like these instructions and if they worked well for you.
+If you have any suggestions I can be contacted at: pinyintoolkit@gmail.com
