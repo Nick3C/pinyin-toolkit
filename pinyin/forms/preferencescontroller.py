@@ -119,6 +119,13 @@ class PreferencesController(object):
         
         # The Quick Access Colors panel
         def setUpQuickAccessColors():
+            helptext = "These colors, along with the tone colors, are available in the fact editor by pressing "\
+                       "Ctrl+F1 to Ctrl+F8 while some text is selected - press Shift to get the sandhi variant:"
+            if pinyin.utils.isosx():
+                self.view.controls.quickAccessLabel.setText(helptext.replace("Ctrl", "Option"))
+            else:
+                self.view.controls.quickAccessLabel.setText(helptext)
+        
             for shortcut in range(1, 4):
                 self.registerColorChooserMapping("extraquickaccesscolors[%d]" % (shortcut - 1), getattr(self.view.controls, "quickAccess%dButton" % shortcut))
         

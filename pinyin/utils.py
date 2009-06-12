@@ -304,6 +304,9 @@ def concat(what):
 # Color conversion appropriated from <http://code.activestate.com/recipes/576554/>
 # We can replace this with a use of the colorsys module when Anki uses Python 2.6
 #
+# NB: have slightly modified the routines so that V is returned between 0 and 1, like
+# the H and S values already were.
+#
 
 def hsvToRGB(h, s, v):
     """Convert HSV color space to RGB color space
@@ -314,6 +317,7 @@ def hsvToRGB(h, s, v):
     return (r, g, b)  
     """
     import math
+    v = int(round(v * 255.0))
     hi = math.floor(h / 60.0) % 6
     f =  (h / 60.0) - math.floor(h / 60.0)
     p = v * (1.0 - s)
@@ -351,7 +355,7 @@ def rgbToHSV(r, g, b):
         h = ((b - r) * 60.0 / (maxc - minc)) + 120
     elif colorMap[id(maxc)] == 'b':
         h = ((r - g) * 60.0 / (maxc - minc)) + 240
-    v = maxc
+    v = (maxc / 255.0)
     if maxc == 0.0:
         s = 0.0
     else:
@@ -361,6 +365,9 @@ def rgbToHSV(r, g, b):
 #
 # End code from ActiveState recipe
 #
+
+def isosx():
+    return os.uname()[0].lower() == "darwin"
 
 if __name__=='__main__':
     import unittest

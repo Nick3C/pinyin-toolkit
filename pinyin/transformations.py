@@ -144,21 +144,27 @@ class ColorizerVisitor(TokenVisitor):
         # made lighter if a sandhi applies
         color = self.colorlist[token.toneinfo.written - 1]
         if token.toneinfo.spoken != token.toneinfo.written:
-            # Lighten up the color by halving saturation and increasing value
-            # by 20%. This was chosen to match Nicks choice of how to change green
-            # (tone 3) when sandhi applies: he wanted to go:
-            #  from 00AA00 = (120, 100, 67)
-            #  to   66CC66 = (120, 50,  80)
-            r, g, b = parseHtmlColor(color)
-            h, s, v = rgbToHSV(r, g, b)
-            r, g, b = hsvToRGB(h, s * 0.5, v * 1.2)
-            color = toHtmlColor(r, g, b)
+            color = sandhifycolor(color)
         
         return [
             Text(u'<span style="color:' + color + u'">'),
             token,
             Text(u'</span>')
           ]
+
+def sandhifycolor(color):
+    # Lighten up the color by halving saturation and increasing value
+    # by 20%. This was chosen to match Nicks choice of how to change green
+    # (tone 3) when sandhi applies: he wanted to go:
+    #  from 00AA00 = (120, 100, 67)
+    #  to   66CC66 = (120, 50,  80)
+    r, g, b = parseHtmlColor(color)
+    h, s, v = rgbToHSV(r, g, b)
+    r, g, b = hsvToRGB(h, s * 0.5, min(v * 1.2, 1.0))
+    finalcolor = toHtmlColor(r, g, b)
+    
+    log.info("Sandhified %s to %s", color, finalcolor)
+    return finalcolor
 
 """
 Output audio reading corresponding to a textual reading.
