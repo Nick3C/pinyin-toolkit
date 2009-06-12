@@ -50,7 +50,8 @@ defaultsettings = {
     "prefersimptrad" : "simp",
 
     # Descending order of priority (default is prefer ".ogg" and dislike ".wav"]
-    "audioextensions" : [".ogg", ".mp3", ".wav"],
+    # Default list taken from http://en.wikipedia.org/wiki/Audio_file_format (as Anki plays anything mplayer can play)
+    "audioextensions" : [".ogg", ".mp3", ".wav", ".mp4", ".m4a", ".wma", ".aac", ".voc", ",mpc", ".mpc", ".flac", ".aiff", ".raw", ".au", ".vox", ".dct", ".gsm", ".mmf", ".ra", ".ram", ".m4p", ".msv"],
 
     # You should not have to change this setting as it defaults to a free and usable sound-set.
     # Be aware that you may be able to find higher quality audio files from other sources.
