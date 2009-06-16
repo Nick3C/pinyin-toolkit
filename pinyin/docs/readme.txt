@@ -3,7 +3,7 @@
 ###                          Version 0.05 (__/06/2009)                        ###
 ###                           pinyintoolkit@gmail.com                         ###
 #################################################################################
-# A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>#
+# A Plugin for the Anki Spaced Repetition learning system http://ichi2.net/anki/#
 # Copyright (C) 2009 Nicholas Cook & Max Bolingbroke                            #
 # Free software Licensed under GNU GPL                                          #
 #################################################################################
@@ -25,13 +25,13 @@ PyKit's core features include:
  2) colorization of pinyin according to tone              (to assist visual learners)
  3) colorization of Hanzi according to tone               (to assist visual learners)
  4) text-to-speech conversion and 'multi-voice' support   (to assist auditory learners)
- 5) advanced hybrid locl/dictionary lookup for Engish, German, and (limited) French
+ 5) advanced hybrid local/dictionary lookup for English, German, and (limited) French
  6) generic web-based lookup for any other language
  7) automatic transcription of measure words (MW) into their own field
  8) mass-fill to populate any missing data from any fact in the deck
  9) Hanzi graph (shows the number of unique characters learned) [ported from Kanzi Graph]
 
-A number of other smaller improvesments and conveniences are also included:
+A number of other smaller improvements and conveniences are also included:
  -  support for a large number of field-names ('Hanzi','Pinyin',etc) and the ability to customise
  -  addition of meaning index numbers for dictionary entries
  -  option to chose either number or tone-mark output
@@ -39,7 +39,7 @@ A number of other smaller improvesments and conveniences are also included:
  -  shortcut support to change colors using control+Fx keys, matching the tones
  -  automatic downloading of a suitable voice audio-pack to use with text-to-speech
  -  much greater support of non-standard field names ( "Hanzi", 英语" and so on)
- -  support for user dictionaires (to customise translated or pinyin rendering)
+ -  support for user dictionaries (to customise translated or pinyin rendering)
 
  ... to be followed in the future by a raft of forthcoming features!
 
@@ -63,7 +63,7 @@ A number of other smaller improvesments and conveniences are also included:
 
 === Full Installation (Customise Deck) ==========================================
 
-It is recomended that you experiment with the sample deck first, as in the QuickStart.
+It is recommended that you experiment with the sample deck first, as in the QuickStart.
 This allows you to understand how to best use the new features.
 
 1) Click on Anki's "File" -> "Download" -> "Shared Plugin" and select "Pinyin Toolkit"
@@ -99,13 +99,13 @@ If you plan not to use certain features then you should turn them off to decreas
 
 
 === Feature Guide & Design Notes ================================================
-This section provides some notes on development methodology and explains why some features have been implimented as they have.
+This section provides some notes on development methodology and explains why some features have been implemented as they have.
 It is just an outline at present and needs to be rewritten properly and expanded.
 
 1) Colorisation
-Having studied Chinese for several years, it became apparnet to me that it was extremly difficult to remember the tone for a given Hanzi.
+Having studied Chinese for several years, it became apparent to me that it was extremely difficult to remember the tone for a given Hanzi.
 
-It came to be that it would be very useful to colorise the pinyin and the characters in order to remember them.
+It came to be that it would be very useful to colorize the pinyin and the characters in order to remember them.
 I looked on the internet to see if others had developed this idea. At the time I only came across:
      Laowai Chinese (老外中文) http://laowaichinese.net/color-coded-tones-on-mdbg.htm
 
@@ -117,21 +117,21 @@ One of the main ideas behind the PyKit is that it is much easier to learn a lang
 Mandarin is an idea language for text-to-speech conversion because there are a relatively small number of unique sounds (around a thousand)
 
 The plugin allows the user to download the Chinese-Lessons Sample audio files automatically.
-However, there are better audio fles available if you are prepared to look for them.
+However, there are better audio files available if you are prepared to look for them.
 To save you some time you can find a list giving this information to you below.
 
-=Mono-sylabic=
+=Mono-syllabic=
 ChineseLessons.com                  [n=1,189]   .mp3    [average quality]          http://www.chinese-lessons.com/download.htm
 ChinesePod.com free pinyin tool     [n=1,627]   .mp3    [licensing restrictions]   http://chinesepod.com/resources/pronunciation
 SWAC Audio Files                    [n=1,000]   .ogg    [need renaming script]     http://swac-collections.org/download.php
 WenLin Audio Files                  [n=1,675]   .wav    [commercial license]       http://www.wenlin.com/
 
-The reccommended audio files are the ChinesePod.com files. They are distributed freely at the above link but licensing prevents us from including them.
+The recommended audio files are the ChinesePod.com files. They are distributed freely at the above link but licensing prevents us from including them.
 If you want to upgrade to these files then go to the webpage, download the files (keep a copy!) and place them in your media directory, replacing any files there already. 
 
 In the future PyKit will support complex word packs such as "ni2hao3.ogg" but for now the information below is just for reference.
 
-If you have multiple audio packs installed Pinyin Toolkit will choose the best one for this piniyn.
+If you have multiple audio packs installed Pinyin Toolkit will choose the best one for this pinyin phrase.
 If there are several possible media packs then a random choice will be made (allowing you to have different voices in your deck).
 
 
@@ -144,7 +144,7 @@ Future support will include using a lighter green for the tone sandhi and suppor
 
 
 4) erhua
-erhua receives special treatemnt and will be merged with the word it is attched to.
+erhua receives special treatment and will be merged with the word it is attached to.
 Obviously there is no audio support for erhua [sorry!]
 
 
@@ -172,7 +172,7 @@ Reference:  http://www.cjkware.com/2008/po1.html
 8) User Dictionaries
                             
 To add your own dictionary entries, create a file called "dict-userdict.txt" in the pinyin/ subdirectory
-Copy the format of the other dictionaires, i.e:
+Copy the format of the other dictionaries, i.e:
     <simplified-without-spaces> <traditional-without-spaces> [<pinyin> ... <pinyin>] /<meaning>/.../<meaning>/
 
 Entries should be separated by spaces.
@@ -196,6 +196,7 @@ Version 0.05   (05/06/2009)  Max Bolingbroke <batterseapower@hotmail.com>
                              Nick Cook       <nick@n-line.co.uk>            [http://www.n-line.co.uk]
 
 * Large-scale re-write and optimisation of the code by Max Bolingbroke (many thanks!)
+* ported KanjiGraph to Hanzigraph
 * Automatic translation of non-dictionary words & phrase [can be used for almost any language]
 * Add [limited] support for new CFDICT (French)
 * All distributions will now include all dictionaries for simplicity. Unwanted dictionaries can be deleted.
@@ -205,17 +206,17 @@ Version 0.05   (05/06/2009)  Max Bolingbroke <batterseapower@hotmail.com>
 * Don't generate audio tags if sounds are missing
 * Use a fifth tone audio sample if one is provided, otherwise switch to 4th tone
 * Try several file extensions when we need a bit of audio, using the order: .mp3, .ogg, .wav
-* Optional entry-number indictaors in translations such as "(1)" "(2)" "(3)"
+* Optional entry-number indicators in translations such as "(1)" "(2)" "(3)"
 * Internal refactoring of code to remove the incidence of unreliable string manipulations, leading to bugfixes:
   - Remove space at the end of colored pinyin
   - Remove spaces between punctuation in pinyin
   - Remove the space between erhua "r" suffix and main word in pinyin
-  - Prevent loss of punctuation when colorizing charactersne
+  - Prevent loss of punctuation when colorizing hanzi
 * erhua and third tone sandhi now handled properly
-* line-index support and seperator support added for dictionary lookup
-* ported KanjiGraph to Hanzigraph
+* line-index support and separator support added for dictionary lookup
 * Squash bug that means character colorisation to fail if audio generation off
 * Pinyin is recognised and colored anywhere in the text
+* support for numbers has been greatly improved
 * Added code testsuite
 * Preferences window now used for config
 * Many smaller modifications to improve usability
