@@ -16,9 +16,8 @@ Email (to all authors):                pinyintoolkit@gmail.com
 Website:                               http://batterseapower.github.com/pinyin-toolkit/
 
 === Features ====================================================================
-The Pinyin Toolkit, or PyKit (pronounced 'Pie-Kit') adds many useful features to
-Anki to assist the study of Mandarin. The aim of the project is to greatly enhance
-the user-experience for students studying Chinese language.
+The Pinyin Toolkit adds many useful features to Anki to assist the study of Mandarin.
+The aim of the project is to greatly enhance the user-experience for students studying Chinese language.
 
 PyKit's core features include:
  1) improved automatic pinyin generation using a dictionary to guess the reading
@@ -32,13 +31,11 @@ PyKit's core features include:
  9) Hanzi graph (shows the number of unique characters learned) [ported from Kanzi Graph]
 
 A number of other smaller improvements and conveniences are also included:
- -  support for a large number of field-names ('Hanzi','Pinyin',etc) and the ability to customise
- -  addition of meaning index numbers for dictionary entries
+ -  much greater support of non-standard field names ( "Hanzi", 英语" and so on) -  addition of meaning index numbers for dictionary entries
  -  option to chose either number or tone-mark output
  -  the automatic blanking of auto-generated fields if there is no expression 
  -  shortcut support to change colors using control+Fx keys, matching the tones
  -  automatic downloading of a suitable voice audio-pack to use with text-to-speech
- -  much greater support of non-standard field names ( "Hanzi", 英语" and so on)
  -  support for user dictionaries (to customise translated or pinyin rendering)
 
  ... to be followed in the future by a raft of forthcoming features!
@@ -48,10 +45,8 @@ A number of other smaller improvements and conveniences are also included:
 
 1) Click on Anki's "File" -> "Download" -> "Shared Plugin" and select "Pinyin Toolkit"
    Restart Anki to enable plugin.
-
-3) Click on Anki's "File" -> "Download" -> "Shared Deck" and select Pinyin Toolkit simple or advanced.
-
-4) Click on Anki's "Tools" -> "Pinyin Toolkit" -> "Preferences" click "Audio" and then "Install Free Mandarin Sound Pack"
+2) Click on Anki's "File" -> "Download" -> "Shared Deck" and select Pinyin Toolkit simple or advanced.
+3) Click on Anki's "Tools" -> "Pinyin Toolkit" -> "Preferences" click "Audio" and then "Install Free Mandarin Sound Pack"
 
 
    Edit your cards and start studying!

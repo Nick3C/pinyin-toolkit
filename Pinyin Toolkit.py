@@ -27,13 +27,13 @@ A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
 pinyin_toolkit="0.05"
 # Dictionary's last updated: 2009-06-06
 
-CEDICT_Ver="2009-06-05 03:55:19 GMT "
+CEDICT_Ver="2009-06-19 03:11:57 GMT"
 # http://www.mdbg.net/chindict/chindict.php?page=cc-cedict
-# entries=85275
+# entries=86142
 
-HanDeDict_Ver="Sat Jun 06 00:07:38 2009"
+HanDeDict_Ver="Fri Jun 19 00:15:00 2009"
 # http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl&w=8
-# entries=170648
+# entries=172982
 
 CFDICT_Ver="Wed Jan 21 01:49:53 2009"
 # http://www.chinaboard.de/fr/cfdict.php?mode=dl&w=8

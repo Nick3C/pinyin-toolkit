@@ -167,7 +167,7 @@ class FieldUpdater(object):
             if dictmeanings == None and dictmeasurewords == None and self.config.shouldusegoogletranslate:
                 log.info("Using Google translate to determine the unknown meaning of %s", expression)
                 dictmeanings = dictionaryonline.gTrans(expression, self.config.dictlanguage)
-                dictmeaningssource = '<br /><span style="color:gray"><small>[Google Translate]</small></span><span style="color:#000000"> </span>'
+                dictmeaningssource = '<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>'
 
             # NB: expression only used for Hanzi masking here
             meaning = self.generatemeanings(expression, dictmeanings)
