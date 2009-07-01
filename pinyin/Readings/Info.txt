@@ -1,0 +1,22 @@
+== NOTE: THIS FEATURES HAS NOT YET BEEN IMPLEMENTED      ==
+==       This file is here for development purposes only ==
+
+This folder is used to store Incremental Reading Text (Readings).
+
+Files can be:
+  .txt
+  .u8
+  .htm
+  .html
+  .njx
+  .wen
+
+Files can be placed in subdirectorys and will appear as part of a tree heirachy.
+
+A few sample files are included for testing and development and reference purposes.
+The files are sourced from the University of Iowa's Chinese program.
+they are copyrighted and are included here under fair usage rules.
+See: http://www.uiowa.edu/~chnsrdng/index.html for details and more files.
+
+Another great source of reading materials is:
+http://blog.sina.com.cn/
