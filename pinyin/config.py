@@ -89,7 +89,7 @@ defaultsettings = {
 
     # Field names are listed in descending order of priority
     "candidateFieldNamesByKey" : {
-        'expression' : ["Expression", "Hanzi", "Chinese", u"汉字", u"中文"],
+        'expression' : ["Expression", "Hanzi", "Chinese", "Character", "Characters", u"汉字", u"中文"],
         'reading'    : ["Reading", "Pinyin", "PY", u"拼音"],
         'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
         'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
