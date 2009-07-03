@@ -36,7 +36,13 @@ defaultsettings = {
     
     "weblinkgeneration"            : False, # Should we try to generate some online dictionary references for each card into a field called Links?
     
-    # Unimplemented flags (why did Nick add these???)
+    "generatetradon"               : True, # Should we try to generate traditional Chinese readings from the main entry?
+    "generatessimpon"          : True, # Should we try to generate simplified Chinese reading from the main entry
+    "generatesimptradrepopulate"  : False, # Should we try to replace the contents of the Expression field with the preferred character set
+                                             # This ensure, for example, they your simplified deck only has simplified in the Expression field
+                                               # note: the setting "perfersimptradgen" controls what is populated into the Expression field
+                                               
+    # Unimplemented flags (for dev purposes)
     "generatepos"                  : True, # Should we try to generate the POS (part of Speech) from dictionaries?
     "enablefeedback"               : True, # Should support for submitting entries to CEDICT, etc be turned on?
     "tonesandhiconvert"            : True, # Should the tone sandhi tones: (3, 3) be colored differently
@@ -51,8 +57,12 @@ defaultsettings = {
     "meaningseperator" : "lines",
     "custommeaningseperator" : " | ",
 
-    # "simp" or "trad"
+    # "simp" or "trad" - display preferences
     "prefersimptrad" : "simp",
+
+    # "simp" or "trad"  - conversion preference for simp / trad generation
+    # represents which language your Expression field is in
+     "perfersimptradgen" : "simp", 
 
     # Descending order of priority (default is prefer ".ogg" and dislike ".wav"]
     # Default list taken from http://en.wikipedia.org/wiki/Audio_file_format (as Anki plays anything mplayer can play)
@@ -96,7 +106,9 @@ defaultsettings = {
         'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
         'mw'         : ["MW", "Measure Word", "Classifier", u"量词"],
         'weblinks'   : ["Links", "Link", "LinksBar", "Links Bar", "Link Bar", "LinkBar", "Web", "Dictionary", "URL", "URLs"],
-        'pos'        : ["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] 
+        'pos'        : ["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] ,
+        'trad'       : ["Traditional", "Trad", "Traditional Chinese", "HK", u'繁体字', u'繁体', u"繁體字", u"繁體"],
+        'simp'       : ["Simplified", "Simp", "Simplified Chinese", u"简体字", u"简体"]
       },
     
     # Links occur in the order that they will be shown in the file
@@ -104,8 +116,6 @@ defaultsettings = {
     # Change MDBG submit to match:
     # http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=1&insertsimpleentry_old_cedict=語言障礙+语言障碍+[yu3+yan2+zhang4+ai4]+/speech+defect/
     # 
-    # Consider:
-    # Chinese wikipedia
     # 
     # need to deal with unicode encoding first
     # great, add it       http://hmarty.free.fr/hanzi/
@@ -116,7 +126,7 @@ defaultsettings = {
     # AMAZING         http://www.zdic.net/    [largest encyclopedia in china)
     "weblinks" : [
       ('e',       'Submit CC-CEDICT entry',  'http://cc-cedict.org/editor/editor.php?handler=InsertSimpleEntry&popup=0&insertsimpleentry_hanzi_simplified={searchTerms}'),
-      ('Nckiu',   'Nckiu',                   'http://www.nciku.com/mini/all/{searchTerms}'),
+      ('nCiku',   'nCiku',                   'http://www.nciku.com/mini/all/{searchTerms}'),
       ('CEDICT',  'CC-CEDICT at MDBG',       'http://www.mdbg.net/chindict/chindict.php?page=worddictbasic&wdqb={searchTerms}'),
       ('Dict.cn', 'Dict.cn',                 'http://dict.cn/{searchTerms}'),
       ('Iciba',   'Iciba',                   'http://love.iciba.com//?{searchTerms}/?'),

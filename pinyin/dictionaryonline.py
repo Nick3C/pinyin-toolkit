@@ -13,7 +13,9 @@ import utils
 
 
 # Translate the parsed text from Chinese into target language using google translate:
-def gTrans(query, destlanguage='en'):
+def gTrans(query, destlanguage='en', prompterror=True):
+    log.info("Using Google translate to determine the unknown translation of %s", query)
+
     # No meanings if we don't have a query
     if query == None:
         return None
@@ -29,11 +31,17 @@ def gTrans(query, destlanguage='en'):
     except urllib2.URLError, e:
         # The only 'meaning' should be an error telling the user that there was some problem
         log.exception("Error while trying to obtain Google response")
-        return [[Word(Text('<span style="color:gray">[Internet Error]</span>'))]]
+        if (prompterror):
+            return [[Word(Text('<span style="color:gray">[Internet Error]</span>'))]]
+        else:
+            return
     except ValueError, e:
         # Not an internet problem
         log.exception("Error while parsing Google response: %s" % repr(literal))
-        return [[Word(Text('<span style="color:gray">[Error In Google Translate Response]</span>'))]]
+        if (prompterror):
+            return [[Word(Text('<span style="color:gray">[Error In Google Translate Response]</span>'))]]
+        else:
+            return
 
 # This function will send a sample query to Google Translate and return true or false depending on success
 # It is used to determine connectivity for the Anki session (and thus whether Pinyin Toolkit should use online services or not)
@@ -61,7 +69,7 @@ def lookup(query, destlanguage):
     literal = u""
     for line in req:
         literal += line.decode('utf-8')
-    
+        
     # Parse the response:
     try:
         log.info("Parsing response %s from Google", literal)

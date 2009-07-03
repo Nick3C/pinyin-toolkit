@@ -114,6 +114,50 @@ class FieldUpdater(object):
     
     def generatecoloredcharacters(self, expression):
         return pinyin.flatten(transformations.colorize(self.config.tonecolors, transformations.tonesandhi(self.config.dictionary.tonedchars(expression))))
+
+
+
+
+
+
+    # Future support will need to be dictionary-based and will require a lot more work
+    # Will need to be a bit complex:
+    # Stage 1 - match exact words from dict
+    # Stage 2 - mix-and-match:
+                # find longest word in phrase
+                # find next longest word in remaining parts
+                # recursive
+    # Stage 3 - fall back on gTrans for unknown characters [mark orange, different from tone2] 
+    # Stage 4 - return unfound characters [mark dark red]
+
+    # be wary of returning wrong characters one-to-many conversions(especially a problem with single-char words)
+    # return single character words in a lighter grey (to indicate they need checking)
+    # Must not return prompt (otherwise well-configured decks will auto-generate unwatned traditional cards)
+    def generateconvertcharface(self, expression, charmode="trad"):
+        log.info("Generating a trad/simp routine %s", expression)
+
+        # Stage 1 - match exact words from dict
+        
+        # Stage 2 - mix-and-match:
+
+        #stage 3 - google translate
+        if charmode=="simp":
+            glangcode="zh-CN"
+        else:
+            glangcode="zh-TW"
+
+        tmp = dictionaryonline.gTrans(expression, glangcode, False)
+        #gets returned in the format: ["社會",[["noun","社會","社會","社會"]]]
+        # bug with this part, need to rewrite the gTrans parser
+
+        output = tmp
+
+        #stage 4 - append unresolved characters
+
+        return output
+
+
+ 
     
     def weblinkgeneration(self, expression):
         # Generate a list of links to online dictionaries, etc to query the expression
@@ -165,7 +209,6 @@ class FieldUpdater(object):
             # Phrases are also queried using googletranslate rather than the local dictionary.
             # This helps deal with small dictionaries (for example French)
             if dictmeanings == None and dictmeasurewords == None and self.config.shouldusegoogletranslate:
-                log.info("Using Google translate to determine the unknown meaning of %s", expression)
                 dictmeanings = dictionaryonline.gTrans(expression, self.config.dictlanguage)
                 dictmeaningssource = '<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>'
 
@@ -183,6 +226,34 @@ class FieldUpdater(object):
             # The measure word shouldn't be included on the main card because if so you break min-info rule (harder to learn it)
             #' If testing seperately then putting audio in the MW field is a good idea (so it will play when the measure word question is answered)
 
+
+        needsimp=False
+        needtrad=False
+        # Which needs to be genereated?
+        if (self.config.generatesimptradrepopulate):    # If have to repopulate one then will need it (even if no field)
+            if (self.config.perfersimptradgen=="simp"):
+                needsimp=True
+            if (self.config.perfersimptradgen=="trad"):
+                needtrad=True
+        if (self.config.generatessimpon):
+            needsimp=True
+        if (self.config.generatetradon):
+            needtrad=True
+
+        outputsimp = u""
+        outputtrad = u""
+        if (needsimp):
+            outputsimp = self.generateconvertcharface(expression, "simp")
+        if (needtrad):
+            outputtrad = self.generateconvertcharface(expression, "trad")
+
+        # if repopulate is on, then we will update the expression field too
+        if (self.config.generatesimptradrepopulate):
+            if self.config.perfersimptradgen=="simp":
+                expression = simpfinished
+            if self.config.perfersimptradgen=="trad":
+                expression = tradfinished
+        
         # Do the updates on the fields the user has requested:
         updaters = {
                 'expression' : (True,                                     lambda: expression),
@@ -191,8 +262,12 @@ class FieldUpdater(object):
                 'mw'         : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
                 'audio'      : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
                 'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression)),
+                #'trad'       : (self.config.generatetradon,               lambda: outputtrad),
+                #'simp'       : (self.config.generatessimpon,              lambda: outputsimp),
                 'weblinks'   : (self.config.weblinkgeneration,            lambda: self.weblinkgeneration(expression))
             }
+        
+        
         
         for key, (enabled, updater) in updaters.items():
             # Skip updating if no suitable field, we are disabled, or the field has text.
