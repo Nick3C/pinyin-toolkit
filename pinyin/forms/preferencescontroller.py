@@ -321,10 +321,12 @@ class TextMapping(Mapping):
         Mapping.__init__(self, model, key)
         self.lineedit = lineedit
         
-        self.lineedit.connect(self.lineedit, SIGNAL('textEdited()'), lambda: self.updateModel())
+        # NB: must use unicode(), because otherwise we get a QString back from QT,
+        # which causes other parts of the toolkit to choke in interesting ways
+        self.lineedit.connect(self.lineedit, SIGNAL('textEdited(QString)'), lambda text: self.updateModel(unicode(text)))
     
-    def updateModel(self):
-        self.updateModelValue(self.lineedit.text())
+    def updateModel(self, text):
+        self.updateModelValue(text)
     
     def updateViewValue(self, value):
         self.lineedit.setText(value)
