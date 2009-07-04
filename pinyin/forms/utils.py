@@ -54,6 +54,13 @@ def fromQVariantList(variantlist):
 Convert a QVariant to a Python value.
 """
 def fromQVariant(variant):
+    # MODIFICATION BY MCB
+    if variant.isNull():
+        # This 'interesting' case arose in bug #87. The ItemData for a QComboBox seperator
+        # appears to be a non-None QVariant, with a typeName of None. You need to check this
+        # flag to detect its null-ness. Weird!
+        return None
+    
     typeName = variant.typeName()
     convert = variant_converter.get(typeName)
     if not convert:
