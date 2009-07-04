@@ -36,14 +36,14 @@ defaultsettings = {
     
     "weblinkgeneration"            : False, # Should we try to generate some online dictionary references for each card into a field called Links?
     
-    "generatetrad"                 : False, # Should we try to generate traditional Chinese readings from the main entry?
-    "generatesimp"                 : False, # Should we try to generate simplified Chinese reading from the main entry
+    "tradgeneration"               : False, # Should we try to generate traditional Chinese readings from the main entry?
+    "simpgeneration"               : False, # Should we try to generate simplified Chinese reading from the main entry
     "forceexpressiontobesimptrad"  : False, # Should we try to replace the contents of the Expression field with the preferred character set?
                                             # This ensure, for example, they your simplified deck only has simplified in the Expression field
                                             # note: the setting "prefersimptrad" controls what is populated into the Expression field
                                                
     # Unimplemented flags (for dev purposes)
-    "generatepos"                  : True, # Should we try to generate the POS (part of Speech) from dictionaries?
+    "posgeneration"                : True, # Should we try to generate the POS (part of Speech) from dictionaries?
     "enablefeedback"               : True, # Should support for submitting entries to CEDICT, etc be turned on?
     "tonesandhiconvert"            : True, # Should the tone sandhi tones: (3, 3) be colored differently
     
@@ -93,20 +93,6 @@ defaultsettings = {
         # u"#FF6347",  # tomato        (random chosen default color)
         # u"#7FFF00"   # light green   (random chosen default color)
       ],
-
-    # Field names are listed in descending order of priority
-    "candidateFieldNamesByKey" : {
-        'expression' : ["Expression", "Hanzi", "Chinese", "Character", "Characters", u"汉字", u"中文"],
-        'reading'    : ["Reading", "Pinyin", "PY", u"拼音"],
-        'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
-        'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
-        'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
-        'mw'         : ["MW", "Measure Word", "Classifier", u"量词"],
-        'weblinks'   : ["Links", "Link", "LinksBar", "Links Bar", "Link Bar", "LinkBar", "Web", "Dictionary", "URL", "URLs"],
-        'pos'        : ["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] ,
-        'trad'       : ["Traditional", "Trad", "Traditional Chinese", "HK", u'繁体字', u'繁体', u"繁體字", u"繁體"],
-        'simp'       : ["Simplified", "Simp", "Simplified Chinese", u"简体字", u"简体"]
-      },
     
     # Links occur in the order that they will be shown in the file
     #
@@ -136,8 +122,34 @@ defaultsettings = {
     ],
     
     # Only decks with this tag are processed
-    "modelTag" : "Mandarin"
+    "modelTag" : "Mandarin",
+
+    # Field names are listed in descending order of priority
+    "candidateFieldNamesByKey" : {
+        'expression' : ["Expression", "Hanzi", "Chinese", "Character", "Characters", u"汉字", u"中文"],
+        'reading'    : ["Reading", "Pinyin", "PY", u"拼音"],
+        'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
+        'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
+        'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
+        'mw'         : ["MW", "Measure Word", "Classifier", u"量词"],
+        #'weblinks'   : ["Links", "Link", "LinksBar", "Links Bar", "Link Bar", "LinkBar", "Web", "Dictionary", "URL", "URLs"],
+        #'pos'        : ["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] ,
+        'trad'       : ["Traditional", "Trad", "Traditional Chinese", "HK", u'繁体字', u'繁体', u"繁體字", u"繁體"],
+        'simp'       : ["Simplified", "Simp", "Simplified Chinese", u"简体字", u"简体"]
+      }
   }
+
+updatecontrolflags = {
+    'expression' : None,
+    'reading'    : None,
+    'meaning'    : "meaninggeneration",
+    'mw'         : "detectmeasurewords",
+    'audio'      : "audiogeneration",
+    'color'      : "colorizedcharactergeneration",
+    'trad'       : "tradgeneration",
+    'simp'       : "simpgeneration",
+    'weblinks'   : "weblinkgeneration"
+}
 
 tonedisplayshouldtonify = {
     "numeric" : False,

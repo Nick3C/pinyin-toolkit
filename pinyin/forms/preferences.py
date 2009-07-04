@@ -70,7 +70,8 @@ class Preferences(QDialog):
         fieldsGrid.setMargin(0)
         
         # Add entries for each field
-        for n, (key, fieldname) in enumerate(keyedfieldnames):
+        checkWidgets = {}
+        for n, (key, fieldname, wantcheckbox) in enumerate(keyedfieldnames):
             # Field label
             l = QLabel(fieldname)
             fieldsGrid.addWidget(l, n, 0)
@@ -84,11 +85,16 @@ class Preferences(QDialog):
             w.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             w.setFont(font)
             w.setReadOnly(True)
-            w.setText("")
             
             # Add the widget to the grid
             self.fieldWidgets[key] = w
             fieldsGrid.addWidget(w, n, 1)
+            
+            # If the user requested a checkbox, add one in
+            if wantcheckbox:
+                c = QCheckBox(self)
+                fieldsGrid.addWidget(c, n, 2)
+                checkWidgets[key] = c
         
         # Resume repainting
         self.parent.setUpdatesEnabled(True)
@@ -97,6 +103,9 @@ class Preferences(QDialog):
         self.fieldsScroll.setWidget(fieldsFrame)
         fieldsFrame.show()
         self.fieldsScroll.show()
+        
+        # Return all the checkbox widgets the controller asked for
+        return checkWidgets
     
     def updateFields(self, keyedvalues):
         # Update the text in every field we created

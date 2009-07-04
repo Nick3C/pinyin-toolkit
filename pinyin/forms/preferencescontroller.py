@@ -53,7 +53,23 @@ class PreferencesController(object):
     
     def setUpViewPreview(self):
         # Make sure we create a field for every field we're going to preview
-        self.view.setupFields(sorted([(key, pinyin.utils.heador(candidatefieldnames, key.capitalize())) for key, candidatefieldnames in self.model.candidateFieldNamesByKey.items()], pinyin.utils.bySecond))
+        keyedfieldnames = []
+        for key, candidatefieldnames in self.model.candidateFieldNamesByKey.items():
+            # The field name isn't drawn from the current deck (if any), we just pick the most vanilla one
+            fieldname = pinyin.utils.heador(candidatefieldnames, key.capitalize())
+            
+            # For every field, create a checkbox allowing the user to disable us fiddling with it, if applicable
+            wantcheckbox = pinyin.config.updatecontrolflags[key] is not None
+            
+            # Finish up
+            keyedfieldnames.append((key, fieldname, wantcheckbox))
+        
+        # Build the fields in order of the label we assign to them: better than hash order!
+        checkwidgets = self.view.setupFields(sorted(keyedfieldnames, pinyin.utils.bySecond))
+        
+        # Set up all the checkboxes to map to the corresponding control flags
+        for key, checkwidget in checkwidgets.items():
+            self.registerCheckMapping(pinyin.config.updatecontrolflags[key], checkwidget)
     
     def setUpText(self):
         # The Hanzi and Pinyin panel

@@ -3,6 +3,7 @@
 
 import os
 
+import config
 import dictionary
 import dictionaryonline
 import media
@@ -220,19 +221,28 @@ class FieldUpdater(object):
             expression = expressionviews[self.config.prefersimptrad]
         
         # Do the updates on the fields the user has requested:
+        # NB: when adding an updater to this list, make sure that you have
+        # added it to the updatecontrolflags dictionary in Config as well!
         updaters = {
-                'expression' : (True,                                     lambda: expression),
-                'reading'    : (True,                                     lambda: self.generatereading(dictreading)),
-                'meaning'    : (self.config.meaninggeneration,            lambda: meaning),
-                'mw'         : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
-                'audio'      : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
-                'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression)),
-                'trad'       : (self.config.generatetrad,                 lambda: expressionviews["trad"]),
-                'simp'       : (self.config.generatesimp,                 lambda: expressionviews["simp"]),
-                'weblinks'   : (self.config.weblinkgeneration,            lambda: self.weblinkgeneration(expression))
+                'expression' : lambda: expression,
+                'reading'    : lambda: self.generatereading(dictreading),
+                'meaning'    : lambda: meaning,
+                'mw'         : lambda: self.generatemeasureword(dictmeasurewords),
+                'audio'      : lambda: self.generateaudio(dictreading),
+                'color'      : lambda: self.generatecoloredcharacters(expression),
+                'trad'       : lambda: expressionviews["trad"],
+                'simp'       : lambda: expressionviews["simp"],
+                'weblinks'   : lambda: self.weblinkgeneration(expression)
             }
         
-        for key, (enabled, updater) in updaters.items():
+        for key, updater in updaters.items():
+            # Find out whether we should actually be doing the update or not
+            controlflag = config.updatecontrolflags[key]
+            if controlflag:
+                enabled = self.config.settings[controlflag]
+            else:
+                enabled = True
+            
             # Skip updating if no suitable field, we are disabled, or the field has text.
             # NB: we always want to update the weblinks field, if it is present and enabled.
             if not(key in fact) or not(enabled) or (fact[key].strip() != u"" and key != "weblinks"):
@@ -270,7 +280,7 @@ if __name__ == "__main__":
                     colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
                     tonedisplay = "tonified", meaningnumbering = "circledChinese", colormeaningnumbers = False, meaningseperator = "lines", prefersimptrad = "simp",
                     audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False,
-                    generatetrad = True, generatesimp = True, forceexpressiontobesimptrad = False), {
+                    tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False), {
                         "reading" : u'<span style="color:#ff0000">shū</span>',
                         "meaning" : u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History',
                         "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
@@ -285,7 +295,7 @@ if __name__ == "__main__":
                     dictlanguage = "de",
                     colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
                     tonedisplay = "tonified", audiogeneration = True, audioextensions = [".ogg"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"],
-                    generatetrad = True, generatesimp = True, forceexpressiontobesimptrad = False), {
+                    tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False), {
                         "reading" : u'<span style="color:#ff0000">shū</span>',
                         "meaning" : u'Buch, Geschriebenes (S)',
                         "mw" : u'',
@@ -300,7 +310,7 @@ if __name__ == "__main__":
                     colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
                     tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
                     audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = True,
-                    generatetrad = True, generatesimp = True), {
+                    tradgeneration = True, simpgeneration = True), {
                         "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e", "trad" : "f", "simp" : "g"
                       })
         
@@ -417,7 +427,7 @@ if __name__ == "__main__":
         def testUpdateSimplifiedTraditional(self):
             self.assertEquals(
                 self.updatefact(u"个個", { "simp" : "", "trad" : "" },
-                    generatesimp = True, generatetrad = True), {
+                    simpgeneration = True, tradgeneration = True), {
                         "simp"  : u"个个",
                         "trad" : u"個個"
                       })
