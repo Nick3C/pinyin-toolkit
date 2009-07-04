@@ -75,24 +75,12 @@ class ColorShortcutKeysHook(Hook):
     def setupShortcuts(self, editor):
         # Loop through the 8 F[x] keys, setting each one up
         # Note: Ctrl-F9 is the HTML editor. Don't do this as it causes a conflict
-        log.info("Setting up shortcut buttons on fact editor")
+        log.info("Setting up shortcut keys on fact editor")
         for i in range(1, 9):
             for sandhify in [True, False]:
-                # Build the invisible button used to gather shortcut events
-                button = QtGui.QPushButton()
-                button.setText(str(i) + (sandhify and "S" or ""))
-                button.setShortcut((sandhify and "Shift+" or "") + "Ctrl+F" + str(i))
-                button.setFocusPolicy(QtCore.Qt.NoFocus)
-                button.setFixedSize(0, 0)
-            
-                # Add the button to the icons box on the fact editor
-                editor.iconsBox.addWidget(button)
-            
-                # Connect button to event handler: note hacks to deal with closure scoping
-                self.mw.connect(button, QtCore.SIGNAL("clicked()"), lambda i=i, sandhify=sandhify: self.setColor(editor, i, sandhify))
-            
-                # Possible alternative approach?
-                # QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F" + str(i)), self.mw, lambda i=i: self.setColor(editor, i))
+                keysequence = (sandhify and "Shift+" or "") + "Ctrl+F" + str(i)
+                QtGui.QShortcut(QtGui.QKeySequence(keysequence), editor.widget,
+                                lambda i=i, sandhify=sandhify: self.setColor(editor, i, sandhify))
     
     def install(self):
         from anki.hooks import wrap
