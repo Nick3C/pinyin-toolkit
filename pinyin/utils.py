@@ -46,11 +46,21 @@ Utility function that reports whether a string consists only of punctuation char
 def ispunctuation(text):
     # NB: can't use "all" because it's not in Python 2.4 and below, which Anki uses
     for char in text:
-        if unicodedata.category(unicode(char)) != 'Po':
+        # For General_Category list see http://unicode.org/Public/UNIDATA/UCD.html
+        # Po . , ' "
+        # Pd -
+        # Ps ( [
+        # Pe ) ]
+        if 'P' not in unicodedata.category(unicode(char)):
             return False
     
     return True
 
+"""
+Reports whether a string consists of only punctuation characters that should have a space added after them.
+"""
+def ispostspacedpunctuation(text):
+    return text == u"。" or text == "." or text == u"，" or text == ","
 
 """
 Reports the absolute directory name that the pinyin/ directory has at runtime

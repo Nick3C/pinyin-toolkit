@@ -292,23 +292,25 @@ class FlattenTokensVisitor(TokenVisitor):
 Report whether the supplied list of words ends with a space
 character. Used for producing pretty formatted output.
 """
-def endswithspace(words):
-    visitor = EndsWithSpaceVisitor()
+def needsspacebeforeappend(words):
+    visitor = NeedsSpaceBeforeAppendVisitor()
     [word.accept(visitor) for word in words]
-    return visitor.endswithspace
+    return visitor.needsspacebeforeappend
 
-class EndsWithSpaceVisitor(TokenVisitor):
+class NeedsSpaceBeforeAppendVisitor(TokenVisitor):
     def __init__(self):
-        self.endswithspace = False
+        self.needsspacebeforeappend = False
     
     def visitText(self, text):
-        self.endswithspace = text.endswith(u" ")
+        lastchar = text[-1]
+        self.needsspacebeforeappend = (lastchar != " " and not(utils.ispunctuation(lastchar))) or utils.ispostspacedpunctuation(text)
     
     def visitPinyin(self, pinyin):
-        self.endswithspace = False
+        self.needsspacebeforeappend = True
     
     def visitTonedCharacter(self, tonedcharacter):
-        self.endswithspace = tonedcharacter.endswith(u" ")
+        # Treat it like normal text
+        self.visitText(tonedcharacter)
 
 """
 Makes some tokens that faithfully represent the given characters
@@ -618,14 +620,22 @@ if __name__ == "__main__":
         def testUsesWrittenTone(self):
             self.assertEquals(flatten([Word(Pinyin("hen", ToneInfo(written=2,spoken=3)))]), "hen2")
 
-    class EndsWithSpaceTest(unittest.TestCase):
-        def testEmptyDoesntEndWithSpace(self):
-            self.assertFalse(endswithspace([]))
+    class NeedsSpaceBeforeAppendTest(unittest.TestCase):
+        def testEmptyDoesntNeedSpace(self):
+            self.assertFalse(needsspacebeforeappend([]))
         
         def testEndsWithSpace(self):
-            self.assertTrue(endswithspace([Word(Text("hello "))]))
-            self.assertTrue(endswithspace([Word(Text("hello"), Text(" "), Text("World"), Text(" "))]))
-            self.assertFalse(endswithspace([Word(Text("hello"))]))
+            self.assertFalse(needsspacebeforeappend([Word(Text("hello "))]))
+            self.assertFalse(needsspacebeforeappend([Word(Text("hello"), Text(" "), Text("World"), Text(" "))]))
+        
+        def testNeedsSpace(self):
+            self.assertTrue(needsspacebeforeappend([Word(Text("hello"))]))
+        
+        def testPunctuation(self):
+            self.assertTrue(needsspacebeforeappend([Word(Text("."))]))
+            self.assertTrue(needsspacebeforeappend([Word(Text(","))]))
+            self.assertFalse(needsspacebeforeappend([Word(Text("("))]))
+            self.assertFalse(needsspacebeforeappend([Word(Text(")"))]))
     
     class TonedCharactersFromReadingTest(unittest.TestCase):
         def testTonedTokens(self):

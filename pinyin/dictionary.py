@@ -106,17 +106,16 @@ class PinyinDictionary(object):
             readingtokens = self.__readings[thing]
             
             # If we already have some text building up, add a preceding space.
-            # However, if the word we got looks like punctuation, don't do it.
+            # However, if the word we got looks like a period, don't do it.
             # This ensures consistency in the treatment of Western and Chinese
             # punctuation.  Furthermore, avoid adding double-spaces.  This is
             # also important for punctuation consistency, because Western
             # punctuation is typically followed by a space whereas the Chinese
             # equivalents are not.
-            have_some_text = len(words) > 0
-            is_punctuation = ispunctuation(thing)
-            already_have_space = have_some_text and endswithspace(words[-1])
+            words_need_space = needsspacebeforeappend(words)
+            is_punctuation = ispunctuation(flatten(readingtokens))
             reading_starts_with_er = len(readingtokens) > 0 and readingtokens[0].iser
-            if have_some_text and not(is_punctuation) and not(already_have_space) and not(reading_starts_with_er):
+            if words_need_space and not(is_punctuation) and not(reading_starts_with_er):
                 words.append(Word(Text(u' ')))
             
             # Add this reading into the token list with nice formatting
@@ -163,7 +162,7 @@ class PinyinDictionary(object):
         foundmeanings, foundmeasurewords = None, None
         for recognised, word in self.parse(sentence):
             if not(recognised) and (ispunctuation(word.strip()) or word.strip() == u""):
-                # Discard punctuation and whitespace from consideration, or we don't return a reading for e.g. 你好!
+                # Discard punctuation and whitespace from consideration, or we don't return a reading for e.g. "你好!"
                 continue
             
             if not (isfirstparsedthing):
@@ -364,6 +363,9 @@ if __name__=='__main__':
     
         def testWesternPunctuation(self):
             self.assertEqual(self.reading(self.nihao_simp_western_punc), self.nihao_reading)
+    
+        def testNoSpacesAfterBraces(self):
+            self.assertEquals(self.reading(u"(你)好!"), u"(ni3)hao3!")
     
         def testEmptyString(self):
             self.assertEqual(self.reading(u""), u"")
