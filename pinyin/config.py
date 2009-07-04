@@ -36,11 +36,11 @@ defaultsettings = {
     
     "weblinkgeneration"            : False, # Should we try to generate some online dictionary references for each card into a field called Links?
     
-    "generatetradon"               : True, # Should we try to generate traditional Chinese readings from the main entry?
-    "generatessimpon"          : True, # Should we try to generate simplified Chinese reading from the main entry
-    "generatesimptradrepopulate"  : False, # Should we try to replace the contents of the Expression field with the preferred character set
-                                             # This ensure, for example, they your simplified deck only has simplified in the Expression field
-                                               # note: the setting "perfersimptradgen" controls what is populated into the Expression field
+    "generatetrad"                 : False, # Should we try to generate traditional Chinese readings from the main entry?
+    "generatesimp"                 : False, # Should we try to generate simplified Chinese reading from the main entry
+    "forceexpressiontobesimptrad"  : False, # Should we try to replace the contents of the Expression field with the preferred character set?
+                                            # This ensure, for example, they your simplified deck only has simplified in the Expression field
+                                            # note: the setting "prefersimptrad" controls what is populated into the Expression field
                                                
     # Unimplemented flags (for dev purposes)
     "generatepos"                  : True, # Should we try to generate the POS (part of Speech) from dictionaries?
@@ -57,12 +57,9 @@ defaultsettings = {
     "meaningseperator" : "lines",
     "custommeaningseperator" : " | ",
 
-    # "simp" or "trad" - display preferences
+    # "simp" or "trad" - used for both determining which kind of measure word to
+    # show and which kind of character to use to fill the expression field
     "prefersimptrad" : "simp",
-
-    # "simp" or "trad"  - conversion preference for simp / trad generation
-    # represents which language your Expression field is in
-     "perfersimptradgen" : "simp", 
 
     # Descending order of priority (default is prefer ".ogg" and dislike ".wav"]
     # Default list taken from http://en.wikipedia.org/wiki/Audio_file_format (as Anki plays anything mplayer can play)

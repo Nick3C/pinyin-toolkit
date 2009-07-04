@@ -61,8 +61,7 @@ def tonesandhi(words):
     applyvisitor = ApplyToneContourVisitor(tonecontourqueue)
     for word in words:
         finalwords.append(word.map(applyvisitor))
-        if (tonecontourqueue):
-            tonecontourqueue.pop() == "~"
+        assert tonecontourqueue.pop() == "~"
     return finalwords
 
 class GatherToneContourVisitor(TokenVisitor):
@@ -89,17 +88,9 @@ class ApplyToneContourVisitor(TokenVisitor):
         return text
 
     def visitPinyin(self, pinyin):
-        log.info("Applying tone sandhi rule to %s", pinyin)
-        # if there is problem then fix by not bothering to differentiate spoken and written (hack)
-        if not (self.tonecontourqueue):
-            return Pinyin(pinyin.word, ToneInfo(written=pinyin.toneinfo.written, spoken=pinyin.toneinfo.written))
         return Pinyin(pinyin.word, ToneInfo(written=pinyin.toneinfo.written, spoken=int(self.tonecontourqueue.pop())))
     
     def visitTonedCharacter(self, tonedcharacter):
-        log.info("Applying tone sandhi rule to %s", tonedcharacter)
-        # if there is problem then fix by not bothering to differentiate spoken and written (hack)
-        if not (self.tonecontourqueue):
-            return TonedCharacter(unicode(tonedcharacter), ToneInfo(written=tonedcharacter.toneinfo.written, spoken=tonedcharacter.toneinfo.written))
         return TonedCharacter(unicode(tonedcharacter), ToneInfo(written=tonedcharacter.toneinfo.written, spoken=int(self.tonecontourqueue.pop())))
 
 """

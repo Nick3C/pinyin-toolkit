@@ -115,11 +115,6 @@ class FieldUpdater(object):
     def generatecoloredcharacters(self, expression):
         return pinyin.flatten(transformations.colorize(self.config.tonecolors, transformations.tonesandhi(self.config.dictionary.tonedchars(expression))))
 
-
-
-
-
-
     # Future support will need to be dictionary-based and will require a lot more work
     # Will need to be a bit complex:
     # Stage 1 - match exact words from dict
@@ -133,31 +128,22 @@ class FieldUpdater(object):
     # be wary of returning wrong characters one-to-many conversions(especially a problem with single-char words)
     # return single character words in a lighter grey (to indicate they need checking)
     # Must not return prompt (otherwise well-configured decks will auto-generate unwatned traditional cards)
-    def generateconvertcharface(self, expression, charmode="trad"):
-        log.info("Generating a trad/simp routine %s", expression)
+    def generateconvertedcharacterset(self, expression, charmode):
+        log.info("Doing conversion of %s into %s characters", expression, charmode)
 
-        # Stage 1 - match exact words from dict
-        
-        # Stage 2 - mix-and-match:
-
-        #stage 3 - google translate
+        # Query Google for the conversion, returned in the format: ["社會",[["noun","社會","社會","社會"]]]
         if charmode=="simp":
             glangcode="zh-CN"
         else:
             glangcode="zh-TW"
-
-        tmp = dictionaryonline.gTrans(expression, glangcode, False)
-        #gets returned in the format: ["社會",[["noun","社會","社會","社會"]]]
-        # bug with this part, need to rewrite the gTrans parser
-
-        output = tmp
-
-        #stage 4 - append unresolved characters
-
-        return output
-
-
- 
+        meanings = dictionaryonline.gTrans(expression, glangcode, False)
+        
+        if meanings == None or len(meanings) == 0:
+            # No conversion, so give up and return the input expression
+            return expression
+        else:
+            # Conversion is stored in the first 'meaning'
+            return pinyin.flatten(meanings[0])
     
     def weblinkgeneration(self, expression):
         # Generate a list of links to online dictionaries, etc to query the expression
@@ -170,7 +156,7 @@ class FieldUpdater(object):
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
         if expression == None or expression.strip() == u"":
-            for key in ["reading", "meaning", "color"]:
+            for key in ["reading", "meaning", "color", "trad", "simp"]:
                 if key in fact:
                     fact[key] = u""
             
@@ -226,33 +212,12 @@ class FieldUpdater(object):
             # The measure word shouldn't be included on the main card because if so you break min-info rule (harder to learn it)
             #' If testing seperately then putting audio in the MW field is a good idea (so it will play when the measure word question is answered)
 
-
-        needsimp=False
-        needtrad=False
-        # Which needs to be genereated?
-        if (self.config.generatesimptradrepopulate):    # If have to repopulate one then will need it (even if no field)
-            if (self.config.perfersimptradgen=="simp"):
-                needsimp=True
-            if (self.config.perfersimptradgen=="trad"):
-                needtrad=True
-        if (self.config.generatessimpon):
-            needsimp=True
-        if (self.config.generatetradon):
-            needtrad=True
-
-        outputsimp = u""
-        outputtrad = u""
-        if (needsimp):
-            outputsimp = self.generateconvertcharface(expression, "simp")
-        if (needtrad):
-            outputtrad = self.generateconvertcharface(expression, "trad")
-
-        # if repopulate is on, then we will update the expression field too
-        if (self.config.generatesimptradrepopulate):
-            if self.config.perfersimptradgen=="simp":
-                expression = simpfinished
-            if self.config.perfersimptradgen=="trad":
-                expression = tradfinished
+        # Generate translations of the expression into simplified/traditional on-demand
+        expressionviews = utils.FactoryDict(lambda simptrad: self.generateconvertedcharacterset(expression, simptrad))
+        
+        # New expression, if needed
+        if self.config.forceexpressiontobesimptrad:
+            expression = expressionviews[self.config.prefersimptrad]
         
         # Do the updates on the fields the user has requested:
         updaters = {
@@ -262,12 +227,10 @@ class FieldUpdater(object):
                 'mw'         : (self.config.detectmeasurewords,           lambda: self.generatemeasureword(dictmeasurewords)),
                 'audio'      : (self.config.audiogeneration,              lambda: self.generateaudio(dictreading)),
                 'color'      : (self.config.colorizedcharactergeneration, lambda: self.generatecoloredcharacters(expression)),
-                #'trad'       : (self.config.generatetradon,               lambda: outputtrad),
-                #'simp'       : (self.config.generatessimpon,              lambda: outputsimp),
+                'trad'       : (self.config.generatetrad,                 lambda: expressionviews["trad"]),
+                'simp'       : (self.config.generatesimp,                 lambda: expressionviews["simp"]),
                 'weblinks'   : (self.config.weblinkgeneration,            lambda: self.weblinkgeneration(expression))
             }
-        
-        
         
         for key, (enabled, updater) in updaters.items():
             # Skip updating if no suitable field, we are disabled, or the field has text.
@@ -294,8 +257,8 @@ if __name__ == "__main__":
     
     class FieldUpdaterTest(unittest.TestCase):
         def testAutoBlanking(self):
-            self.assertEquals(self.updatefact(u"", { "reading" : "blather", "meaning" : "junk", "color" : "yes!" }),
-                              { "reading" : "", "meaning" : "", "color" : "" })
+            self.assertEquals(self.updatefact(u"", { "reading" : "blather", "meaning" : "junk", "color" : "yes!", "trad" : "meh", "simp" : "yay" }),
+                              { "reading" : "", "meaning" : "", "color" : "", "trad" : "", "simp" : "" })
         
         def testAutoBlankingAudioMeasureWord(self):
             # TODO: test behaviour for audio and measure word, once we know what it should be
@@ -303,37 +266,42 @@ if __name__ == "__main__":
         
         def testFullUpdate(self):
             self.assertEquals(
-                self.updatefact(u"书", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                self.updatefact(u"书", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "trad" : "", "simp" : "" },
                     colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
                     tonedisplay = "tonified", meaningnumbering = "circledChinese", colormeaningnumbers = False, meaningseperator = "lines", prefersimptrad = "simp",
-                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False), {
+                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False,
+                    generatetrad = True, generatesimp = True, forceexpressiontobesimptrad = False), {
                         "reading" : u'<span style="color:#ff0000">shū</span>',
                         "meaning" : u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History',
                         "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
                         "audio" : u"[sound:" + os.path.join("Test", "shu1.mp3") + "]",
-                        "color" : u'<span style="color:#ff0000">书</span>'
+                        "color" : u'<span style="color:#ff0000">书</span>',
+                        "trad" : u"書", "simp" : u"书"
                       })
         
         def testFullUpdateGerman(self):
             self.assertEquals(
-                self.updatefact(u"书", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
+                self.updatefact(u"书", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "trad" : "", "simp" : "" },
                     dictlanguage = "de",
                     colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
-                    tonedisplay = "tonified", audiogeneration = True, audioextensions = [".ogg"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"]), {
+                    tonedisplay = "tonified", audiogeneration = True, audioextensions = [".ogg"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"],
+                    generatetrad = True, generatesimp = True, forceexpressiontobesimptrad = False), {
                         "reading" : u'<span style="color:#ff0000">shū</span>',
                         "meaning" : u'Buch, Geschriebenes (S)',
                         "mw" : u'',
                         "audio" : u"[sound:" + os.path.join("Test", "shu1.ogg") + "]",
-                        "color" : u'<span style="color:#ff0000">书</span>'
+                        "color" : u'<span style="color:#ff0000">书</span>',
+                        "trad" : u"書", "simp" : u"书"
                       })
         
         def testDontOverwriteFields(self):
             self.assertEquals(
-                self.updatefact(u"书", { "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e" },
+                self.updatefact(u"书", { "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e", "trad" : "f", "simp" : "g" },
                     colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
                     tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
-                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = True), {
-                        "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e"
+                    audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = True,
+                    generatetrad = True, generatesimp = True), {
+                        "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e", "trad" : "f", "simp" : "g"
                       })
         
         def testUpdateExpressionItself(self):
@@ -346,7 +314,8 @@ if __name__ == "__main__":
             self.assertEquals(
                 self.updatefact(u"啤酒", { "expression" : "", "meaning" : "" },
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True,
-                    meaningnumbering = "circledChinese", colormeaningnumbers = False, detectmeasurewords = True, audiogeneration = False, weblinkgeneration = False), {
+                    meaningnumbering = "circledChinese", colormeaningnumbers = False, detectmeasurewords = True, audiogeneration = False, weblinkgeneration = False,
+                    forceexpressiontobesimptrad = False), {
                         "expression" : u"啤酒", "meaning" : u"㊀ beer<br />㊁ MW: 杯 - b\u0113i, 瓶 - p\xedng, 罐 - gu\xe0n, 桶 - t\u01d2ng, 缸 - g\u0101ng"
                       })
 
@@ -441,9 +410,28 @@ if __name__ == "__main__":
                     colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
                     tonedisplay = "numeric", audiogeneration = False, hanzimasking = False), {
                         "reading" : u'ni3 hao3, ni3 shi4 wo3 de peng2 you ma',
-                        "meaning" : u'Hello, you are right my friend<br /><span style="color:gray"><small>[Google Translate]</small></span>',
+                        "meaning" : u'Hello, you are right my friend<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
                         "mw" : "", "audio" : "", "color" : ""
                       })
+
+        def testUpdateSimplifiedTraditional(self):
+            self.assertEquals(
+                self.updatefact(u"个個", { "simp" : "", "trad" : "" },
+                    generatesimp = True, generatetrad = True), {
+                        "simp"  : u"个个",
+                        "trad" : u"個個"
+                      })
+
+        def testOverwriteExpressionWithSimpTrad(self):
+            self.assertEquals(
+                self.updatefact(u"个個", { "expression" : "" },
+                    forceexpressiontobesimptrad = True, prefersimptrad = "trad"), {
+                        "expression"  : u"個個" })
+
+            self.assertEquals(
+                self.updatefact(u"个個", { "expression" : "" },
+                    forceexpressiontobesimptrad = True, prefersimptrad = "simp"), {
+                        "expression"  : u"个个" })
 
         def testUpdateReadingAndColoredHanziAndAudioWithSandhi(self):
             self.assertEquals(

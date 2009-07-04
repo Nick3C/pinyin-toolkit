@@ -31,17 +31,17 @@ def gTrans(query, destlanguage='en', prompterror=True):
     except urllib2.URLError, e:
         # The only 'meaning' should be an error telling the user that there was some problem
         log.exception("Error while trying to obtain Google response")
-        if (prompterror):
+        if prompterror:
             return [[Word(Text('<span style="color:gray">[Internet Error]</span>'))]]
         else:
-            return
+            return None
     except ValueError, e:
         # Not an internet problem
         log.exception("Error while parsing Google response: %s" % repr(literal))
-        if (prompterror):
+        if prompterror:
             return [[Word(Text('<span style="color:gray">[Error In Google Translate Response]</span>'))]]
         else:
-            return
+            return None
 
 # This function will send a sample query to Google Translate and return true or false depending on success
 # It is used to determine connectivity for the Anki session (and thus whether Pinyin Toolkit should use online services or not)

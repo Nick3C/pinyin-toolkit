@@ -373,6 +373,20 @@ def rgbToHSV(r, g, b):
 def isosx():
     return sys.platform.lower().startswith("darwin")
 
+class FactoryDict(dict):
+    def __init__(self, factory, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+        self.factory = factory
+    
+    def __getitem__(self, key):
+        try:
+            return dict.__getitem__(self, key)
+        except KeyError:
+            # Use the factory to build an item
+            value = self.factory(key)
+            self[key] = value
+            return value
+
 if __name__=='__main__':
     import unittest
     
@@ -502,5 +516,20 @@ if __name__=='__main__':
                     result.append((ismatch, thing))
             
             return result
+
+    class FactoryDictTest(unittest.TestCase):
+        def testFactory(self):
+            dict = FactoryDict(lambda x: x + 1)
+            self.assertEquals(dict[3], 4)
+        
+        def testNormalOperation(self):
+            dict = FactoryDict(lambda x: x + 1)
+            
+            dict[2] = "Hello"
+            self.assertEquals(dict[2], "Hello")
+            
+            dict[3] = "Bye"
+            self.assertEquals(dict[2], "Hello")
+            self.assertEquals(dict[3], "Bye")
 
     unittest.main()
