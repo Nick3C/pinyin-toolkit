@@ -383,6 +383,9 @@ def rgbToHSV(r, g, b):
 def isosx():
     return sys.platform.lower().startswith("darwin")
 
+def islinux():
+    return sys.platform.lower().startswith("linux")
+
 class FactoryDict(dict):
     def __init__(self, factory, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)

@@ -15,7 +15,6 @@ from PyQt4 import QtGui
 
 import time
 
-from ankiqt.ui.graphs import AdjustableFigure, GraphWindow
 from anki.hooks import wrap
 import anki.utils
 
@@ -23,6 +22,7 @@ import hooks
 
 from pinyin.logger import log
 import pinyin.statistics
+import pinyin.utils
 
 
 class HanziGraphHook(hooks.Hook):
@@ -181,6 +181,7 @@ class HanziGraphHook(hooks.Hook):
         # avoid adding the graph if the current deck was not 
         
         # Append our own graph at the end
+        from ankiqt.ui.graphs import AdjustableFigure
         extragraph = AdjustableFigure(graphwindow.parent, 'hanzi', lambda days: self.calculateHanziData(graphwindow, days), graphwindow.range)
         extragraph.addWidget(QtGui.QLabel("<h1>Unique Hanzi (Cumulative, By HSK Level)</h1>"))
         graphwindow.vbox.addWidget(extragraph)
@@ -194,4 +195,13 @@ class HanziGraphHook(hooks.Hook):
     
     def install(self):
         log.info("Installing Hanzi graph hook")
-        GraphWindow.setupGraphs = wrap(GraphWindow.setupGraphs, self.setupHanziGraph, "after")
+        
+        # NB: must lazy-load ankiqt.ui.graphs because importing it will fail if the user doesn't
+        # have python-matplotlib installed on Linux.
+        try:
+            from ankiqt.ui.graphs import GraphWindow
+            GraphWindow.setupGraphs = wrap(GraphWindow.setupGraphs, self.setupHanziGraph, "after")
+        except ImportError, e:
+            self.notifier.exception("There was a problem setting up the Hanzi Graph! If you are using Linux, " +
+                                    "you may need to install the package providing matplotlib to Python. On Ubuntu " +
+                                    "you can do that by running 'sudo apt-get install python-matplotlib' in the Terminal.", e)
