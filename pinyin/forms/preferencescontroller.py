@@ -38,6 +38,7 @@ class PreferencesController(object):
         
         # Set up the controls - one time only
         self.mappings = []
+        self.setUpViewPreview()
         self.setUpText()
         self.setUpColors()
         self.setUpAudio()
@@ -49,6 +50,10 @@ class PreferencesController(object):
     #
     # Setup
     #
+    
+    def setUpViewPreview(self):
+        # Make sure we create a field for every field we're going to preview
+        self.view.setupFields(sorted([(key, pinyin.utils.heador(candidatefieldnames, key.capitalize())) for key, candidatefieldnames in self.model.candidateFieldNamesByKey.items()], pinyin.utils.bySecond))
     
     def setUpText(self):
         # The Hanzi and Pinyin panel
@@ -188,24 +193,12 @@ class PreferencesController(object):
             mapping.updateView()
     
     def updateViewPreview(self):
-        # Create a model fact that we will fill with information, as well
-        # as a list of fields to put that information into
-        fact = {}
-        fieldnamesbykey = {}
-        for key, candidatefieldnames in self.model.candidateFieldNamesByKey.items():
-            fact[key] = u""
-            fieldnamesbykey[key] = pinyin.utils.heador(candidatefieldnames, key.capitalize())
-        
-        # Update the fact using the current model configuration
+        # Update a blank fact using the current model configuration
+        fact = dict([(key, u"") for key in self.model.candidateFieldNamesByKey.keys()])
         self.updater.updatefact(fact, previewexpression)
         
-        # Pull together the name of the field and the contents it should have
-        namedvalues = []
-        for key, value in fact.items():
-            namedvalues.append((fieldnamesbykey[key], value))
-        
-        # Done: give the named values to the view, sorted by the field name
-        self.view.updateFields(sorted(namedvalues, pinyin.utils.byFirst))
+        # Done: give the named values to the view to update it
+        self.view.updateFields(fact)
 
     #
     # Mapping helpers

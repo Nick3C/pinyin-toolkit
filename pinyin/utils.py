@@ -265,6 +265,12 @@ def byFirst(x, y):
     return cmp(x[0], y[0])
 
 """
+Sorting combinator: sort by second element
+"""
+def bySecond(x, y):
+    return cmp(x[1], y[1])
+
+"""
 Sorting combinator: reverse order:
 """
 def inReverse(how=cmp):
@@ -436,6 +442,9 @@ if __name__=='__main__':
         def testSortedByFirst(self):
             self.assertEquals(sorted([(5, "1"), (2, "4"), (3, "2"), (1, "5"), (4, "3")], byFirst), [(1, "5"), (2, "4"), (3, "2"), (4, "3"), (5, "1")])
         
+        def testSortedBySecond(self):
+            self.assertEquals(sorted([(5, "1"), (2, "4"), (3, "2"), (1, "5"), (4, "3")], bySecond), [(5, "1"), (3, "2"), (4, "3"), (2, "4"), (1, "5")])
+
         def testSortedInReverse(self):
             self.assertEquals(sorted([5, 2, 3, 1, 4], inReverse()), [5, 4, 3, 2, 1])
             self.assertEquals(sorted([5, 2, 3, 1, 4], inReverse(inReverse())), [1, 2, 3, 4, 5])

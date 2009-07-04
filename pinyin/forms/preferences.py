@@ -15,14 +15,12 @@ class Preferences(QDialog):
     def __init__(self, parent):
         QDialog.__init__(self, parent, Qt.Window)
         self.parent = parent
+        self.fieldWidgets = {}
         
         self.controls = pinyin.forms.generated.preferences.Ui_Preferences()
         self.controls.setupUi(self)
         
         self.fieldsScroll = self.createFieldsScroll(self.controls.fieldsFrame)
-        
-        # Necessary for Anki integration?
-        # ui.dialogs.open("AddCards", self)
     
     #
     # Setup
@@ -35,7 +33,6 @@ class Preferences(QDialog):
         fieldsScroll.setLineWidth(0)
         fieldsScroll.setFrameStyle(0)
         fieldsScroll.setFocusPolicy(Qt.NoFocus)
-        
         
         # top level vbox
         fieldsBox = QVBoxLayout(widget)
@@ -57,7 +54,7 @@ class Preferences(QDialog):
     def pickColor(self, initcolor):
         return QColorDialog.getColor(initcolor, self)
     
-    def updateFields(self, namedvalues):
+    def setupFields(self, keyedfieldnames):
         # Suspend repainting
         self.parent.setUpdatesEnabled(False)
         
@@ -73,7 +70,7 @@ class Preferences(QDialog):
         fieldsGrid.setMargin(0)
         
         # Add entries for each field
-        for n, (fieldname, fieldvalue) in enumerate(namedvalues):
+        for n, (key, fieldname) in enumerate(keyedfieldnames):
             # Field label
             l = QLabel(fieldname)
             fieldsGrid.addWidget(l, n, 0)
@@ -87,9 +84,10 @@ class Preferences(QDialog):
             w.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             w.setFont(font)
             w.setReadOnly(True)
-            w.setText(fieldvalue)
+            w.setText("")
             
             # Add the widget to the grid
+            self.fieldWidgets[key] = w
             fieldsGrid.addWidget(w, n, 1)
         
         # Resume repainting
@@ -99,6 +97,11 @@ class Preferences(QDialog):
         self.fieldsScroll.setWidget(fieldsFrame)
         fieldsFrame.show()
         self.fieldsScroll.show()
+    
+    def updateFields(self, keyedvalues):
+        # Update the text in every field we created
+        for key, value in keyedvalues.items():
+            self.fieldWidgets[key].setText(value)
 
 if __name__ == "__main__":
     import sys
