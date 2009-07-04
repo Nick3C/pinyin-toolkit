@@ -42,11 +42,19 @@ def tonesandhi(words):
     #  3~33 -> 3~23
     # (and the more general sandhi effect with strings of length > 3)
     def dealWithThrees(match):
+        # a) Split the match into a list of strings of 3 per word
         wordcontours = (match.group(1) or "").split("~")[:-1] + [match.group(2)]
+        
+        # b) Build the result
+        #   i) For everything but the last word, turn the tone into 2 if it is monosyllabic
         maketwosifpoly = lambda what: len(what) == 1 and what or '2' * len(what)
+        #   ii) For the last word, always end with a sequence of 2s followed by a 3
         makeprefixtwos = lambda what: '2' * (len(what) - 1) + '3'
-        return "~".join([maketwosifpoly(wordcontour) for wordcontour in wordcontours[:-1]] + [makeprefixtwos(wordcontours[-1])])
-    tonecontour = re.sub(r"((?:3+)\~+)*(3+)", dealWithThrees, tonecontour)
+        replacement = "~".join([maketwosifpoly(wordcontour) for wordcontour in wordcontours[:-1]] + [makeprefixtwos(wordcontours[-1])])
+        
+        log.debug("Rewrote complex tone sandhi %s into %s", match.group(0), replacement)
+        return replacement
+    tonecontour = re.sub(r"((?:3+\~+)*)(3+)", dealWithThrees, tonecontour)
     
     # Low priority (let others take effect first):
     #  33  -> 23 (though this is already caught by the code above, actually)
@@ -476,6 +484,9 @@ if __name__=='__main__':
         
         def testMonoMulti(self):
             self.assertSandhi(Word(Pinyin.parse("lao3")), Word(Pinyin.parse("bao3"), Pinyin.parse("guan3")), "lao3bao2guan3")
+        
+        def testBugWithWordContour(self):
+            self.assertSandhi(*(englishdict.reading(u"酒水饮料") + ["jiu2 shui3 yin3 liao4"]))
         
         # def testYiFollowedByFour(self):
         #     self.assertSandhi(Word(Pinyin.parse("yi1")), Word(Pinyin.parse("ding4")), "yi2ding4")
