@@ -171,6 +171,42 @@ meaningseperatorstrings = {
     "commas" : ", "
   }
 
+#
+# The framework of 'incorporations' that I use to upgrade the configuration data.
+# Can be nested arbitrarily deeply for awesome hierarchical update power!
+#
+
+def incorporatebydeepcopy(existing, new):
+    return copy.deepcopy(new)
+
+def incorporatepositionallist(incorporations):
+    def inner(existing, new):
+        # Ensure that we leave the size of the existing list unchanged,
+        # but incorporate any changes in the elements
+        for n in range(0, min(len(existing), len(new))):
+            incorporation = n < len(incorporations) and incorporations[n] or incorporatebydeepcopy
+            existing[n] = incorporation(existing[n], new[n])
+    
+        return existing
+
+    return inner
+
+def incorporatebykeydict(incorporations):
+    def inner(existing, new):
+        for key, value in new.items():
+            # This setting might have disappeared entirely or been renamed.
+            # In that case, throw away the "new" data we've just sucked in
+            if key not in existing:
+                continue
+        
+            # Use the supplied incorporations to recursively merge the data
+            # stored in the values of the dictionary
+            existing[key] = incorporations.get(key, incorporatebydeepcopy)(existing[key], value)
+        
+        return existing
+    
+    return inner
+
 """
 Pinyin Toolkit configuration object: this will be pickled
 up and stored into Anki's configuration database.  To allow
@@ -185,16 +221,21 @@ class Config(object):
     def __init__(self, usersettings=None):
         settings = {}
         
-        # Set all settings first using the defaults and then by coping the user settings
-        for key, value in defaultsettings.items() + (usersettings or {}).items():
-            # Because of a BUG a previous versions, users might have some private
-            # data in their settings.  Filter that out here.
-            # NB: this special case is just to make Nick's life easier.  Should be able
-            # to remove it once he has run the new version at least once.
-            if "_Config__" in key:
-                continue
-            
+        # Set all settings first by deep-copying the defaults. These are in an authoratitive
+        # format and guaranteed to work with the current Toolkit version
+        for key, value in defaultsettings.items():
             settings[key] = copy.deepcopy(value)
+        
+        # Now incorporate any saved settings. Here we have to be careful, because the stuff
+        # we're sucking in might have screwy stuff in it from the old days. The point of the
+        # incorporations framework is to try and move as much stuff from the user into the
+        # settings as possible without screwing up the fine structure of the settings and making
+        # the toolkit inoperable:
+        settings = incorporatebykeydict({
+                "tonecolors" : incorporatepositionallist({}),
+                "extraquickaccesscolors" : incorporatepositionallist({}),
+                "candidateFieldNamesByKey" : incorporatebykeydict({})
+            })(settings, usersettings or {})
         
         log.info("Initialized configuration with settings %s", settings)
         self.settings = settings
@@ -307,13 +348,24 @@ if __name__=='__main__':
             self.assertEquals(pickle.loads(pickle.dumps(config)).settings, config.settings)
     
         def testAttribute(self):
-            self.assertEquals(Config({ "key" : "value" }).key, "value")
+            self.assertEquals(Config({ "tonedisplay" : "value" }).tonedisplay, "value")
         
         def testIndexedAttribute(self):
-            self.assertEquals(Config({ "key" : ["value"] }).key[0], "value")
+            self.assertEquals(Config({ "tonecolors" : ["100"] }).tonecolors[0], "100")
     
         def testMissingAttribute(self):
             self.assertRaises(AttributeError, lambda: Config({ "key" : ["value"] }).kay)
+        
+        def testNonExistentKeysDiscarded(self):
+            self.assertRaises(AttributeError, lambda: Config({ "idontexist" : "value" }).idontexist)
+        
+        def testNonExistentFieldNamesDiscarded(self):
+            self.assertRaises(KeyError, lambda: Config({ "candidateFieldNamesByKey" : { "silly" : ["Fish"] } }).candidateFieldNamesByKey["silly"])
+        
+        def testPositionalListLengthNotChanged(self):
+            config = Config({ "tonecolors" : ["hi"] })
+            self.assertEquals(config.tonecolors[0], "hi")
+            self.assertEquals(len(config.tonecolors), len(Config({}).tonecolors))
         
         def testCopiesInput(self):
             inputSettings = {}
