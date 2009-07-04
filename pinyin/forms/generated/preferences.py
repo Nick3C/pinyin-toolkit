@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'designer/preferences.ui'
 #
-# Created: Fri Jun 12 19:08:09 2009
+# Created: Sat Jul  4 19:59:33 2009
 #      by: PyQt4 UI code generator 4.4.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -271,9 +271,6 @@ class Ui_Preferences(object):
         self.groupBox.setObjectName("groupBox")
         self.verticalLayout_10 = QtGui.QVBoxLayout(self.groupBox)
         self.verticalLayout_10.setObjectName("verticalLayout_10")
-        self.enableAudioCheck = QtGui.QCheckBox(self.groupBox)
-        self.enableAudioCheck.setObjectName("enableAudioCheck")
-        self.verticalLayout_10.addWidget(self.enableAudioCheck)
         self.installedAudioPacksLabel = QtGui.QLabel(self.groupBox)
         self.installedAudioPacksLabel.setObjectName("installedAudioPacksLabel")
         self.verticalLayout_10.addWidget(self.installedAudioPacksLabel)
@@ -346,7 +343,6 @@ class Ui_Preferences(object):
         self.colorizeMeaningNumberingCheck.setText(QtGui.QApplication.translate("Preferences", "Colorize meaning numbering and mask", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.colorsTab), QtGui.QApplication.translate("Preferences", "Colors", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox.setTitle(QtGui.QApplication.translate("Preferences", "Audio Packs", None, QtGui.QApplication.UnicodeUTF8))
-        self.enableAudioCheck.setText(QtGui.QApplication.translate("Preferences", "Enable automatic text-to-speech generation", None, QtGui.QApplication.UnicodeUTF8))
         self.installedAudioPacksLabel.setText(QtGui.QApplication.translate("Preferences", "Installed text-to-speech audio packs:", None, QtGui.QApplication.UnicodeUTF8))
         self.installMandarinSoundsButton.setText(QtGui.QApplication.translate("Preferences", "Install Chinese-Lessons.com Mandarin Sounds Pack", None, QtGui.QApplication.UnicodeUTF8))
         self.openAudioPackDirectoryButton.setText(QtGui.QApplication.translate("Preferences", "Open Audio Pack Directory", None, QtGui.QApplication.UnicodeUTF8))

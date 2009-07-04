@@ -510,13 +510,6 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_10">
           <item>
-           <widget class="QCheckBox" name="enableAudioCheck">
-            <property name="text">
-             <string>Enable automatic text-to-speech generation</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QLabel" name="installedAudioPacksLabel">
             <property name="text">
              <string>Installed text-to-speech audio packs:</string>

@@ -160,8 +160,6 @@ class PreferencesController(object):
         setUpMeaningNumberingColor()
     
     def setUpAudio(self):
-        self.registerCheckMapping("audiogeneration", self.view.controls.enableAudioCheck)
-        
         self.updateAudioPacksList()
         
         # Connect up the two buttons to the event handlers
