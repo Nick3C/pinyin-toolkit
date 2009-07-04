@@ -128,7 +128,7 @@ class FieldUpdater(object):
     # be wary of returning wrong characters one-to-many conversions(especially a problem with single-char words)
     # return single character words in a lighter grey (to indicate they need checking)
     # Must not return prompt (otherwise well-configured decks will auto-generate unwatned traditional cards)
-    def generateconvertedcharacterset(self, expression, charmode):
+    def generateincharactersystem(self, expression, charmode):
         log.info("Doing conversion of %s into %s characters", expression, charmode)
 
         # Query Google for the conversion, returned in the format: ["社會",[["noun","社會","社會","社會"]]]
@@ -213,7 +213,7 @@ class FieldUpdater(object):
             #' If testing seperately then putting audio in the MW field is a good idea (so it will play when the measure word question is answered)
 
         # Generate translations of the expression into simplified/traditional on-demand
-        expressionviews = utils.FactoryDict(lambda simptrad: self.generateconvertedcharacterset(expression, simptrad))
+        expressionviews = utils.FactoryDict(lambda simptrad: self.generateincharactersystem(expression, simptrad))
         
         # New expression, if needed
         if self.config.forceexpressiontobesimptrad:
