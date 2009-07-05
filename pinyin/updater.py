@@ -154,8 +154,8 @@ class FieldUpdater(object):
     
         # Figure out the reading for the expression field, with sandhi considered
         dictreadingsources = [
-                # Get the reading by considering the text as a number
-                lambda: None,
+                # Get the reading by considering the text as a (Western) number
+                lambda: numbers.readingfromnumberlike(expression, self.config.dictionary),
                 # Use CEDICT to get reading (always succeeds)
                 lambda: self.config.dictionary.reading(expression)
             ]
@@ -176,9 +176,10 @@ class FieldUpdater(object):
                     # Use CEDICT to get meanings
                     (None,
                      lambda: self.config.dictionary.meanings(expression, self.config.prefersimptrad)),
-                    # Interpret Hanzi as numbers
+                    # Interpret Hanzi as numbers. NB: only consult after CEDICT so that we
+                    # handle curious numbers such as 'liang' using the dictionary
                     (None,
-                     lambda: (utils.bind_none(numbers.hanziasnumber(expression), lambda number: [[pinyin.Word(pinyin.Text(unicode(number)))]]), None))
+                     lambda: (numbers.meaningfromnumberlike(expression, self.config.dictionary), None))
                 ] + (self.config.shouldusegoogletranslate and [
                     # If the dictionary can't answer our question, ask Google Translate.
                     # If there is a long word followed by another word then this will be treated as a phrase.
@@ -338,11 +339,11 @@ if __name__ == "__main__":
                         "meaning" : u'<span style="color:#123456">①</span> book | <span style="color:#123456">②</span> letter | <span style="color:#123456">③</span> same as <span style="color:#123456">MASKED</span><span style="color:#ff0000">\u7ecf</span> Book of History | <span style="color:#123456">④</span> MW: <span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
                       })
 
-        def testMeaningNumbers(self):
-            self.assertEquals(
-                self.updatefact(u"九千零二十五", { "meaning" : "" }, meaninggeneration = True), {
-                        "meaning" : u'9025',
-                      })
+        def testMeaningChineseNumbers(self):
+            self.assertEquals(self.updatefact(u"九千零二十五", { "meaning" : "" }, meaninggeneration = True), { "meaning" : u'9025' })
+
+        def testMeaningWesternNumbersYear(self):
+            self.assertEquals(self.updatefact(u"2001年", { "meaning" : "" }, meaninggeneration = True), { "meaning" : u'2001AD' })
 
         def testUpdateReadingOnly(self):
             self.assertEquals(
@@ -402,6 +403,10 @@ if __name__ == "__main__":
                         "reading" : u'yi1 gai4', "meaning" : u'', "mw" : "", "audio" : "", "color" : u'',
                         "weblinks" : u'[<a href="silly%E4%B8%80%E6%A6%82url" title="mytitle">YEAH!</a>] [<a href="verysilly%E4%B8%80%E6%A6%82url" title="myothertitle">NAY!</a>]'
                       })
+
+        def testReadingFromWesternNumbers(self):
+            self.assertEquals(self.updatefact(u"111", { "reading" : "" }, colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
+                                                      { "reading" : u'<span style="color:#333333">b\u01cei</span> <span style="color:#111111">y\u012b</span> <span style="color:#222222">sh\xed</span> <span style="color:#111111">y\u012b</span>' })
         
         def testWebLinkFieldCanBeMissingAndStaysMissing(self):
             self.assertEquals(self.updatefact(u"一概", { }, weblinkgeneration = True), { })
@@ -439,15 +444,11 @@ if __name__ == "__main__":
                       })
 
         def testOverwriteExpressionWithSimpTrad(self):
-            self.assertEquals(
-                self.updatefact(u"个個", { "expression" : "" },
-                    forceexpressiontobesimptrad = True, prefersimptrad = "trad"), {
-                        "expression"  : u"個個" })
+            self.assertEquals(self.updatefact(u"个個", { "expression" : "" }, forceexpressiontobesimptrad = True, prefersimptrad = "trad"),
+                                                     { "expression"  : u"個個" })
 
-            self.assertEquals(
-                self.updatefact(u"个個", { "expression" : "" },
-                    forceexpressiontobesimptrad = True, prefersimptrad = "simp"), {
-                        "expression"  : u"个个" })
+            self.assertEquals(self.updatefact(u"个個", { "expression" : "" }, forceexpressiontobesimptrad = True, prefersimptrad = "simp"),
+                                                     { "expression"  : u"个个" })
 
         def testUpdateReadingAndColoredHanziAndAudioWithSandhi(self):
             self.assertEquals(

@@ -1,7 +1,46 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import dictionary
+import pinyin
+import utils
+
+#
+# These are the low-level functions that just convert between
+# hanzi representing integers and Python integers
+#
+
+def parsemany(ofwhat):
+    def inner(text):
+        things = []
+        while True:
+            thing, text = ofwhat(text)
+            if thing is None:
+                return things, text
+            
+            things.append(thing)
+    
+    return inner
+
+def parsedigit(text):
+    if len(text) > 0 and text[0].isdigit():
+        return text[0], text[1:]
+    else:
+        return None, text
+
+parsedigits = lambda text: "".join(parsemany(parsedigit)(text))
+
 digits = [u"零", u"一", u"二", u"三", u"四", u"五", u"六", u"七", u"八", u"九"]
+
+# Parsing a single digit: returns a digit (or None) and the rest of the string
+def parsehanzidigit(hanzi):
+    for digit, digittext in enumerate(digits):
+        if hanzi.startswith(digittext):
+            return digit, hanzi[len(digittext):]
+    
+    return None, hanzi
+
+parsehanzidigits = lambda text: "".join(parsemany(parsehanzidigit)(text))
 
 magnitudes = list(enumerate([
     u"",     # units
@@ -69,24 +108,20 @@ def numberashanzi(n):
     return hanzi
 
 # Takes Chinese characters and attempts to convert them into an integer
-def hanziasnumber(hanzi):
-    # Utility for digit parsing
-    def parsedigit(hanzi):
-        for digit, digittext in enumerate(digits):
-            if hanzi.startswith(digittext):
-                return digit, hanzi.lstrip(digittext)
-        
-        return None, hanzi
+def parsehanziasnumber(hanzi):
+    # The only valid form for 0 is 'ling'
+    if hanzi.startswith(digits[0]):
+        return 0, hanzi[len(digits[0]):]
     
     # Special case for the irregular 'liang'
-    if hanzi == u"两":
-        return 2
+    if hanzi.startswith(u"两"):
+        return 2, hanzi[len(u"两"):]
     
     # Main loop that parses the numeric text from the left
     number = 0
     for power, powertext in reversed(magnitudes):
         # Start off by trying to parse a digit
-        digit, candidatehanzi = parsedigit(hanzi)
+        digit, candidatehanzi = parsehanzidigit(hanzi)
         if digit is None:
             if power == 0:
                 # Musn't make assumption about leading digit if we're on
@@ -108,17 +143,179 @@ def hanziasnumber(hanzi):
             continue
         
         # Starts with a power, so we can accumulate the resulting stuff
-        hanzi = candidatehanzi.lstrip(powertext)
+        hanzi = candidatehanzi[len(powertext):]
         number += digit * pow(10, power)
     
-    # If we have anything left then what we were parsing didn't look like a number
-    if hanzi != u"":
+    # If we still have 0 in the accumulator at this point then there
+    # was no valid number there at all
+    if number == 0:
+        number = None
+    
+    # Return the number and any remaining text
+    return number, hanzi
+
+#
+# Higher level functions using the ability to go between Hanzi and integers
+#
+
+# TODO: currency support?
+# TODO: the Western and Chinese parsers are substantially the same. Perhaps more code could be shared.
+
+def parsewesternnumberlike(expression, integerhandler, decimalhandler, yearhandler):
+    # Every numberlike form starts with some leading digits
+    leadingdigits, expression = parsemany(parsedigit)(expression)
+    expression = expression.strip()
+    
+    # Ensure we managed to get at least some digits
+    if len(leadingdigits) == 0:
         return None
     
-    return number
+    # If that's followed by a decimal seperator and some digits we
+    # can generate a Chinese decimal reading
+    if expression.startswith("."):
+        trailingdigits, expression = parsemany(parsedigit)(expression[1:])
+        if len(trailingdigits) == 0 or expression.strip() != u"":
+            # Something after the trailing digits that we don't understand
+            # or we didn't get any digits after . at all
+            return None
+        
+        return decimalhandler(leadingdigits, trailingdigits)
+    
+    # What suffixes the integer?
+    if expression == u"":
+        # No suffix, return as a straight number
+        return integerhandler(leadingdigits)
+    elif expression == u"年":
+        # Followed by a nian, return as a year
+        return yearhandler(leadingdigits)
+    else:
+        # Unknown suffix, we have to give up for sanity
+        return None
+
+def parsechinesenumberlike(expression, integerhandler, decimalhandler, yearhandler):
+    # Every numberilke form starts with some leading digits
+    leadingnumber, trailingexpression = parsehanziasnumber(expression)
+    leadingwesterndigits = list(str(leadingnumber))
+    
+    # Ensure we managed to get at least some digits
+    if leadingnumber is None:
+        return None
+    
+    # If that's followed by a decimal seperator and some digits we
+    # can generate a Chinese decimal meaning
+    if trailingexpression.startswith(u"点"):
+        trailingdigits, trailingexpression = parsemany(parsehanzidigit)(trailingexpression[len(u"点"):])
+        if len(trailingdigits) == 0 or trailingexpression.strip() != u"":
+            # Something after the trailing digits that we don't understand
+            # or we didn't get any digits after . at all
+            return None
+        
+        return decimalhandler(leadingwesterndigits, trailingdigits)
+    
+    # What suffixes the integer?
+    if trailingexpression == u"":
+        # No suffix, return as a straight number
+        return integerhandler(leadingwesterndigits)
+    else:
+        # Unknown suffix. We probably have to give up, but we MIGHT have had a year:
+        leadingwesterndigits, trailingexpression = parsemany(parsehanzidigit)(expression)
+        if trailingexpression == u"年":
+            # Followed by a nian, return as a year
+            return yearhandler(leadingwesterndigits)
+        else:
+            # Give up
+            return None
+
+def readingfromnumberlike(expression, dictionary):
+    intify = lambda digits: int("".join(digits))
+    
+    # Here, we need to be careful to turn Western number-like things into readings
+    # the way a Chinese person would say them
+    return parsewesternnumberlike(expression,
+            lambda digits: dictionary.reading(numberashanzi(intify(digits))),
+            lambda leadingdigits, trailingdigits: dictionary.reading(numberashanzi(intify(leadingdigits)) + u"点" + "".join([numberashanzi(int(digit)) for digit in trailingdigits])),
+            lambda digits: dictionary.reading("".join([numberashanzi(int(digit)) for digit in digits]) + u"年"))
+
+def meaningfromnumberlike(expression, dictionary):
+    stringify = lambda digits: u"".join([unicode(digit) for digit in digits])
+    handlers = [
+        lambda digits: stringify(digits),
+        lambda leadingdigits, trailingdigits: stringify(leadingdigits) + "." + stringify(trailingdigits),
+        lambda digits: stringify(digits) + "AD"
+      ]
+    
+    # Generates a meaning from approximately Western expressions (almost useless, but does handle nian suffix)
+    text = parsewesternnumberlike(expression, *handlers)
+    
+    if not(text):
+        # Generate a meaning from approximately Chinese expressions
+        text = parsechinesenumberlike(expression, *handlers)
+        
+    # Wrap the result in the appropriate gumpf
+    return utils.bind_none(text, lambda nonnulltext: [[pinyin.Word(pinyin.Text(nonnulltext))]])
 
 if __name__=='__main__':
     import unittest
+    
+    englishdict = utils.Thunk(lambda: dictionary.PinyinDictionary.load('en', True))
+    
+    class ReadingFromNumberlikeTest(unittest.TestCase):
+        def testIntegerReading(self):
+            self.assertReading("ba1 qian1 jiu3 bai3 er4 shi2 yi1", "8921")
+        
+        def testDecimalReading(self):
+            self.assertReading("er4 shi2 wu3 dian3 er4 wu3", "25.25")
+        
+        def testYearReading(self):
+            self.assertReading("yi1 jiu3 jiu3 ba1 nian2", u"1998年")
+        
+        def testNoReadingForPhrase(self):
+            self.assertReading(None, u"你好")
+        
+        def testNoReadingForBlank(self):
+            self.assertReading(None, u"")
+            self.assertReading(None, u"24.")
+        
+        def testNoReadingsIfTrailingStuff(self):
+            self.assertReading(None, u"8921A")
+            self.assertReading(None, u"25.25A")
+            self.assertReading(None, u"1998年A")
+        
+        # Test helpers
+        def assertReading(self, expected_reading, expression):
+            self.assertEquals(expected_reading, utils.bind_none(readingfromnumberlike(expression, englishdict), lambda reading: pinyin.flatten(reading)))
+    
+    class MeaningFromNumberlikeTest(unittest.TestCase):
+        def testIntegerMeaning(self):
+            self.assertMeaning("8921", "8921")
+            self.assertMeaning("8921", u"八千九百二十一")
+        
+        def testDecimalMeaning(self):
+            self.assertMeaning("25.25", "25.25")
+            self.assertMeaning("25.25", u"二十五点二五")
+        
+        def testYearMeaning(self):
+            self.assertMeaning("1998AD", u"1998年")
+            self.assertMeaning("1998AD", u"一九九八年")
+        
+        def testNoMeaningForPhrase(self):
+            self.assertMeaning(None, u"你好")
+        
+        def testNoMeaningForBlank(self):
+            self.assertMeaning(None, u"")
+            self.assertMeaning(None, u"24.")
+        
+        def testNoMeaningsIfTrailingStuff(self):
+            self.assertMeaning(None, u"8921A")
+            self.assertMeaning(None, u"八千九百二十一A")
+            self.assertMeaning(None, u"25.25A")
+            self.assertMeaning(None, u"二十五点二五A")
+            self.assertMeaning(None, u"1998年A")
+            self.assertMeaning(None, u"一九九八年A")
+        
+        # Test helpers
+        def assertMeaning(self, expected_meaning, expression):
+            self.assertEquals(expected_meaning, utils.bind_none(meaningfromnumberlike(expression, englishdict), lambda meanings: pinyin.flatten(meanings[0])))
     
     class NumberAsHanziTest(unittest.TestCase):
         def testSingleNumerals(self):
@@ -151,35 +348,46 @@ if __name__=='__main__':
     
     class HanziAsNumberTest(unittest.TestCase):
         def testSingleNumerals(self):
-            self.assertEquals(hanziasnumber(u"零"), 0)
-            self.assertEquals(hanziasnumber(u"五"), 5)
-            self.assertEquals(hanziasnumber(u"九"), 9)
+            self.assertHanziAsNumber(u"零", 0)
+            self.assertHanziAsNumber(u"五", 5)
+            self.assertHanziAsNumber(u"九", 9)
+        
+        def testLing(self):
+            self.assertHanziAsNumber(u"零", 0)
+            self.assertHanziAsNumber(u"零个", 0, expected_rest_hanzi=u"个")
         
         def testLiang(self):
-            self.assertEquals(hanziasnumber(u"两"), 2)
+            self.assertHanziAsNumber(u"两", 2)
+            self.assertHanziAsNumber(u"两个", 2, expected_rest_hanzi=u"个")
         
         def testFullNumbers(self):
-            self.assertEquals(hanziasnumber(u"二十五"), 25)
-            self.assertEquals(hanziasnumber(u"八千九百二十一"), 8921)
+            self.assertHanziAsNumber(u"二十五", 25)
+            self.assertHanziAsNumber(u"八千九百二十一", 8921)
         
         def testTruncationOfLowerUnits(self):
-            self.assertEquals(hanziasnumber(u"二十"), 20)
-            self.assertEquals(hanziasnumber(u"九千"), 9000)
-            self.assertEquals(hanziasnumber(u"九千一百"), 9100)
+            self.assertHanziAsNumber(u"二十", 20)
+            self.assertHanziAsNumber(u"九千", 9000)
+            self.assertHanziAsNumber(u"九千一百", 9100)
 
         def testSkippedOnes(self):
-            self.assertEquals(hanziasnumber(u"一"), 1)
-            self.assertEquals(hanziasnumber(u"十"), 10)
-            self.assertEquals(hanziasnumber(u"百"), 100)
-            self.assertEquals(hanziasnumber(u"一千"), 1000)
+            self.assertHanziAsNumber(u"一", 1)
+            self.assertHanziAsNumber(u"十", 10)
+            self.assertHanziAsNumber(u"百", 100)
+            self.assertHanziAsNumber(u"一千", 1000)
 
         def testSkippedMagnitudes(self):
-            self.assertEquals(hanziasnumber(u"九千零二十五"), 9025)
-            self.assertEquals(hanziasnumber(u"九千零二十"), 9020)
-            self.assertEquals(hanziasnumber(u"九千零五"), 9005)
+            self.assertHanziAsNumber(u"九千零二十五", 9025)
+            self.assertHanziAsNumber(u"九千零二十", 9020)
+            self.assertHanziAsNumber(u"九千零五", 9005)
         
         def testNonNumber(self):
-            self.assertEquals(hanziasnumber(u"个"), None)
-            self.assertEquals(hanziasnumber(u"一个"), None)
+            self.assertHanziAsNumber(u"一个", 1, expected_rest_hanzi=u"个")
+            self.assertHanziAsNumber(u"个", None, expected_rest_hanzi=u"个")
+    
+        # Test helpers
+        def assertHanziAsNumber(self, hanzi, expect_number, expected_rest_hanzi=""):
+            actual_number, actual_rest_hanzi = parsehanziasnumber(hanzi)
+            self.assertEquals(actual_rest_hanzi, expected_rest_hanzi)
+            self.assertEquals(actual_number, expect_number)
     
     unittest.main()
