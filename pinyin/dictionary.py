@@ -189,17 +189,6 @@ class PinyinDictionary(object):
 
         return foundmeanings, foundmeasurewords
 
-    """
-    Return meanings and measure words for the sentence, if available.
-    """
-    def flatmeanings(self, sentence, prefersimptrad):
-        dictmeanings, dictmeasurewords = self.meanings(sentence, prefersimptrad)
-        
-        if dictmeanings != None or dictmeasurewords != None:
-            return (dictmeanings or []) + [[Word(Text("MW: "))] + dictmeasureword for dictmeasureword in (dictmeasurewords or [])]
-        else:
-            return None
-
     def parse(self, sentence):
         assert type(sentence)==unicode
         if sentence == None or len(sentence) == 0:
@@ -230,6 +219,11 @@ class PinyinDictionary(object):
                 yield (False, sentence[i:i+1])
                 i += 1
 
+def combinemeaningsmws(dictmeanings, dictmeasurewords):
+    if dictmeanings != None or dictmeasurewords != None:
+        return (dictmeanings or []) + [[Word(Text("MW: "))] + dictmeasureword for dictmeasureword in (dictmeasurewords or [])]
+    else:
+        return None
 
 # Testsuite
 if __name__=='__main__':
@@ -339,7 +333,7 @@ if __name__=='__main__':
         
         # Test helper 
         def flatmeanings(self, dictionary, what, prefersimptrad="simp"):
-            dictmeanings = dictionary.flatmeanings(what, prefersimptrad)
+            dictmeanings = combinemeaningsmws(*(dictionary.meanings(what, prefersimptrad)))
             if dictmeanings:
                 return self.flattenall(dictmeanings)
             else:

@@ -155,24 +155,33 @@ class FieldUpdater(object):
   
         # Preload the meaning, but only if we absolutely have to
         if self.config.needmeanings:
-            # Start by asking the built-in dictionary what the meaning should be
-            dictmeaningssource = None
-            if self.config.detectmeasurewords and "mw" in fact:
-                # Get measure words and meanings seperately
-                dictmeanings, dictmeasurewords = self.config.dictionary.meanings(expression, self.config.prefersimptrad)
-            else:
-                # Get meanings and measure words together in one list
-                dictmeanings = self.config.dictionary.flatmeanings(expression, self.config.prefersimptrad)
-                dictmeasurewords = None
+            dictmeaningssources = [
+                    # Interpret Hanzi as numbers
+                    (None,
+                     lambda: (None, None)),
+                    # Use CEDICT to get meanings
+                    (None,
+                     lambda: self.config.dictionary.meanings(expression, self.config.prefersimptrad))
+                ] + (self.config.shouldusegoogletranslate and [
+                    # If the dictionary can't answer our question, ask Google Translate.
+                    # If there is a long word followed by another word then this will be treated as a phrase.
+                    # Phrases are also queried using googletranslate rather than the local dictionary.
+                    # This helps deal with small dictionaries (for example French)
+                    ('<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
+                     lambda: (dictionaryonline.gTrans(expression, self.config.dictlanguage), None))
+                ] or [])
             
-            # If the dictionary can't answer our question, ask Google Translate.
-            # If there is a long word followed by another word then this will be treated as a phrase.
-            # Phrases are also queried using googletranslate rather than the local dictionary.
-            # This helps deal with small dictionaries (for example French)
-            if dictmeanings == None and dictmeasurewords == None and self.config.shouldusegoogletranslate:
-                dictmeanings = dictionaryonline.gTrans(expression, self.config.dictlanguage)
-                dictmeaningssource = '<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>'
-
+            # Find the first source that returns a sensible meaning
+            for dictmeaningssource, lookup in dictmeaningssources:
+                dictmeanings, dictmeasurewords = lookup()
+                if dictmeanings != None or dictmeasurewords != None:
+                    break
+            
+            # If the user wants the measure words to be folded into the definition or there
+            # is no MW field for us to split them out into, fold them in there
+            if not(self.config.detectmeasurewords) or "mw" not in fact:
+                dictmeanings, dictmeasurewords = dictionary.combinemeaningsmws(dictmeanings, dictmeasurewords), None
+            
             # NB: expression only used for Hanzi masking here
             meaning = self.generatemeanings(expression, dictmeanings)
             if meaning and dictmeaningssource:
