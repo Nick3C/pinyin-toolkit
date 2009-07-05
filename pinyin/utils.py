@@ -406,6 +406,15 @@ class FactoryDict(dict):
             self[key] = value
             return value
 
+"""
+Monadic bind in the Maybe monad (embedded into Python 'None's)
+"""
+def bind_none(mx, f):
+    if mx:
+        return f(mx)
+    else:
+        return None
+
 if __name__=='__main__':
     import unittest
     

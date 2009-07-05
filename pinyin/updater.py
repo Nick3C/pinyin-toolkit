@@ -8,6 +8,7 @@ import dictionary
 import dictionaryonline
 import media
 import meanings
+import numbers
 import pinyin
 import transformations
 import utils
@@ -156,12 +157,12 @@ class FieldUpdater(object):
         # Preload the meaning, but only if we absolutely have to
         if self.config.needmeanings:
             dictmeaningssources = [
-                    # Interpret Hanzi as numbers
-                    (None,
-                     lambda: (None, None)),
                     # Use CEDICT to get meanings
                     (None,
-                     lambda: self.config.dictionary.meanings(expression, self.config.prefersimptrad))
+                     lambda: self.config.dictionary.meanings(expression, self.config.prefersimptrad)),
+                    # Interpret Hanzi as numbers
+                    (None,
+                     lambda: (utils.bind_none(numbers.hanziasnumber(expression), lambda number: [[pinyin.Word(pinyin.Text(unicode(number)))]]), None))
                 ] + (self.config.shouldusegoogletranslate and [
                     # If the dictionary can't answer our question, ask Google Translate.
                     # If there is a long word followed by another word then this will be treated as a phrase.
@@ -319,6 +320,12 @@ if __name__ == "__main__":
                     tonedisplay = "tonified", meaningnumbering = "circledArabic", colormeaningnumbers = True, meaningnumberingcolor="#123456", meaningseperator = "custom", custommeaningseperator = " | ", prefersimptrad = "simp",
                     audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = True, hanzimaskingcharacter = "MASKED"), {
                         "meaning" : u'<span style="color:#123456">①</span> book | <span style="color:#123456">②</span> letter | <span style="color:#123456">③</span> same as <span style="color:#123456">MASKED</span><span style="color:#ff0000">\u7ecf</span> Book of History | <span style="color:#123456">④</span> MW: <span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
+                      })
+
+        def testMeaningNumbers(self):
+            self.assertEquals(
+                self.updatefact(u"九千零二十五", { "meaning" : "" }, meaninggeneration = True), {
+                        "meaning" : u'9025',
                       })
 
         def testUpdateReadingOnly(self):
