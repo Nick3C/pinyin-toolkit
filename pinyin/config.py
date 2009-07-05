@@ -25,6 +25,7 @@ defaultsettings = {
 
     "colorizedpinyingeneration"    : True, # Should we try and write readings and measure words that include colorized pinyin?
     "colorizedcharactergeneration" : True, # Should we try and fill out a field called Color with a colored version of the character?
+    "colorfromblackwhite"          : True, # Should we try to overwrite B&W pinyin with colored pinyin? 
     
     "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
     "readinggeneration"            : True, # Should we try and fill out a field called Reading with pinyin?

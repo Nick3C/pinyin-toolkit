@@ -34,8 +34,7 @@ class FieldUpdater(object):
     #
     
     def generatereading(self, dictreading):
-        # TODO: do we really want lower case here? If so, we should do it for colorized pinyin as well.
-        return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
+        return self.preparetokens(dictreading).lower() # consider use of pinyin lowercasing
     
     def generateaudio(self, dictreading):
         mediapacks = self.mediamanager.discovermediapacks()
@@ -125,6 +124,13 @@ class FieldUpdater(object):
         # Generate a list of links to online dictionaries, etc to query the expression
         return " ".join(['[<a href="' + urltemplate.replace("{searchTerms}", utils.urlescape(expression)) + '" title="' + tooltip + '">' + text + '</a>]' for text, tooltip, urltemplate in self.config.weblinks])
 
+    # strip a phrase of formatting and basic punctuation, reading for a comparsion with formatted strings
+    def stripdownpinyin( self, what ):
+        what = self.stripdown( what )               # remvoe formattng
+        return pinyin.flatten(what, tonify=True)   # tonify
+    def stripdown( self, what ):
+        return utils.striphtml(what)
+
     #
     # Core updater routine
     #
@@ -155,7 +161,11 @@ class FieldUpdater(object):
         expressionupdated=False    
         # Figure out the reading for the expression field, with sandhi considered
         dictreading = transformations.tonesandhi(self.config.dictionary.reading(expression))
-  
+
+        # preloud reading value (so it can be used in comparison with new value)
+        if (self.config.readinggeneration):
+            reading = self.generatereading(dictreading)
+
         # Preload the meaning, but only if we absolutely must
         if self.config.needmeanings:
             dictmeaningssources = [
@@ -216,7 +226,7 @@ class FieldUpdater(object):
         # added it to the updatecontrolflags dictionary in Config as well!
         updaters = {
                 'expression' : lambda: expression,
-                'reading'    : lambda: self.generatereading(dictreading),
+                'reading'    : lambda: reading,
                 'meaning'    : lambda: meaning,
                 'mw'         : lambda: self.generatemeasureword(dictmeasurewords),
                 'audio'      : lambda: self.generateaudio(dictreading),
@@ -228,18 +238,15 @@ class FieldUpdater(object):
 
         # Loop through each field, deciding whether to update it or not
         for key, updater in updaters.items():
-            # if there is no key or this option has been disabled then stop 
             if not (key in fact) or not (config.updatecontrolflags[key]):
-                continue
+                continue                      # if there is no key or this option has been disabled then stop early
+            elif (fact[key].strip() == u""):
+                enabled = True                # Turn on update if the field is empty
             else:
-                enabled = True
-                            
-            # Turn off the update if the field is not empty already (so we don't overwrite it)...
-            if (fact[key].strip() != u""):
-                enabled=False
+                enabled = False               # otherwise turn off updating if field has text
             
+            # Turn on the update again, even though field is not empty, if one of the rules below matches
             
-            # ... unless:
             # 1) this is the expression field      because it should be over-written with simp/trad)
             # 2) this is the weblinks field        because must always be up to date
             if (key == "expression") or (key=="weblinks"):
@@ -258,8 +265,8 @@ class FieldUpdater(object):
                 # the only 'safe' condition is when simp/trad don't match
 
             # 5) for the pinyin field, if colorfromblackwhite is turned on and the only change is formating
-            #if (key == "pinyin") and (self.config.colorfromblackwhite) and ( (stripdown(reading) ) == (stripdown(fact['reading']) ) ):
-            #    enabled = True
+            if (key == "reading") and (self.config.colorfromblackwhite) and ( ( self.stripdownpinyin(reading) ) == ( self.stripdownpinyin( fact['reading'] ) ) ):
+                enabled = True
 
 
 
@@ -267,12 +274,7 @@ class FieldUpdater(object):
             if (enabled): 
                 value = updater()
                 if value != None and value != fact[key]:
-                    fact[key] = value
-
-
-def stripdown(what):
-    return utils.striphtml(what)
-    
+                    fact[key] = value    
 
 if __name__ == "__main__":
     import copy
