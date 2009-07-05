@@ -120,7 +120,7 @@ class FieldUpdater(object):
             return expression
         else:
             # Conversion is stored in the first 'meaning'
-            return pinyin.flatten(meanings[0])
+            return pinyin.flatten(meanings[0]).strip()
     
     def weblinkgeneration(self, expression):
         # Generate a list of links to online dictionaries, etc to query the expression
@@ -151,9 +151,11 @@ class FieldUpdater(object):
             # this means blanking will occur if one measure word is there but not if two (so if user added any they are safe)
             if 'mw' in fact and len(fact['mw']) < 12: 
                 fact['mw'] = u""
-            return # give up after auto-blanking [removes minor delay]
+            
+            # TODO: Nick added this to give up after auto-blanking. He claims it removes a minor
+            # delay, but I'm not sure where the delay originates from, which worries me:
+            return
         
-        expressionupdated=False    
         # Figure out the reading for the expression field, with sandhi considered
         dictreadingsources = [
                 # Get the reading by considering the text as a (Western) number
@@ -218,15 +220,12 @@ class FieldUpdater(object):
 
         # Generate translations of the expression into simplified/traditional on-demand
         expressionviews = utils.FactoryDict(lambda simptrad: self.generateincharactersystem(expression, simptrad))
-        # If trad=simp then wipe them to prevent unwanted form-fill and unwanted card-generation
-        if expressionviews['simp']==expressionviews['trad']:
-            expressionviews['simp'] = u""
-            expressionviews['trad'] = u""
         
         # Update the expression is option is turned on and the preference simp/trad is different to expression (i.e. needs correcting)
-        if (self.config.forceexpressiontobesimptrad) and (expressionviews[self.config.prefersimptrad]) and (expressionviews[self.config.prefersimptrad].strip() != expression) and (expression != expressionviews[self.config.prefersimptrad]):
+        expressionupdated = False
+        if self.config.forceexpressiontobesimptrad and (expression != expressionviews[self.config.prefersimptrad]):
             expression = expressionviews[self.config.prefersimptrad]
-            expressionupdated=True
+            expressionupdated = True
 
         # Do the updates on the fields the user has requested:
         # NB: when adding an updater to this list, make sure that you have
@@ -238,58 +237,36 @@ class FieldUpdater(object):
                 'mw'         : lambda: self.generatemeasureword(dictmeasurewords),
                 'audio'      : lambda: self.generateaudio(dictreading),
                 'color'      : lambda: self.generatecoloredcharacters(expression),
-                'trad'       : lambda: expressionviews["trad"],
-                'simp'       : lambda: expressionviews["simp"],
+                'trad'       : lambda: (expressionviews["trad"] != expressionviews["simp"]) and expressionviews["trad"] or None,
+                'simp'       : lambda: (expressionviews["trad"] != expressionviews["simp"]) and expressionviews["simp"] or None,
                 'weblinks'   : lambda: self.weblinkgeneration(expression)
             }
 
         # Loop through each field, deciding whether to update it or not
         for key, updater in updaters.items():
-            # if there is no key or this option has been disabled then stop 
-            if not (key in fact) or not (config.updatecontrolflags[key]):
+            # If this option has been disabled or the field isn't present then jump to the next update.
+            # Expression is always updated because some parts of the code call updatefact with an expression
+            # that is not yet set on the fact, and we need to make sure that it arrives. This is OK, because
+            # we only actually modify a directly user-entered expression when forceexpressiontobesimptrad is on.
+            #
+            # NB: please do NOT do this if key isn't in updatecontrolflags, because that
+            # indicates an error with the Toolkit that I'd like to get an exception for!
+            if key not in fact or (config.updatecontrolflags[key] is not None and not self.config.settings[config.updatecontrolflags[key]] and key != "expression"):
                 continue
-            else:
-                enabled = True
-                            
-            # Turn off the update if the field is not empty already (so we don't overwrite it)...
-            if (fact[key].strip() != u""):
-                enabled=False
             
+            # If the field is not empty already then skip (so we don't overwrite it), unless:
+            # a) this is the expression field, which should always be over-written with simp/trad
+            # b) this is the weblinks field, which must always be up to date
+            # c) this is the color field and we have just forced the expression to change,
+            #    in which case we'd like to overwrite the colored characters regardless
+            if fact[key].strip() != u"" and (key != "expression") and (key != "weblinks") and (key != "color" or not(expressionupdated)): 
+                continue
             
-            # ... unless:
-            # 1) this is the expression field      because it should be over-written with simp/trad)
-            # 2) this is the weblinks field        because must always be up to date
-            if (key == "expression") or (key=="weblinks"):
-                enabled = True
-                
-            # 3) (this is the simp/trad field ) AND (there are no simp/trad meaning)
-            if ((key == "trad") and (expressionviews['trad']=="")) or ((key == "simp") and (expressionviews['simp']=="")):
-                enabled = True
-                # trad must not do this all the time or corrections can be lost
-                # the only 'safe' condition is where simp/trad ceases to be present in expression
+            # Fill the field with the new value
+            value = updater()
+            if value != None and value != fact[key]:
+                fact[key] = value
 
-            # 4) if this is the color field and expression has been updated / force over-written (i.e. simp/trad didn't match)
-            if (key == "color") and (expressionupdated):
-                enabled = True
-                # color must not do this all the time or tone can be lost.
-                # the only 'safe' condition is when simp/trad don't match
-
-            # 5) for the pinyin field, if colorfromblackwhite is turned on and the only change is formating
-            #if (key == "pinyin") and (self.config.colorfromblackwhite) and ( (stripdown(reading) ) == (stripdown(fact['reading']) ) ):
-            #    enabled = True
-
-
-
-            # If still enabled then fill the field with the new value
-            if (enabled): 
-                value = updater()
-                if value != None and value != fact[key]:
-                    fact[key] = value
-
-
-def stripdown(what):
-    return utils.striphtml(what)
-    
 
 if __name__ == "__main__":
     import copy
@@ -479,12 +456,32 @@ if __name__ == "__main__":
                         "trad" : u"個個"
                       })
 
+        def testUpdateSimplifiedTraditionalDoesNothingIfSimpTradIdentical(self):
+            self.assertEquals(
+                self.updatefact(u"鼠", { "simp" : "", "trad" : "" }, simpgeneration = True, tradgeneration = True), { "simp"  : u"", "trad" : u"" })
+
         def testOverwriteExpressionWithSimpTrad(self):
             self.assertEquals(self.updatefact(u"个個", { "expression" : "" }, forceexpressiontobesimptrad = True, prefersimptrad = "trad"),
                                                      { "expression"  : u"個個" })
 
             self.assertEquals(self.updatefact(u"个個", { "expression" : "" }, forceexpressiontobesimptrad = True, prefersimptrad = "simp"),
                                                      { "expression"  : u"个个" })
+
+        def testOverwriteExpressionWithSimpTradEvenWorksIfFieldFilled(self):
+            self.assertEquals(self.updatefact(u"个個", { "expression" : "I'm Filled!" }, forceexpressiontobesimptrad = True, prefersimptrad = "trad"),
+                                                     { "expression"  : u"個個" })
+
+        def testOverwriteExpressionWithSimpTradCausesColoredCharsToUpdateEvenIfFilled(self):
+            self.assertEquals(
+                self.updatefact(u"个個", { "expression" : "I'm Filled!", "color" : "dummy" },
+                                forceexpressiontobesimptrad = True, prefersimptrad = "trad", tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
+                                { "expression"  : u"個個", "color" : u'<span style="color:#444444">個</span><span style="color:#444444">個</span>' })
+
+        def testDontOverwriteFilledColoredCharactersIfSimpTradDoesntChange(self):
+            self.assertEquals(
+                self.updatefact(u"個個", { "expression" : "I'm Filled!", "color" : "dummy" },
+                                forceexpressiontobesimptrad = True, prefersimptrad = "trad", tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
+                                { "expression"  : u"個個", "color" : "dummy" })
 
         def testUpdateReadingAndColoredHanziAndAudioWithSandhi(self):
             self.assertEquals(
