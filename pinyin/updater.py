@@ -236,15 +236,23 @@ class FieldUpdater(object):
             if (fact[key].strip() != u""):
                 enabled=False
             
+            
             # ... unless:
-            # 1) this is the expression field                                          because it should be over-written with simp/trad)
-            # 2) this is the weblinks field                                            because must always be up to date
-            # 3) (this is the simp/trad field ) AND (there are no simp/trad meaning)   because control over this is needed only to correct many-to-one
-            #     note: color and simp/trad must not be generally excempt (it will break user-corrected tones and characters)
-            if (key == "expression") or (key=="weblinks") or ((key == "trad") and (expressionviews['trad']=="")) or ((key == "simp") and (expressionviews['simp']=="")):
+            # 1) this is the expression field      because it should be over-written with simp/trad)
+            # 2) this is the weblinks field        because must always be up to date
+            if (key == "expression") or (key=="weblinks"):
                 enabled = True
+                
+            # 3) (this is the simp/trad field ) AND (there are no simp/trad meaning)   because control over this is needed only to correct many-to-one
+            if ((key == "trad") and (expressionviews['trad']=="")) or ((key == "simp") and (expressionviews['simp']=="")):
+                enabled = True
+            # note: color and simp/trad must not be generally excempt (it will break user-corrected tones and characters)
+ 
+            # 4) for the pinyin field, if colorfromblackwhite is turned on and the only change is formating
+            #if (key == "pinyin") and (self.config.colorfromblackwhite) and ( (pinyin.strippinyin(reading) ) == (pinyin.strippinyin(fact['reading']) ) ):
+            #    enabled = True
 
-            # If still enabled then do update
+            # If still enabled then fill the field with the new value
             if (enabled): 
                 value = updater()
                 if value != None and value != fact[key]:
