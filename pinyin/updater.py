@@ -132,7 +132,7 @@ class FieldUpdater(object):
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
         if expression == None or expression.strip() == u"":
-            for key in ["reading", "meaning", "color", "trad", "simp"]:
+            for key in ["reading", "meaning", "color", "trad", "simp", "weblinks"]:
                 if key in fact:
                     fact[key] = u""
             
@@ -150,11 +150,12 @@ class FieldUpdater(object):
             # this means blanking will occur if one measure word is there but not if two (so if user added any they are safe)
             if 'mw' in fact and len(fact['mw']) < 12: 
                 fact['mw'] = u""
-    
+            return # give up after auto-blanking [removes minor delay]
+            
         # Figure out the reading for the expression field, with sandhi considered
         dictreading = transformations.tonesandhi(self.config.dictionary.reading(expression))
   
-        # Preload the meaning, but only if we absolutely have to
+        # Preload the meaning, but only if we absolutely must
         if self.config.needmeanings:
             dictmeaningssources = [
                     # Use CEDICT to get meanings
@@ -199,11 +200,15 @@ class FieldUpdater(object):
 
         # Generate translations of the expression into simplified/traditional on-demand
         expressionviews = utils.FactoryDict(lambda simptrad: self.generateincharactersystem(expression, simptrad))
+        # If trad=simp then wipe them to prevent unwanted form-fill and unwanted card-generation
+        if expressionviews['simp']==expressionviews['trad']:
+            expressionviews['simp'] = u""
+            expressionviews['trad'] = u""
         
         # New expression, if needed
-        if self.config.forceexpressiontobesimptrad:
+        if self.config.forceexpressiontobesimptrad and (expressionviews[self.config.prefersimptrad] and expressionviews[self.config.prefersimptrad].strip() != u""):
             expression = expressionviews[self.config.prefersimptrad]
-        
+
         # Do the updates on the fields the user has requested:
         # NB: when adding an updater to this list, make sure that you have
         # added it to the updatecontrolflags dictionary in Config as well!
@@ -218,24 +223,32 @@ class FieldUpdater(object):
                 'simp'       : lambda: expressionviews["simp"],
                 'weblinks'   : lambda: self.weblinkgeneration(expression)
             }
-        
+
+        # Loop through each field, deciding whether to update it or not
         for key, updater in updaters.items():
-            # Find out whether we should actually be doing the update or not
-            controlflag = config.updatecontrolflags[key]
-            if controlflag:
-                enabled = self.config.settings[controlflag]
+            # if there is no key or this option has been disabled then stop 
+            if not (key in fact) or not (config.updatecontrolflags[key]):
+                continue
             else:
                 enabled = True
+                            
+            # Turn off the update if the field is not empty already (so we don't overwrite it)...
+            if (fact[key].strip() != u""):
+                enabled=False
             
-            # Skip updating if no suitable field, we are disabled, or the field has text.
-            # NB: we always want to update the weblinks field, if it is present and enabled.
-            if not(key in fact) or not(enabled) or (fact[key].strip() != u"" and key != "weblinks"):
-                continue
+            # ... unless:
+            # 1) this is the expression field                                          because it should be over-written with simp/trad)
+            # 2) this is the weblinks field                                            because must always be up to date
+            # 3) (this is the simp/trad field ) AND (there are no simp/trad meaning)   because control over this is needed only to correct many-to-one
+            #     note: color and simp/trad must not be generally excempt (it will break user-corrected tones and characters)
+            if (key == "expression") or (key=="weblinks") or ((key == "trad") and (expressionviews['trad']=="")) or ((key == "simp") and (expressionviews['simp']=="")):
+                enabled = True
 
-            # Update the value in that field
-            value = updater()
-            if value != None and value != fact[key]:
-                fact[key] = value
+            # If still enabled then do update
+            if (enabled): 
+                value = updater()
+                if value != None and value != fact[key]:
+                    fact[key] = value
 
 
 if __name__ == "__main__":
