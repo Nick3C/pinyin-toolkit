@@ -68,6 +68,54 @@ def numberashanzi(n):
     
     return hanzi
 
+# Takes Chinese characters and attempts to convert them into an integer
+def hanziasnumber(hanzi):
+    # Utility for digit parsing
+    def parsedigit(hanzi):
+        for digit, digittext in enumerate(digits):
+            if hanzi.startswith(digittext):
+                return digit, hanzi.lstrip(digittext)
+        
+        return None, hanzi
+    
+    # Special case for the irregular 'liang'
+    if hanzi == u"两":
+        return 2
+    
+    # Main loop that parses the numeric text from the left
+    number = 0
+    for power, powertext in reversed(magnitudes):
+        # Start off by trying to parse a digit
+        digit, candidatehanzi = parsedigit(hanzi)
+        if digit is None:
+            if power == 0:
+                # Musn't make assumption about leading digit if we're on
+                # the final magnitude, or we might get an extra 1
+                continue
+            else:
+                # Assume the leading digit is 1 if we couldn't find one
+                digit = 1
+        
+        # Zeroes tend to act as filler between things which really
+        # contribute to the number. NB: also deals with ling by itself
+        if digit == 0:
+            hanzi = candidatehanzi
+            continue
+        
+        # If the remaining stuff doesn't look like a power, move on to
+        # the next order of magnitude to give that a chance
+        if not(candidatehanzi.startswith(powertext)):
+            continue
+        
+        # Starts with a power, so we can accumulate the resulting stuff
+        hanzi = candidatehanzi.lstrip(powertext)
+        number += digit * pow(10, power)
+    
+    # If we have anything left then what we were parsing didn't look like a number
+    if hanzi != u"":
+        return None
+    
+    return number
 
 if __name__=='__main__':
     import unittest
@@ -100,5 +148,38 @@ if __name__=='__main__':
             self.assertEquals(numberashanzi(9025), u"九千零二十五")
             self.assertEquals(numberashanzi(9020), u"九千零二十")
             self.assertEquals(numberashanzi(9005), u"九千零五")
+    
+    class HanziAsNumberTest(unittest.TestCase):
+        def testSingleNumerals(self):
+            self.assertEquals(hanziasnumber(u"零"), 0)
+            self.assertEquals(hanziasnumber(u"五"), 5)
+            self.assertEquals(hanziasnumber(u"九"), 9)
+        
+        def testLiang(self):
+            self.assertEquals(hanziasnumber(u"两"), 2)
+        
+        def testFullNumbers(self):
+            self.assertEquals(hanziasnumber(u"二十五"), 25)
+            self.assertEquals(hanziasnumber(u"八千九百二十一"), 8921)
+        
+        def testTruncationOfLowerUnits(self):
+            self.assertEquals(hanziasnumber(u"二十"), 20)
+            self.assertEquals(hanziasnumber(u"九千"), 9000)
+            self.assertEquals(hanziasnumber(u"九千一百"), 9100)
+
+        def testSkippedOnes(self):
+            self.assertEquals(hanziasnumber(u"一"), 1)
+            self.assertEquals(hanziasnumber(u"十"), 10)
+            self.assertEquals(hanziasnumber(u"百"), 100)
+            self.assertEquals(hanziasnumber(u"一千"), 1000)
+
+        def testSkippedMagnitudes(self):
+            self.assertEquals(hanziasnumber(u"九千零二十五"), 9025)
+            self.assertEquals(hanziasnumber(u"九千零二十"), 9020)
+            self.assertEquals(hanziasnumber(u"九千零五"), 9005)
+        
+        def testNonNumber(self):
+            self.assertEquals(hanziasnumber(u"个"), None)
+            self.assertEquals(hanziasnumber(u"一个"), None)
     
     unittest.main()
