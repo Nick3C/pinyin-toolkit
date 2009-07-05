@@ -29,32 +29,6 @@ class FieldUpdater(object):
         return pinyin.flatten(tokens, tonify=self.config.shouldtonify)
     
     #
-    # Media discovery
-    #
-    
-    # def discoverlegacymedia(self):
-    #         # NB: we used to do this when initialising the toolkit, but that dosen't work,
-    #         # for the simple reason that if you change deck the media should change, but
-    #         # we can't hook that event
-    #         
-    #         # I can ask Damien for a hook if you like. He has been very good with these sort of things in the past.
-    #         
-    #         # Discover all the files in the media directory
-    #         mediaDir = self.mw.deck.mediaDir()
-    #         if mediaDir:
-    #             try:
-    #                 mediadircontents = os.listdir(mediaDir)
-    #             except IOError:
-    #                 log.exception("Error while listing media directory")
-    #                 mediadircontents = None
-    #         else:
-    #             log.info("The media directory was either not present or not accessible")
-    #             mediadircontents = None
-    #         
-    #         # Finally, find any legacy media in that directory. TODO: use this method for something
-    #         return media.discoverlegacymedia(mediadircontents, self.mw.deck.s.all("select originalPath, filename from media"))
-    
-    #
     # Generation
     #
     
