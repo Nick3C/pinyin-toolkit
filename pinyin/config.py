@@ -27,6 +27,7 @@ defaultsettings = {
     "colorizedcharactergeneration" : True, # Should we try and fill out a field called Color with a colored version of the character?
     
     "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
+    "readinggeneration"            : True, # Should we try and fill out a field called Reading with pinyin?
     
     "meaninggeneration"            : True, # Should we try and fill out a field called Meaning with the definition? 
     "fallbackongoogletranslate"    : True, # Should we use Google to fill out the Meaning field if needs be? 
@@ -140,8 +141,8 @@ defaultsettings = {
   }
 
 updatecontrolflags = {
-    'expression' : None,
-    'reading'    : None,
+    'expression' : "forceexpressiontobesimptrad",
+    'reading'    : "readinggeneration",
     'meaning'    : "meaninggeneration",
     'mw'         : "detectmeasurewords",
     'audio'      : "audiogeneration",
