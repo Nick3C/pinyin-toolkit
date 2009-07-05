@@ -161,7 +161,7 @@ def parsehanziasnumber(hanzi):
 # TODO: currency support?
 # TODO: the Western and Chinese parsers are substantially the same. Perhaps more code could be shared.
 
-def parsewesternnumberlike(expression, integerhandler, decimalhandler, yearhandler):
+def parsewesternnumberlike(expression, integerhandler, decimalhandler, yearhandler, percenthandler, fractionhandler):
     # Every numberlike form starts with some leading digits
     leadingdigits, expression = parsemany(parsedigit)(expression)
     expression = expression.strip()
@@ -188,11 +188,23 @@ def parsewesternnumberlike(expression, integerhandler, decimalhandler, yearhandl
     elif expression == u"年":
         # Followed by a nian, return as a year
         return yearhandler(leadingdigits)
+    elif expression == u"%":
+        # Followed by a percentage symbol, return as a percentage
+        return percenthandler(leadingdigits)
+    elif expression.startswith(u"/") or expression.startswith(u"\\"):
+        # Followed by a slash, so could be a fraction
+        trailingdigits, expression = parsemany(parsedigit)(expression[1:])
+        if len(trailingdigits) == 0 or expression.strip() != u"":
+            # Something after the trailing digits that we don't understand
+            # or we didn't get any digits after the slash at all
+            return None
+        
+        return fractionhandler(leadingdigits, trailingdigits)
     else:
         # Unknown suffix, we have to give up for sanity
         return None
 
-def parsechinesenumberlike(expression, integerhandler, decimalhandler, yearhandler):
+def parsechinesenumberlike(expression, integerhandler, decimalhandler, yearhandler, percenthandler, fractionhandler):
     # Every numberilke form starts with some leading digits
     leadingnumber, trailingexpression = parsehanziasnumber(expression)
     leadingwesterndigits = list(str(leadingnumber))
@@ -216,6 +228,21 @@ def parsechinesenumberlike(expression, integerhandler, decimalhandler, yearhandl
     if trailingexpression == u"":
         # No suffix, return as a straight number
         return integerhandler(leadingwesterndigits)
+    elif trailingexpression.startswith(u"分之"):
+        # A fraction! Get the numerator
+        trailingnumber, trailingexpression = parsehanziasnumber(trailingexpression[len(u"分之"):])
+        trailingwesterndigits = list(str(trailingnumber))
+    
+        # Bail out if that didn't consume the whole input
+        if trailingexpression.strip() != u"":
+            return None
+    
+        if leadingnumber == 100:
+            # Divisions out of 100 should be treated as percentages
+            return percenthandler(trailingwesterndigits)
+        else:
+            # Otherwise treat as a straight fraction
+            return fractionhandler(trailingwesterndigits, leadingwesterndigits)
     else:
         # Unknown suffix. We probably have to give up, but we MIGHT have had a year:
         leadingwesterndigits, trailingexpression = parsemany(parsehanzidigit)(expression)
@@ -234,14 +261,18 @@ def readingfromnumberlike(expression, dictionary):
     return parsewesternnumberlike(expression,
             lambda digits: dictionary.reading(numberashanzi(intify(digits))),
             lambda leadingdigits, trailingdigits: dictionary.reading(numberashanzi(intify(leadingdigits)) + u"点" + "".join([numberashanzi(int(digit)) for digit in trailingdigits])),
-            lambda digits: dictionary.reading("".join([numberashanzi(int(digit)) for digit in digits]) + u"年"))
+            lambda digits: dictionary.reading("".join([numberashanzi(int(digit)) for digit in digits]) + u"年"),
+            lambda digits: dictionary.reading(u"百分之" + numberashanzi(intify(digits))),
+            lambda numdigits, denomdigits: dictionary.reading(numberashanzi(intify(denomdigits)) + u"分之" + numberashanzi(intify(numdigits))))
 
 def meaningfromnumberlike(expression, dictionary):
     stringify = lambda digits: u"".join([unicode(digit) for digit in digits])
     handlers = [
         lambda digits: stringify(digits),
         lambda leadingdigits, trailingdigits: stringify(leadingdigits) + "." + stringify(trailingdigits),
-        lambda digits: stringify(digits) + "AD"
+        lambda digits: stringify(digits) + "AD",
+        lambda digits: stringify(digits) + "%",
+        lambda numdigits, denomdigits: stringify(numdigits) + "/" + stringify(denomdigits)
       ]
     
     # Generates a meaning from approximately Western expressions (almost useless, but does handle nian suffix)
@@ -269,17 +300,28 @@ if __name__=='__main__':
         def testYearReading(self):
             self.assertReading("yi1 jiu3 jiu3 ba1 nian2", u"1998年")
         
+        def testPercentageReading(self):
+            self.assertReading("bai3 fen1 zhi1 qi1 shi2", u"70%")
+        
+        def testFractionReading(self):
+            self.assertReading("san1 fen1 zhi1 yi1", "1/3")
+            self.assertReading("san1 fen1 zhi1 yi1", "1\\3")
+        
         def testNoReadingForPhrase(self):
             self.assertReading(None, u"你好")
         
         def testNoReadingForBlank(self):
             self.assertReading(None, u"")
             self.assertReading(None, u"24.")
+            self.assertReading(None, u"24/")
         
         def testNoReadingsIfTrailingStuff(self):
             self.assertReading(None, u"8921A")
             self.assertReading(None, u"25.25A")
             self.assertReading(None, u"1998年A")
+            self.assertReading(None, u"80%A")
+            self.assertReading(None, u"1/3A")
+            self.assertReading(None, u"1\3A")
         
         # Test helpers
         def assertReading(self, expected_reading, expression):
@@ -298,6 +340,12 @@ if __name__=='__main__':
             self.assertMeaning("1998AD", u"1998年")
             self.assertMeaning("1998AD", u"一九九八年")
         
+        def testPercentageReading(self):
+            self.assertMeaning("20%", u"百分之二十")
+        
+        def testFractionReading(self):
+            self.assertMeaning("1/3", u"三分之一")
+        
         def testNoMeaningForPhrase(self):
             self.assertMeaning(None, u"你好")
         
@@ -312,6 +360,11 @@ if __name__=='__main__':
             self.assertMeaning(None, u"二十五点二五A")
             self.assertMeaning(None, u"1998年A")
             self.assertMeaning(None, u"一九九八年A")
+            self.assertMeaning(None, u"100%A")
+            self.assertMeaning(None, u"百分之二十A")
+            self.assertMeaning(None, u"1/3A")
+            self.assertMeaning(None, u"1\3A")
+            self.assertMeaning(None, u"三分之一A")
         
         # Test helpers
         def assertMeaning(self, expected_meaning, expression):
