@@ -34,8 +34,9 @@ class FieldUpdater(object):
     #
     
     def generatereading(self, dictreading):
+        # Put pinyin into lowercase before anything else is done to it
         # TODO: do we really want lower case here? If so, we should do it for colorized pinyin as well.
-        return self.preparetokens(dictreading).lower() # Put pinyin into lowercase before anything else is done to it
+        return self.preparetokens(dictreading).lower()
     
     def generateaudio(self, dictreading):
         mediapacks = self.mediamanager.discovermediapacks()
@@ -152,7 +153,22 @@ class FieldUpdater(object):
                 fact['mw'] = u""
     
         # Figure out the reading for the expression field, with sandhi considered
-        dictreading = transformations.tonesandhi(self.config.dictionary.reading(expression))
+        dictreadingsources = [
+                # Get the reading by considering the text as a number
+                lambda: None,
+                # Use CEDICT to get reading (always succeeds)
+                lambda: self.config.dictionary.reading(expression)
+            ]
+        
+        # Find the first source that returns a sensible reading
+        for lookup in dictreadingsources:
+            dictreading = lookup()
+            if dictreading != None:
+                break
+  
+        # Apply tone sandhi: this information is needed both by the sound generation
+        # and the colorisation, so we can't do it in generatereading
+        dictreading = transformations.tonesandhi(dictreading)
   
         # Preload the meaning, but only if we absolutely have to
         if self.config.needmeanings:
