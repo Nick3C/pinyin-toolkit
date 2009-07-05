@@ -151,7 +151,8 @@ class FieldUpdater(object):
             if 'mw' in fact and len(fact['mw']) < 12: 
                 fact['mw'] = u""
             return # give up after auto-blanking [removes minor delay]
-            
+        
+        expressionupdated=False    
         # Figure out the reading for the expression field, with sandhi considered
         dictreading = transformations.tonesandhi(self.config.dictionary.reading(expression))
   
@@ -205,9 +206,10 @@ class FieldUpdater(object):
             expressionviews['simp'] = u""
             expressionviews['trad'] = u""
         
-        # New expression, if needed
-        if self.config.forceexpressiontobesimptrad and (expressionviews[self.config.prefersimptrad] and expressionviews[self.config.prefersimptrad].strip() != u""):
+        # Update the expression is option is turned on and the preference simp/trad is different to expression (i.e. needs correcting)
+        if (self.config.forceexpressiontobesimptrad) and (expressionviews[self.config.prefersimptrad]) and (expressionviews[self.config.prefersimptrad].strip() != expression) and (expression != expressionviews[self.config.prefersimptrad]):
             expression = expressionviews[self.config.prefersimptrad]
+            expressionupdated=True
 
         # Do the updates on the fields the user has requested:
         # NB: when adding an updater to this list, make sure that you have
@@ -243,14 +245,23 @@ class FieldUpdater(object):
             if (key == "expression") or (key=="weblinks"):
                 enabled = True
                 
-            # 3) (this is the simp/trad field ) AND (there are no simp/trad meaning)   because control over this is needed only to correct many-to-one
+            # 3) (this is the simp/trad field ) AND (there are no simp/trad meaning)
             if ((key == "trad") and (expressionviews['trad']=="")) or ((key == "simp") and (expressionviews['simp']=="")):
                 enabled = True
-            # note: color and simp/trad must not be generally excempt (it will break user-corrected tones and characters)
- 
-            # 4) for the pinyin field, if colorfromblackwhite is turned on and the only change is formating
-            #if (key == "pinyin") and (self.config.colorfromblackwhite) and ( (pinyin.strippinyin(reading) ) == (pinyin.strippinyin(fact['reading']) ) ):
+                # trad must not do this all the time or corrections can be lost
+                # the only 'safe' condition is where simp/trad ceases to be present in expression
+
+            # 4) if this is the color field and expression has been updated / force over-written (i.e. simp/trad didn't match)
+            if (key == "color") and (expressionupdated):
+                enabled = True
+                # color must not do this all the time or tone can be lost.
+                # the only 'safe' condition is when simp/trad don't match
+
+            # 5) for the pinyin field, if colorfromblackwhite is turned on and the only change is formating
+            #if (key == "pinyin") and (self.config.colorfromblackwhite) and ( (stripdown(reading) ) == (stripdown(fact['reading']) ) ):
             #    enabled = True
+
+
 
             # If still enabled then fill the field with the new value
             if (enabled): 
@@ -258,6 +269,10 @@ class FieldUpdater(object):
                 if value != None and value != fact[key]:
                     fact[key] = value
 
+
+def stripdown(what):
+    return utils.striphtml(what)
+    
 
 if __name__ == "__main__":
     import copy
