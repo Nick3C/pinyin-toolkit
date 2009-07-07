@@ -7,6 +7,17 @@ import unicodedata
 from logger import log
 import utils
 
+# Generally helpful pinyin utilities
+
+# Map tones to Unicode combining diacritical marks
+# <http://en.wikipedia.org/wiki/Combining_diacritical_mark>
+tonecombiningmarks = [
+    u'\u0304', # Macron
+    u'\u0301', # Acute
+    u'\u030C', # Caron
+    u'\u0300', # Grave
+    u''        # Blank - 5th tone is trivial
+]
 
 def substituteForUUmlaut(inwhat):
     return inwhat.replace(u"u:", u"ü").replace(u"U:", u"ü".upper()) \
@@ -126,7 +137,8 @@ class Pinyin(object):
         return PinyinTonifier().tonify(self.numericformat(hideneutraltone=False))
 
     """
-    Constructs a Pinyin object from text representing a single character and numeric tone mark.
+    Constructs a Pinyin object from text representing a single character and numeric tone mark
+    or an embedded tone mark on one of the letters.
     
     >>> Pinyin.parse("hen3")
     hen3
@@ -134,21 +146,40 @@ class Pinyin(object):
     @classmethod
     def parse(cls, text):
         # Normalise u: and v: into umlauted version:
+        # NB: might think about doing lower() here, as some dictionary words have upper case (e.g. proper names)
         text = substituteForUUmlaut(text)
         
-        # Length check (yes, you can get 7 character pinyin, such as zhuang1)
-        if len(text) < 2 or len(text) > 7:
-            raise ValueError("The text '%s' was not the right length to be Pinyin - should be in the range 2 to 7 characters" % text)
+        # Seperate combining marks (NFD = Normal Form Decomposed)
+        text = unicodedata.normalize('NFD', text)
         
-        # Extract the tone number, ensuring that the thing at the end of the string is actually a number
-        try:
-            toneinfo = ToneInfo(written=int(text[-1:]))
-        except ValueError:
-            raise ValueError("The text '%s' didn't end with a valid tone number" % text)
+        # Length check (yes, you can get 7 character pinyin, such as zhuang1.
+        # If the u had an umlaut then it would be 8 'characters')
+        if len(text) < 2 or len(text) > 8:
+            raise ValueError(u"The text '%s' was not the right length to be Pinyin - should be in the range 2 to 7 characters" % text)
         
-        # Find the word. NB: might think about doing lower() here, as some dictionary words have upper case (e.g. proper names)
-        word = text[:-1]
+        # Does it look like we have a non-tonified string?
+        if text[-1].isdigit():
+            # Extract the tone number directly
+            toneinfo = ToneInfo(written=int(text[-1]))
+            word = text[:-1]
+        else:
+            # Remove the combining mark to get the tone
+            toneinfo, word = None, text
+            for n, tonecombiningmark in enumerate(tonecombiningmarks):
+                if tonecombiningmark != "" and tonecombiningmark in text:
+                    # Two marks on the same string is an error
+                    if toneinfo != None:
+                        raise ValueError(u"Too many combining tone marks on the input pinyin '%s'" % text)
+                    
+                    # Record the corresponding tone and remove the combining mark
+                    toneinfo = ToneInfo(written=n+1)
+                    word = word.replace(tonecombiningmark, "")
+            
+            # No combining mark? Fall back on the unmarked 5th tone
+            if toneinfo == None:
+                toneinfo = ToneInfo(written=5)
         
+        # We now have a word and tone info, whichever route we took
         return Pinyin(word, toneinfo)
 
 """
@@ -377,15 +408,6 @@ class PinyinTonifier(object):
         u'([oO])([uU])([1234])'   : ur'\g<1>\g<3>\g<2>'
     }
 
-    # map tones to Unicode combining diacritical marks <http://en.wikipedia.org/wiki/Combining_diacritical_mark>
-    tone2Unicode = {
-        u'1':u'\u0304', # Macron
-        u'2':u'\u0301', # Acute
-        u'3':u'\u030C', # Caron
-        u'4':u'\u0300', # Grave
-        u'5':u''
-    }
-
     """
     Convert pinyin text with tone numbers to pinyin with diacritical marks
     over the appropriate vowel.
@@ -410,8 +432,8 @@ class PinyinTonifier(object):
             line = re.sub(x, y, line)
 
         # Third transform: map tones to the Unicode equivalent
-        for (x,y) in self.tone2Unicode.items():
-            line = line.replace(x, y)
+        for (x,y) in enumerate(tonecombiningmarks):
+            line = line.replace(str(x + 1), y)
 
         # Turn combining marks into real characters - saves us doing this in all the test (Python
         # unicode string comparison does not appear to normalise!! Very bad!)
@@ -500,6 +522,19 @@ if __name__ == "__main__":
             self.assertEquals(Pinyin.parse("nU:3"), Pinyin.parse(u"nÜ3"))
             self.assertEquals(Pinyin.parse("nv3"), Pinyin.parse(u"nü3"))
             self.assertEquals(Pinyin.parse("nV3"), Pinyin.parse(u"nÜ3"))
+        
+        def testParseTonified(self):
+            self.assertEquals(Pinyin.parse("chi1"), Pinyin.parse(u"chī"))
+            self.assertEquals(Pinyin.parse("shi2"), Pinyin.parse(u"shí"))
+            self.assertEquals(Pinyin.parse("xiao3"), Pinyin.parse(u"xiǎo"))
+            self.assertEquals(Pinyin.parse("dan4"), Pinyin.parse(u"dàn"))
+            self.assertEquals(Pinyin.parse("huan"), Pinyin.parse(u"huan"))
+        
+        def testRejectsPinyinWithMultipleToneMarks(self):
+            self.assertRaises(ValueError, lambda: Pinyin.parse(u"xíǎo"))
+        
+        def testRejectsSingleNumbers(self):
+            self.assertRaises(ValueError, lambda: Pinyin.parse(u"1"))
     
     class TextTest(unittest.TestCase):
         def testNonEmpty(self):
