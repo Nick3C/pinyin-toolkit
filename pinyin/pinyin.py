@@ -149,11 +149,8 @@ class Pinyin(object):
         # NB: might think about doing lower() here, as some dictionary words have upper case (e.g. proper names)
         text = substituteForUUmlaut(text)
         
-        # Seperate combining marks (NFD = Normal Form Decomposed)
-        text = unicodedata.normalize('NFD', text)
-        
         # Length check (yes, you can get 7 character pinyin, such as zhuang1.
-        # If the u had an umlaut then it would be 8 'characters')
+        # If the u had an umlaut then it would be 8 'characters' to Python)
         if len(text) < 2 or len(text) > 8:
             raise ValueError(u"The text '%s' was not the right length to be Pinyin - should be in the range 2 to 7 characters" % text)
         
@@ -166,6 +163,10 @@ class Pinyin(object):
             # Whoops. Should have been numeric but wasn't!
             raise ValueError("No tone mark present on purportely-numeric pinyin '%s'" % text)
         else:
+            # Seperate combining marks (NFD = Normal Form Decomposed) so it
+            # is easy to spot the combining marks
+            text = unicodedata.normalize('NFD', text)
+            
             # Remove the combining mark to get the tone
             toneinfo, word = None, text
             for n, tonecombiningmark in enumerate(tonecombiningmarks):
@@ -181,6 +182,9 @@ class Pinyin(object):
             # No combining mark? Fall back on the unmarked 5th tone
             if toneinfo == None:
                 toneinfo = ToneInfo(written=5)
+            
+            # Recombine for consistency of comparisons in the application (everything else assumes NFC)
+            word = unicodedata.normalize('NFC', word)
         
         # We now have a word and tone info, whichever route we took
         return Pinyin(word, toneinfo)
@@ -532,6 +536,10 @@ if __name__ == "__main__":
             self.assertEquals(Pinyin.parse("xiao3"), Pinyin.parse(u"xiǎo"))
             self.assertEquals(Pinyin.parse("dan4"), Pinyin.parse(u"dàn"))
             self.assertEquals(Pinyin.parse("huan"), Pinyin.parse(u"huan"))
+        
+        def testParseRespectsOtherCombiningMarks(self):
+            self.assertEquals(u"hüan", unicode(Pinyin.parse(u"hüan5")))
+            self.assertEquals(u"hüan", unicode(Pinyin.parse(u"hüan")))
         
         def testParseForceNumeric(self):
             Pinyin.parse("chi")
