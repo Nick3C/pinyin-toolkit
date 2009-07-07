@@ -188,7 +188,7 @@ def parsewesternnumberlike(expression, integerhandler, decimalhandler, yearhandl
     elif expression == u"年":
         # Followed by a nian, return as a year
         return yearhandler(leadingdigits)
-    elif expression == u"%":
+    elif expression in [u"%", u"％"]:
         # Followed by a percentage symbol, return as a percentage
         return percenthandler(leadingdigits)
     elif expression.startswith(u"/") or expression.startswith(u"\\"):
@@ -302,6 +302,7 @@ if __name__=='__main__':
         
         def testPercentageReading(self):
             self.assertReading("bai3 fen1 zhi1 qi1 shi2", u"70%")
+            self.assertReading("bai3 fen1 zhi1 qi1 shi2", u"70％")
         
         def testFractionReading(self):
             self.assertReading("san1 fen1 zhi1 yi1", "1/3")
@@ -320,6 +321,7 @@ if __name__=='__main__':
             self.assertReading(None, u"25.25A")
             self.assertReading(None, u"1998年A")
             self.assertReading(None, u"80%A")
+            self.assertReading(None, u"80％A")
             self.assertReading(None, u"1/3A")
             self.assertReading(None, u"1\3A")
         
