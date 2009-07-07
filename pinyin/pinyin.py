@@ -234,7 +234,7 @@ class TokenVisitor(object):
 Turns a space-seperated string of pinyin and English into a list of tokens,
 as best we can.
 """
-def tokenize(text):
+def tokenizespaceseperated(text):
     # Read the pinyin into the array: 
     return [tokenizeone(possible_token) for possible_token in text.split()]
 
@@ -643,18 +643,18 @@ if __name__ == "__main__":
             self.assertFalse(TonedCharacter(u"化", 2).iser)
             self.assertFalse(TonedCharacter(u"儿", 4).iser)
 
-    class TokenizeTest(unittest.TestCase):
+    class TokenizeSpaceSeperatedTest(unittest.TestCase):
         def testFromSingleSpacedString(self):
-            self.assertEquals([Pinyin.parse(u"hen3")], tokenize(u"hen3"))
+            self.assertEquals([Pinyin.parse(u"hen3")], tokenizespaceseperated(u"hen3"))
 
         def testFromMultipleSpacedString(self):
-            self.assertEquals([Pinyin.parse(u"hen3"), Pinyin.parse(u"hao3")], tokenize(u"hen3 hao3"))
+            self.assertEquals([Pinyin.parse(u"hen3"), Pinyin.parse(u"hao3")], tokenizespaceseperated(u"hen3 hao3"))
 
         def testFromSpacedStringWithEnglish(self):
-            self.assertEquals([Text(u"T"), Pinyin.parse(u"xu4")], tokenize(u"T xu4"))
+            self.assertEquals([Text(u"T"), Pinyin.parse(u"xu4")], tokenizespaceseperated(u"T xu4"))
 
         def testFromSpacedStringWithPinyinlikeEnglish(self):
-            self.assertEquals([Text(u"USB"), Pinyin.parse(u"xu4")], tokenize(u"USB xu4"))
+            self.assertEquals([Text(u"USB"), Pinyin.parse(u"xu4")], tokenizespaceseperated(u"USB xu4"))
 
     class PinyinTonifierTest(unittest.TestCase):
         def testEasy(self):

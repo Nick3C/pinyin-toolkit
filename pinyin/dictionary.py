@@ -80,7 +80,7 @@ class PinyinDictionary(object):
                 raw_definition = m.group(5)
                 
                 # Parse readings
-                pinyintokens = tokenize(raw_pinyin)
+                pinyintokens = tokenizespaceseperated(raw_pinyin)
                 
                 # Save meanings and readings
                 for characters in [lcharacters, rcharacters]:
