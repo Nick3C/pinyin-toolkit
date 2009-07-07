@@ -95,6 +95,10 @@ class Text(unicode):
 Represents a single Pinyin character in the system.
 """
 class Pinyin(object):
+    # From http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108. Should match all valid pinyin
+    # while excluding most invalid pinyin.
+    validpinyin = re.compile(u"(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)(?:i(?:ao|[uae])?|u(?:ai|[iaeo])?|üe?))|(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)|')?(?:a[oi]?|ei?|ou?)))(?:(?:ng|n|er)(?![aeo]))?", re.IGNORECASE)
+    
     def __init__(self, word, toneinfo):
         self.word = word
         
@@ -185,6 +189,11 @@ class Pinyin(object):
             
             # Recombine for consistency of comparisons in the application (everything else assumes NFC)
             word = unicodedata.normalize('NFC', word)
+            
+            # Sanity check to catch English/French/whatever that doesn't look like pinyin
+            match = cls.validpinyin.match(word)
+            if match is None or match.end() < len(word):
+                raise ValueError(u"The proposed pinyin '%s' doesn't look like pinyin after all" % text)
         
         # We now have a word and tone info, whichever route we took
         return Pinyin(word, toneinfo)
@@ -240,15 +249,34 @@ as best we can.
 """
 def tokenizespaceseperated(text):
     # Read the pinyin into the array: 
-    return [tokenizeone(possible_token) for possible_token in text.split()]
+    return [tokenizeone(possible_token, forcenumeric=True) for possible_token in text.split()]
 
-def tokenizeone(possible_token):
+def tokenizeone(possible_token, forcenumeric=False):
     # Sometimes the pinyin field in CEDICT contains english (e.g. in the pinyin for 'T shirt')
     # so we better handle that by returning it as a Text token.
     try:
-        return Pinyin.parse(possible_token, forcenumeric=True)
+        return Pinyin.parse(possible_token, forcenumeric=forcenumeric)
     except ValueError:
         return Text(possible_token)
+
+"""
+Turns an arbitrary string containing pinyin into a sequence of tokens. Does its best
+to seperate pinyin out from normal text, but no guarantees!
+"""
+def tokenize(text):
+    # To recognise pinyin amongst the rest of the text, for now just look for maximal
+    # sequences of alphanumeric characters as defined by Unicode. This should catch
+    # the pinyin, its tone marks, tone numbers (if any) and allow umlauts.
+    tokens = []
+    for recognised, match in utils.regexparse(re.compile(u"\w+", re.UNICODE), text):
+        if recognised:
+            tokens.append(tokenizeone(match.group(0)))
+        else:
+            tokens.append(Text(match))
+    
+    # TODO: could be much smarter about segmentation here. For example, we could use the
+    # pinyin regex to split up run on groups of pinyin-like characters.
+    return tokens
 
 """
 Represents a word boundary in the system, where the tokens inside represent a complete Chinese word.
@@ -538,8 +566,8 @@ if __name__ == "__main__":
             self.assertEquals(Pinyin.parse("huan"), Pinyin.parse(u"huan"))
         
         def testParseRespectsOtherCombiningMarks(self):
-            self.assertEquals(u"hüan", unicode(Pinyin.parse(u"hüan5")))
-            self.assertEquals(u"hüan", unicode(Pinyin.parse(u"hüan")))
+            self.assertEquals(u"nü", unicode(Pinyin.parse(u"nü5")))
+            self.assertEquals(u"nü", unicode(Pinyin.parse(u"nü")))
         
         def testParseForceNumeric(self):
             Pinyin.parse("chi")
@@ -550,6 +578,9 @@ if __name__ == "__main__":
         
         def testRejectsSingleNumbers(self):
             self.assertRaises(ValueError, lambda: Pinyin.parse(u"1"))
+        
+        def testRejectsPinyinlikeEnglish(self):
+            self.assertRaises(ValueError, lambda: Pinyin.parse("USB"))
     
     class TextTest(unittest.TestCase):
         def testNonEmpty(self):
@@ -663,6 +694,13 @@ if __name__ == "__main__":
 
         def testFromSpacedStringWithPinyinlikeEnglish(self):
             self.assertEquals([Text(u"USB"), Pinyin.parse(u"xu4")], tokenizespaceseperated(u"USB xu4"))
+
+    class TokenizeTest(unittest.TestCase):
+        def testTokenizeSimple(self):
+            self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3")], tokenize(u"hen3 hao3"))
+            self.assertEquals([Pinyin.parse(u"hen3"), Text(","), Pinyin.parse(u"hao3")], tokenize(u"hen3,hao3"))
+            self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3"), Text(", "), Text("my"), Text(" "), Text("small"), Text(" "), Text("one"), Text("!")],
+                              tokenize(u"hen3 hao3, my small one!"))
 
     class PinyinTonifierTest(unittest.TestCase):
         def testEasy(self):

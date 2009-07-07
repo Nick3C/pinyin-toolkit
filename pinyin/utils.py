@@ -200,8 +200,7 @@ def regexparse(regex, text):
                 i = match.end()
         else:
             # Yield the text up until the end
-            if i != len(text) - 1:
-                yield (False, text[i:])
+            yield (False, text[i:])
             return
 
 """
@@ -536,6 +535,10 @@ if __name__=='__main__':
         def testParseEmpty(self):
             self.assertEquals(self.parse(re.compile(""), "abc"),
                               [(True, ""), (False, "a"), (True, ""), (False, "b"), (True, ""), (False, "c")])
+        
+        def testParseNeedStuffAtEnd(self):
+            self.assertEquals(self.parse(re.compile("foo"), "foo foo, foo!"),
+                              [(True, "foo"), (False, " "), (True, "foo"), (False, ", "), (True, "foo"), (False, "!")])
         
         # Test helpers
         def parse(self, re, text):
