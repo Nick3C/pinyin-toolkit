@@ -144,7 +144,7 @@ class Pinyin(object):
     hen3
     """
     @classmethod
-    def parse(cls, text):
+    def parse(cls, text, forcenumeric=False):
         # Normalise u: and v: into umlauted version:
         # NB: might think about doing lower() here, as some dictionary words have upper case (e.g. proper names)
         text = substituteForUUmlaut(text)
@@ -162,6 +162,9 @@ class Pinyin(object):
             # Extract the tone number directly
             toneinfo = ToneInfo(written=int(text[-1]))
             word = text[:-1]
+        elif forcenumeric:
+            # Whoops. Should have been numeric but wasn't!
+            raise ValueError("No tone mark present on purportely-numeric pinyin '%s'" % text)
         else:
             # Remove the combining mark to get the tone
             toneinfo, word = None, text
@@ -232,16 +235,16 @@ Turns a space-seperated string of pinyin and English into a list of tokens,
 as best we can.
 """
 def tokenize(text):
-    # Read the pinyin into the array: sometimes this field contains
-    # english (e.g. in the pinyin for 'T shirt') so we better handle that
-    tokens = []
-    for possible_token in text.split():
-        try:
-            tokens.append(Pinyin.parse(possible_token))
-        except ValueError:
-            tokens.append(Text(possible_token))
+    # Read the pinyin into the array: 
+    return [tokenizeone(possible_token) for possible_token in text.split()]
 
-    return tokens
+def tokenizeone(possible_token):
+    # Sometimes the pinyin field in CEDICT contains english (e.g. in the pinyin for 'T shirt')
+    # so we better handle that by returning it as a Text token.
+    try:
+        return Pinyin.parse(possible_token, forcenumeric=True)
+    except ValueError:
+        return Text(possible_token)
 
 """
 Represents a word boundary in the system, where the tokens inside represent a complete Chinese word.
@@ -530,6 +533,10 @@ if __name__ == "__main__":
             self.assertEquals(Pinyin.parse("dan4"), Pinyin.parse(u"dàn"))
             self.assertEquals(Pinyin.parse("huan"), Pinyin.parse(u"huan"))
         
+        def testParseForceNumeric(self):
+            Pinyin.parse("chi")
+            self.assertRaises(ValueError, lambda: Pinyin.parse("chi", forcenumeric=True))
+        
         def testRejectsPinyinWithMultipleToneMarks(self):
             self.assertRaises(ValueError, lambda: Pinyin.parse(u"xíǎo"))
         
@@ -645,6 +652,9 @@ if __name__ == "__main__":
 
         def testFromSpacedStringWithEnglish(self):
             self.assertEquals([Text(u"T"), Pinyin.parse(u"xu4")], tokenize(u"T xu4"))
+
+        def testFromSpacedStringWithPinyinlikeEnglish(self):
+            self.assertEquals([Text(u"USB"), Pinyin.parse(u"xu4")], tokenize(u"USB xu4"))
 
     class PinyinTonifierTest(unittest.TestCase):
         def testEasy(self):
