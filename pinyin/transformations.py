@@ -229,12 +229,13 @@ class PinyinAudioReadingsVisitor(TokenVisitor):
     def visitPinyin(self, pinyin):
         # Find possible base sounds we could accept
         possiblebases = [pinyin.numericformat(hideneutraltone=False, tone="spoken")]
+        substitutions = waysToSubstituteAwayUUmlaut(pinyin.word)
         if pinyin.toneinfo.spoken == 5:
             # Sometimes we can replace tone 5 with 4 in order to deal with lack of '[xx]5.ogg's
             possiblebases.extend([pinyin.word, pinyin.word + '4'])
-        elif u"u:" in pinyin.word:
+        elif substitutions is not None:
             # Typically u: is written as v in filenames
-            possiblebases.append(pinyin.word.replace(u"u:", u"v") + str(pinyin.toneinfo.spoken))
+            possiblebases.extend([substitution + str(pinyin.toneinfo.spoken) for substitution in substitutions])
     
         # Find path to first suitable media in the possibilty list
         for possiblebase in possiblebases:
@@ -358,8 +359,8 @@ if __name__=='__main__':
             self.assertHasReading(u"吗", ["ma4.mp3"], raw_available_media=["ma4.mp3"])
         
         def testNv(self):
-            self.assertHasReading(u"女", ["nu:3.mp3"], raw_available_media=["nv3.mp3", "nu:3.mp3", "nu3.mp3"])
-            self.assertHasReading(u"女", ["nv3.mp3"], raw_available_media=["nu3.mp3", "nv3.mp3"])
+            self.assertHasReading(u"女", ["nu:3.mp3"], raw_available_media=["nu:3.mp3", "nu3.mp3"])
+            self.assertHasReading(u"女", ["nv3.mp3"], raw_available_media=["nu3.mp3", "nu:3.mp3", "nv3.mp3"])
             self.assertMediaMissing(u"女", raw_available_media=["nu3.mp3"])
             
         def testLv(self):

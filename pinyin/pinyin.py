@@ -8,6 +8,21 @@ from logger import log
 import utils
 
 
+def substituteForUUmlaut(inwhat):
+    return inwhat.replace(u"u:", u"ü").replace(u"U:", u"ü".upper()) \
+                 .replace(u"v", u"ü").replace(u"V", u"ü".upper())
+
+def waysToSubstituteAwayUUmlaut(inwhat):
+    strategy1 = inwhat.replace(u"ü", u"v").replace(u"Ü", u"V")
+    strategy2 = inwhat.replace(u"ü", u"u:").replace(u"Ü", u"U:")
+    
+    if strategy1 == strategy2:
+        # Equal strategies, so the initial string doesn't contain ü
+        return None
+    else:
+        # It makes a difference!
+        return [strategy1, strategy2]
+
 # The basic data model is as follows:
 #  * Text is represented as lists of Words
 #  * Words contain lists of Tokens
@@ -118,7 +133,8 @@ class Pinyin(object):
     """
     @classmethod
     def parse(cls, text):
-        # Normalise u: and v into umlauted version
+        # Normalise u: and v: into umlauted version:
+        text = substituteForUUmlaut(text)
         
         # Length check (yes, you can get 7 character pinyin, such as zhuang1)
         if len(text) < 2 or len(text) > 7:
@@ -384,9 +400,6 @@ class PinyinTonifier(object):
     def tonify(self, line):
         assert type(line)==unicode
         
-        # Zeroth transform: rewrite u: and v to version with umlaut (TODO: do this in Pinyin class?)
-        line = line.replace(u"u:", u"ü").replace(u"U:", u"Ü").replace(u"v", u"ü").replace(u"V:", u"Ü")
-        
         # First transform: commute tone numbers over finals containing only constants
         for (x,y) in self.constTone2ToneConst.items():
             line = re.sub(x, y, line)
@@ -481,6 +494,12 @@ if __name__ == "__main__":
         
         def testParseLong(self):
             self.assertEquals(Pinyin.parse("zhuang1"), Pinyin("zhuang", 1))
+        
+        def testParseNormalisesUmlaut(self):
+            self.assertEquals(Pinyin.parse("nu:3"), Pinyin.parse(u"nü3"))
+            self.assertEquals(Pinyin.parse("nU:3"), Pinyin.parse(u"nÜ3"))
+            self.assertEquals(Pinyin.parse("nv3"), Pinyin.parse(u"nü3"))
+            self.assertEquals(Pinyin.parse("nV3"), Pinyin.parse(u"nÜ3"))
     
     class TextTest(unittest.TestCase):
         def testNonEmpty(self):
