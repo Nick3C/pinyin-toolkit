@@ -244,6 +244,9 @@ class FieldUpdater(object):
 
         # Loop through each field, deciding whether to update it or not
         for key, updater in updaters.items():
+            # A hint for reading this method: read the stuff inside the if not(...):
+            # as an assertion that has to be valid before we can proceed with the update.
+            
             # If this option has been disabled or the field isn't present then jump to the next update.
             # Expression is always updated because some parts of the code call updatefact with an expression
             # that is not yet set on the fact, and we need to make sure that it arrives. This is OK, because
@@ -251,7 +254,7 @@ class FieldUpdater(object):
             #
             # NB: please do NOT do this if key isn't in updatecontrolflags, because that
             # indicates an error with the Toolkit that I'd like to get an exception for!
-            if key not in fact or (config.updatecontrolflags[key] is not None and not self.config.settings[config.updatecontrolflags[key]] and key != "expression"):
+            if not(key in fact and (key == "expression" or config.updatecontrolflags[key] is None or self.config.settings[config.updatecontrolflags[key]])):
                 continue
             
             # If the field is not empty already then skip (so we don't overwrite it), unless:
@@ -259,10 +262,10 @@ class FieldUpdater(object):
             # b) this is the weblinks field, which must always be up to date
             # c) this is the color field and we have just forced the expression to change,
             #    in which case we'd like to overwrite the colored characters regardless
-            if fact[key].strip() != u"" and (key != "expression") and (key != "weblinks") and (key != "color" or not(expressionupdated)): 
+            if not(fact[key].strip() == u"" or key in ["expression", "weblinks"] or (key == "color" and expressionupdated)):
                 continue
             
-            # Fill the field with the new value
+            # Fill the field with the new value, but only if we have one and it is necessary to do so
             value = updater()
             if value != None and value != fact[key]:
                 fact[key] = value
