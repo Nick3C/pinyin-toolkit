@@ -50,6 +50,12 @@ def persistconfig(mw, config):
     # configuration is updated with the new value whenever we modify the config.
     mw.config["pinyintoolkit"] = config.settings
 
+def suitableFacts(modelTag, deck):
+    for model in deck.models:
+        if anki.utils.findTag(modelTag, model.tags):
+            for fact in deck.s.query(anki.facts.Fact).filter('modelId = %s' % model.id):
+                yield fact
+
 if __name__ == "__main__":
     import unittest
     

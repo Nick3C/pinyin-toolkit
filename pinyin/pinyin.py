@@ -62,7 +62,7 @@ class ToneInfo(object):
         self.spoken = spoken or written
 
     def __repr__(self):
-        return "ToneInfo(written=%s, spoken=%s)" % (repr(self.written), repr(self.spoken))
+        return u"ToneInfo(written=%s, spoken=%s)" % (repr(self.written), repr(self.spoken))
     
     def __eq__(self, other):
         if other is None:
@@ -86,7 +86,7 @@ class Text(unicode):
     iser = property(lambda self: False)
 
     def __repr__(self):
-        return "Text(%s)" % unicode.__repr__(self)
+        return u"Text(%s)" % unicode.__repr__(self)
 
     def accept(self, visitor):
         return visitor.visitText(self)
@@ -95,9 +95,10 @@ class Text(unicode):
 Represents a single Pinyin character in the system.
 """
 class Pinyin(object):
-    # From http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108. Should match all valid pinyin
-    # while excluding most invalid pinyin.
-    validpinyin = re.compile(u"(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)(?:i(?:ao|[uae])?|u(?:ai|[iaeo])?|üe?))|(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)|')?(?:a[oi]?|ei?|ou?)))(?:(?:ng|n|er)(?![aeo]))?", re.IGNORECASE)
+    # From <http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108>. Should match all valid pinyin
+    # while excluding most invalid pinyin. Compared to his blogpost, this has the fix for 'er' pinyin,
+    # and can additionally deal with 'r', which crops up in CEDICT for erhua.
+    validpinyin = re.compile(u"(?:(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)(?:i(?:ao|[uae])?|u(?:ai|[iaeo])?|üe?))|(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)|')?(?:a[oi]?|ei?|ou?)))(?:(?:ng|n|r)(?![aeo]))?)|r", re.IGNORECASE + re.UNICODE)
     
     def __init__(self, word, toneinfo):
         self.word = word
@@ -117,7 +118,7 @@ class Pinyin(object):
         return self.numericformat(hideneutraltone=True)
     
     def __repr__(self):
-        return "Pinyin(%s, %s)" % (repr(self.word), repr(self.toneinfo))
+        return u"Pinyin(%s, %s)" % (repr(self.word), repr(self.toneinfo))
     
     def __eq__(self, other):
         if other == None:
@@ -165,7 +166,7 @@ class Pinyin(object):
             word = text[:-1]
         elif forcenumeric:
             # Whoops. Should have been numeric but wasn't!
-            raise ValueError("No tone mark present on purportely-numeric pinyin '%s'" % text)
+            raise ValueError(u"No tone mark present on purportely-numeric pinyin '%s'" % text)
         else:
             # Seperate combining marks (NFD = Normal Form Decomposed) so it
             # is easy to spot the combining marks
@@ -189,11 +190,11 @@ class Pinyin(object):
             
             # Recombine for consistency of comparisons in the application (everything else assumes NFC)
             word = unicodedata.normalize('NFC', word)
-            
-            # Sanity check to catch English/French/whatever that doesn't look like pinyin
-            match = cls.validpinyin.match(word)
-            if match is None or match.end() < len(word):
-                raise ValueError(u"The proposed pinyin '%s' doesn't look like pinyin after all" % text)
+        
+        # Sanity check to catch English/French/whatever that doesn't look like pinyin
+        match = cls.validpinyin.match(word)
+        if match is None or match.end() < len(word):
+            raise ValueError(u"The proposed pinyin '%s' doesn't look like pinyin after all" % text)
         
         # We now have a word and tone info, whichever route we took
         return Pinyin(word, toneinfo)
@@ -273,6 +274,8 @@ def tokenize(text):
             tokens.append(tokenizeone(match.group(0)))
         else:
             tokens.append(Text(match))
+    
+    # TODO: for robustness, we should explicitly parse around HTML tags
     
     # TODO: could be much smarter about segmentation here. For example, we could use the
     # pinyin regex to split up run on groups of pinyin-like characters.
@@ -546,6 +549,10 @@ if __name__ == "__main__":
             self.assertEquals(Pinyin.parse("ma4"), Pinyin("ma", 4))
             self.assertEquals(Pinyin.parse("ma5"), Pinyin("ma", 5))
         
+        def testParseAdditions(self):
+            self.assertEquals(Pinyin.parse("er5"), Pinyin("er", 5))
+            self.assertEquals(Pinyin.parse("r2"), Pinyin("r", 2))
+        
         def testParseShort(self):
             self.assertEquals(Pinyin.parse("a1"), Pinyin("a", 1))
         
@@ -573,11 +580,17 @@ if __name__ == "__main__":
             Pinyin.parse("chi")
             self.assertRaises(ValueError, lambda: Pinyin.parse("chi", forcenumeric=True))
         
+        def testParseUnicode(self):
+            self.assertEquals(repr(Pinyin.parse(u"nü3")), u"Pinyin(u'n\\xfc', ToneInfo(written=3, spoken=3))")
+        
         def testRejectsPinyinWithMultipleToneMarks(self):
             self.assertRaises(ValueError, lambda: Pinyin.parse(u"xíǎo"))
         
         def testRejectsSingleNumbers(self):
             self.assertRaises(ValueError, lambda: Pinyin.parse(u"1"))
+        
+        def testRejectsNumbers(self):
+            self.assertRaises(ValueError, lambda: Pinyin.parse(u"12345"))
         
         def testRejectsPinyinlikeEnglish(self):
             self.assertRaises(ValueError, lambda: Pinyin.parse("USB"))
@@ -645,13 +658,13 @@ if __name__ == "__main__":
                     return Text("MEH")
                 
                 def visitPinyin(self, pinyin):
-                    return Pinyin.parse("meh3")
+                    return Pinyin.parse("hai3")
                 
                 def visitTonedCharacter(self, tonedcharacter):
                     return TonedCharacter("M", 2)
             
             self.assertEqual(Word(Text("Hi"), Pinyin.parse("hen3"), TonedCharacter("a", 2), Text("Bye")).map(Visitor()),
-                             Word(Text("MEH"), Pinyin.parse("meh3"), TonedCharacter("M", 2), Text("MEH")))
+                             Word(Text("MEH"), Pinyin.parse("hai3"), TonedCharacter("M", 2), Text("MEH")))
         
         def testConcatMap(self):
             class Visitor(object):
@@ -699,8 +712,14 @@ if __name__ == "__main__":
         def testTokenizeSimple(self):
             self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3")], tokenize(u"hen3 hao3"))
             self.assertEquals([Pinyin.parse(u"hen3"), Text(","), Pinyin.parse(u"hao3")], tokenize(u"hen3,hao3"))
-            self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3"), Text(", "), Text("my"), Text(" "), Text("small"), Text(" "), Text("one"), Text("!")],
-                              tokenize(u"hen3 hao3, my small one!"))
+            self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3"), Text(", "), Text("my"), Text(" "), Pinyin.parse(u"xiǎo"), Text(" "), Text("one"), Text("!")],
+                              tokenize(u"hen3 hao3, my xiǎo one!"))
+        
+        def testTokenizeHTML(self):
+            self.assertEquals([Text(u'<'), Text(u'span'), Text(u' '), Text(u'style'), Text(u'="'), Text(u'color'), Text(u':#'), Text(u'123456'), Text(u'">'),
+                               Pinyin(u'tou', ToneInfo(written=2, spoken=2)), Text(u'</'), Text(u'span'), Text(u'> <'), Text(u'span'), Text(u' '), Text(u'style'),
+                               Text(u'="'), Text(u'color'), Text(u':#'), Text(u'123456'), Text(u'">'), Pinyin(u'er', ToneInfo(written=4, spoken=4)), Text(u'</'), Text(u'span'), Text(u'>')],
+                               tokenize(u'<span style="color:#123456">tou2</span> <span style="color:#123456">er4</span>'))
 
     class PinyinTonifierTest(unittest.TestCase):
         def testEasy(self):
