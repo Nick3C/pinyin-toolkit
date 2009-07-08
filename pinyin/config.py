@@ -42,7 +42,9 @@ defaultsettings = {
     "forceexpressiontobesimptrad"  : False, # Should we try to replace the contents of the Expression field with the preferred character set?
                                             # This ensure, for example, they your simplified deck only has simplified in the Expression field
                                             # note: the setting "prefersimptrad" controls what is populated into the Expression field
-                                               
+    
+    "forcereadingtobeformatted"    : True,  # Should we try and update the reading with a colored, appropriately tonified variant?
+    
     # Unimplemented flags (for dev purposes)
     "posgeneration"                : True, # Should we try to generate the POS (part of Speech) from dictionaries?
     "enablefeedback"               : True, # Should support for submitting entries to CEDICT, etc be turned on?

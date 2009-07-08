@@ -16,18 +16,30 @@ import re
 
 from logger import log
 
+def preparetokens(config, tokens):
+    if config.colorizedpinyingeneration:
+        tokens = transformations.colorize(config.tonecolors, tokens)
+
+    return pinyin.flatten(tokens, tonify=config.shouldtonify)
+
+class FieldUpdaterFromReading(object):
+    def __init__(self, config):
+        self.config = config
+    
+    def updatefact(self, fact, reading):
+        # Don't bother if the appropriate configuration option is off or update will fail
+        if not(self.config.forcereadingtobeformatted) or 'reading' not in fact:
+            return
+        
+        # First order of business: identify probable pinyin in the user's freeform input,
+        # reformat it according to the current rules, and pop the result back into the field
+        fact['reading'] = preparetokens(self.config, [pinyin.Word(*pinyin.tokenize(reading))])
 
 class FieldUpdaterFromExpression(object):
     def __init__(self, notifier, mediamanager, config):
         self.notifier = notifier
         self.mediamanager = mediamanager
         self.config = config
-    
-    def preparetokens(self, tokens):
-        if self.config.colorizedpinyingeneration:
-            tokens = transformations.colorize(self.config.tonecolors, tokens)
-    
-        return pinyin.flatten(tokens, tonify=self.config.shouldtonify)
     
     #
     # Generation
@@ -36,7 +48,7 @@ class FieldUpdaterFromExpression(object):
     def generatereading(self, dictreading):
         # Put pinyin into lowercase before anything else is done to it
         # TODO: do we really want lower case here? If so, we should do it for colorized pinyin as well.
-        return self.preparetokens(dictreading).lower()
+        return preparetokens(self.config, dictreading).lower()
     
     def generateaudio(self, dictreading):
         mediapacks = self.mediamanager.discovermediapacks()
@@ -72,7 +84,7 @@ class FieldUpdaterFromExpression(object):
             dictmeanings = [transformations.maskhanzi(expression, self.config.formathanzimaskingcharacter(), dictmeaning) for dictmeaning in dictmeanings]
 
         # Prepare all the meanings by flattening them and removing empty entries
-        meanings = [meaning for meaning in [self.preparetokens(dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
+        meanings = [meaning for meaning in [preparetokens(self.config, dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
         
         if len(meanings) == 0:
             # After flattening and stripping, we didn't get any meanings: don't update the field
@@ -87,7 +99,7 @@ class FieldUpdaterFromExpression(object):
             return None
         
         # Just use the first measure word meaning, if there was more than one
-        return self.preparetokens(dictmeasurewords[0])
+        return preparetokens(self.config, dictmeasurewords[0])
     
     def generatecoloredcharacters(self, expression):
         return pinyin.flatten(transformations.colorize(self.config.tonecolors, transformations.tonesandhi(self.config.dictionary.tonedchars(expression))))
@@ -282,7 +294,33 @@ if __name__ == "__main__":
     # Shared dictionary
     englishdict = Thunk(lambda: dictionary.PinyinDictionary.load("en"))
     
-    class FieldUpdaterTest(unittest.TestCase):
+    class FieldUpdaterFromReadingTest(unittest.TestCase):
+        def testDoesntDoAnythingWhenDisabled(self):
+            self.assertEquals(self.updatefact(u"hen3 hǎo", { "reading" : "", "expression" : "junk" }, forcereadingtobeformatted = False),
+                              { "reading" : "", "expression" : "junk" })
+        
+        def testWorksIfReadingFieldMissing(self):
+            self.assertEquals(self.updatefact(u"hen3 hǎo", { "expression" : "junk" }, forcereadingtobeformatted = True),
+                              { "expression" : "junk" })
+
+        def testLeavesOtherFieldsAlone(self):
+            self.assertEquals(self.updatefact(u"", { "reading" : "junk", "expression" : "junk" }, forcereadingtobeformatted = True),
+                              { "reading" : u"", "expression" : "junk" })
+
+        def testReformatsAccordingToConfig(self):
+            self.assertEquals(
+                self.updatefact(u"hen3 hǎo", { "reading" : "junky" },
+                    forcereadingtobeformatted = True, tonedisplay = "tonified",
+                    colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
+                    { "reading" : u'<span style="color:#333333">hěn</span> <span style="color:#333333">hǎo</span>' })
+        
+        # Test helpers
+        def updatefact(self, reading, fact, **kwargs):
+            factclone = copy.deepcopy(fact)
+            FieldUpdaterFromReading(config.Config(kwargs)).updatefact(factclone, reading)
+            return factclone
+    
+    class FieldUpdaterFromExpressionTest(unittest.TestCase):
         def testAutoBlanking(self):
             self.assertEquals(self.updatefact(u"", { "reading" : "blather", "meaning" : "junk", "color" : "yes!", "trad" : "meh", "simp" : "yay" }),
                               { "reading" : "", "meaning" : "", "color" : "", "trad" : "", "simp" : "" })
