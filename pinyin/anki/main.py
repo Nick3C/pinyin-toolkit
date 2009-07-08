@@ -14,6 +14,9 @@ import utils
 
 import statsandgraphs
 
+hookbuilders = hooks.hookbuilders + [
+    statsandgraphs.HanziGraphHook
+  ]
 
 class PinyinToolkit(object):
     def __init__(self, mw):
@@ -41,7 +44,6 @@ class PinyinToolkit(object):
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
-        hookbuilders = [hooks.PreferencesHook, hooks.FocusHook, hooks.MissingInformationHook, hooks.ColorShortcutKeysHook, statsandgraphs.HanziGraphHook, hooks.HelpHook]
         self.hooks = [hookbuilder(self.mw, thenotifier, themediamanager, config, updaterfromexpr) for hookbuilder in hookbuilders]
     
     def installhooks(self):

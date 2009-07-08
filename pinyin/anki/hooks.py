@@ -14,7 +14,6 @@ import pinyin.utils
 
 import utils
 
-
 class Hook(object):
     def __init__(self, mw, notifier, mediamanager, config, updater):
         self.mw = mw
@@ -23,7 +22,7 @@ class Hook(object):
         self.config = config
         self.updaterfromexpr = updater
 
-class FocusHook(Hook):
+class ExpressionFocusHook(Hook):
     def onFocusLost(self, fact, field):
         log.info("User moved focus from the field %s", field.name)
         
@@ -171,3 +170,15 @@ class MissingInformationHook(MenuHook):
     
         # DEBUG consider future feature to add missing measure words cards after doing so (not now)
         self.notifier.info("All missing information has been successfully added to your deck.")
+
+# NB: this must go at the end of the file, after all the definitions are in scope
+hookbuilders = [
+    # Focus hooks
+    ExpressionFocusHook,
+    # Keybord hooks
+    ColorShortcutKeysHook,
+    # Menu hooks
+    HelpHook,
+    PreferencesHook,
+    MissingInformationHook
+  ]
