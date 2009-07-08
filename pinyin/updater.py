@@ -17,7 +17,7 @@ import re
 from logger import log
 
 
-class FieldUpdater(object):
+class FieldUpdaterFromExpression(object):
     def __init__(self, notifier, mediamanager, config):
         self.notifier = notifier
         self.mediamanager = mediamanager
@@ -513,7 +513,7 @@ if __name__ == "__main__":
             mediamanager = MockMediaManager(mediapacks)
             
             factclone = copy.deepcopy(fact)
-            FieldUpdater(notifier, mediamanager, config.Config(utils.updated({ "dictlanguage" : "en" }, kwargs))).updatefact(factclone, expression)
+            FieldUpdaterFromExpression(notifier, mediamanager, config.Config(utils.updated({ "dictlanguage" : "en" }, kwargs))).updatefact(factclone, expression)
             
             return notifier.infos, factclone
     

@@ -37,12 +37,12 @@ class PinyinToolkit(object):
         themediamanager = mediamanager.AnkiMediaManager(self.mw)
         
         # Build the updater
-        updater = pinyin.updater.FieldUpdater(thenotifier, themediamanager, config)
+        updaterfromexpr = pinyin.updater.FieldUpdaterFromExpression(thenotifier, themediamanager, config)
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
         hookbuilders = [hooks.PreferencesHook, hooks.FocusHook, hooks.MissingInformationHook, hooks.ColorShortcutKeysHook, statsandgraphs.HanziGraphHook, hooks.HelpHook]
-        self.hooks = [hookbuilder(self.mw, thenotifier, themediamanager, config, updater) for hookbuilder in hookbuilders]
+        self.hooks = [hookbuilder(self.mw, thenotifier, themediamanager, config, updaterfromexpr) for hookbuilder in hookbuilders]
     
     def installhooks(self):
         # Install all hooks

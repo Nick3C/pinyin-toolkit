@@ -34,7 +34,7 @@ class PreferencesController(object):
         # Set up an updater we will use to deal with the live preview, based off the current model
         # NB: use NullNotifier instead of the one we are passed because we don't want e.g. popups about
         # installing sound packs if we are just doing the live preview!
-        self.updater = pinyin.updater.FieldUpdater(pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager(previewmedia), self.model)
+        self.updaterfromexpr = pinyin.updater.FieldUpdaterFromExpression(pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager(previewmedia), self.model)
         
         # Set up the controls - one time only
         self.mappings = []
@@ -209,7 +209,7 @@ class PreferencesController(object):
     def updateViewPreview(self):
         # Update a blank fact using the current model configuration
         fact = dict([(key, u"") for key in self.model.candidateFieldNamesByKey.keys()])
-        self.updater.updatefact(fact, previewexpression)
+        self.updaterfromexpr.updatefact(fact, previewexpression)
         
         # Done: give the named values to the view to update it
         self.view.updateFields(fact)
