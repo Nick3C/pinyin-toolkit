@@ -10,6 +10,26 @@ import utils
 # hanzi representing integers and Python integers
 #
 
+def skipcommas(whenparsingwhat):
+    skips = [",", u"，"]
+    
+    def inner(text):
+        # We want to keep stripping stuff until we can't any longer
+        skipped = True
+        while skipped:
+            skipped = False
+            for skip in skips:
+                if text.startswith(skip):
+                    # Able to skip: trim and go around for another round
+                    text = text[len(skip):]
+                    skipped = True
+                    break
+        
+        # Stripped as much as possible, try the inner parser now
+        return whenparsingwhat(text)
+    
+    return inner
+
 def parsemany(ofwhat):
     def inner(text):
         things = []
@@ -28,7 +48,7 @@ def parsedigit(text):
     else:
         return None, text
 
-parsedigits = lambda text: "".join(parsemany(parsedigit)(text))
+parsedigitswithcommas = lambda text: parsemany(skipcommas(parsedigit))(text)
 
 digits = [u"零", u"一", u"二", u"三", u"四", u"五", u"六", u"七", u"八", u"九"]
 
@@ -163,7 +183,7 @@ def parsehanziasnumber(hanzi):
 
 def parsewesternnumberlike(expression, integerhandler, decimalhandler, yearhandler, percenthandler, fractionhandler):
     # Every numberlike form starts with some leading digits
-    leadingdigits, expression = parsemany(parsedigit)(expression)
+    leadingdigits, expression = parsedigitswithcommas(expression)
     expression = expression.strip()
     
     # Ensure we managed to get at least some digits
@@ -193,7 +213,7 @@ def parsewesternnumberlike(expression, integerhandler, decimalhandler, yearhandl
         return percenthandler(leadingdigits)
     elif expression.startswith(u"/") or expression.startswith(u"\\"):
         # Followed by a slash, so could be a fraction
-        trailingdigits, expression = parsemany(parsedigit)(expression[1:])
+        trailingdigits, expression = parsedigitswithcommas(expression[1:])
         if len(trailingdigits) == 0 or expression.strip() != u"":
             # Something after the trailing digits that we don't understand
             # or we didn't get any digits after the slash at all
@@ -293,20 +313,29 @@ if __name__=='__main__':
     class ReadingFromNumberlikeTest(unittest.TestCase):
         def testIntegerReading(self):
             self.assertReading("ba1 qian1 jiu3 bai3 er4 shi2 yi1", "8921")
+            self.assertReading("ba1 qian1 jiu3 bai3 er4 shi2 yi1", "8,921")
+            self.assertReading("san1 qian1 wan4 si4 bai3 wan4 san1 shi2 wan4 er4 wan4 si4 qian1 si4 bai3 san1 shi2 er4", "34,324,432")
         
         def testDecimalReading(self):
             self.assertReading("er4 shi2 wu3 dian3 er4 wu3", "25.25")
+            self.assertReading("yi1 qian1 dian3 jiu3", "1,000.9")
+            self.assertReading(None, "25.253,2")
         
         def testYearReading(self):
             self.assertReading("yi1 jiu3 jiu3 ba1 nian2", u"1998年")
+            # This is not a very valid way of writing a year, but it's extra work to disallow it so what the hell
+            self.assertReading("yi1 jiu3 jiu3 ba1 nian2", u"1,998年")
         
         def testPercentageReading(self):
             self.assertReading("bai3 fen1 zhi1 qi1 shi2", u"70%")
             self.assertReading("bai3 fen1 zhi1 qi1 shi2", u"70％")
+            self.assertReading("bai3 fen1 zhi1 yi1 qian1", u"1000%")
+            self.assertReading("bai3 fen1 zhi1 yi1 qian1", u"1,000%")
         
         def testFractionReading(self):
             self.assertReading("san1 fen1 zhi1 yi1", "1/3")
             self.assertReading("san1 fen1 zhi1 yi1", "1\\3")
+            self.assertReading("san1 qian1 fen1 zhi1 yi1 qian1", "1,000/3,000")
         
         def testNoReadingForPhrase(self):
             self.assertReading(None, u"你好")
@@ -318,12 +347,17 @@ if __name__=='__main__':
         
         def testNoReadingsIfTrailingStuff(self):
             self.assertReading(None, u"8921A")
+            self.assertReading(None, u"8,921A")
             self.assertReading(None, u"25.25A")
+            self.assertReading(None, u"1,000.9A")
             self.assertReading(None, u"1998年A")
             self.assertReading(None, u"80%A")
             self.assertReading(None, u"80％A")
+            self.assertReading(None, u"1000%A")
+            self.assertReading(None, u"1,000%A")
             self.assertReading(None, u"1/3A")
             self.assertReading(None, u"1\3A")
+            self.assertReading(None, "1,000/3,000!")
         
         # Test helpers
         def assertReading(self, expected_reading, expression):
@@ -332,21 +366,28 @@ if __name__=='__main__':
     class MeaningFromNumberlikeTest(unittest.TestCase):
         def testIntegerMeaning(self):
             self.assertMeaning("8921", "8921")
+            self.assertMeaning("8921", "8,921")
             self.assertMeaning("8921", u"八千九百二十一")
         
         def testDecimalMeaning(self):
             self.assertMeaning("25.25", "25.25")
             self.assertMeaning("25.25", u"25。25")
             self.assertMeaning("25.25", u"二十五点二五")
+            self.assertMeaning("1123.89", u"1,123.89")
         
         def testYearMeaning(self):
             self.assertMeaning("1998AD", u"1998年")
             self.assertMeaning("1998AD", u"一九九八年")
         
         def testPercentageReading(self):
+            self.assertMeaning("20%", u"20%")
+            self.assertMeaning("1000%", u"1000%")
+            self.assertMeaning("1000%", u"1,000%")
             self.assertMeaning("20%", u"百分之二十")
         
         def testFractionReading(self):
+            self.assertMeaning("1/3", u"1/3")
+            self.assertMeaning("1000/3000", u"1,000/3,000")
             self.assertMeaning("1/3", u"三分之一")
         
         def testNoMeaningForPhrase(self):
@@ -358,16 +399,21 @@ if __name__=='__main__':
         
         def testNoMeaningsIfTrailingStuff(self):
             self.assertMeaning(None, u"8921A")
+            self.assertMeaning(None, u"8,921A")
             self.assertMeaning(None, u"八千九百二十一A")
             self.assertMeaning(None, u"25.25A")
             self.assertMeaning(None, u"25。25A")
             self.assertMeaning(None, u"二十五点二五A")
+            self.assertMeaning(None, u"1,123.89A")
             self.assertMeaning(None, u"1998年A")
             self.assertMeaning(None, u"一九九八年A")
             self.assertMeaning(None, u"100%A")
+            self.assertMeaning(None, u"1000%Junk")
+            self.assertMeaning(None, u"1,000%!")
             self.assertMeaning(None, u"百分之二十A")
             self.assertMeaning(None, u"1/3A")
             self.assertMeaning(None, u"1\3A")
+            self.assertMeaning(None, u"1,000/3,000Blah")
             self.assertMeaning(None, u"三分之一A")
         
         # Test helpers
