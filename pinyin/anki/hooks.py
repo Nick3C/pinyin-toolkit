@@ -97,27 +97,6 @@ class ColorShortcutKeysHook(Hook):
         ankiqt.ui.facteditor.FactEditor.setupFields = wrap(ankiqt.ui.facteditor.FactEditor.setupFields, self.setupShortcuts, "after")
         self.setupShortcuts(self.mw.editor)
 
-class MenuHook(Hook):
-    pinyinToolkitMenu = None
-    
-    def install(self):
-        # Install menu item
-        log.info("Installing a menu hook (%s)", type(self))
-        
-        # Build and install the top level menu if it doesn't already exist
-        if MenuHook.pinyinToolkitMenu is None:
-            MenuHook.pinyinToolkitMenu = QtGui.QMenu("Pinyin Toolkit", self.mw.mainWin.menuTools)
-            self.mw.mainWin.menuTools.addMenu(MenuHook.pinyinToolkitMenu)
-        
-        # Store the action on the class.  Storing a reference to it is necessary to avoid it getting garbage collected.
-        self.action = QtGui.QAction(self.__class__.menutext, self.mw)
-        self.action.setStatusTip(self.__class__.menutooltip)
-        self.action.setEnabled(True)
-        
-        # HACK ALERT: must use lambda here, or the signal never gets raised! I think this is due to garbage collection...
-        self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: self.triggered())
-        MenuHook.pinyinToolkitMenu.addAction(self.action)
-
 class HelpHook(Hook):
     def install(self):
         # Store the action on the class.  Storing a reference to it is necessary to avoid it getting garbage collected.
@@ -129,7 +108,7 @@ class HelpHook(Hook):
         self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: QtGui.QDesktopServices.openUrl(helpUrl))
         self.mw.mainWin.menuHelp.addAction(self.action)
 
-class PreferencesHook(MenuHook):
+class PreferencesHook(Hook):
     menutext = "Preferences"
     menutooltip = "Configure the Pinyin Toolkit"
     
@@ -149,8 +128,42 @@ class PreferencesHook(MenuHook):
             
             # Ensure this is saved in Anki's configuration
             utils.persistconfig(self.mw, self.config)
+    
+    def install(self):
+        # Store the action on the class.  Storing a reference to it is necessary to avoid it getting garbage collected.
+        self.action = QtGui.QAction("Pinyin &Toolkit Preferences", self.mw)
+        self.action.setStatusTip("Configure the Pinyin Toolkit")
+        self.action.setMenuRole(QtGui.QAction.PreferencesRole)
+        self.action.setEnabled(True)
+        
+        self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: self.triggered())
+        self.mw.mainWin.menu_Settings.addAction(self.action)
 
-class MassFillHook(MenuHook):
+class ToolMenuHook(Hook):
+    pinyinToolkitMenu = None
+    
+    def install(self):
+        # Install menu item
+        log.info("Installing a menu hook (%s)", type(self))
+        
+        # Build and install the top level menu if it doesn't already exist
+        if ToolMenuHook.pinyinToolkitMenu is None:
+            ToolMenuHook.pinyinToolkitMenu = QtGui.QMenu("Pinyin Toolkit", self.mw.mainWin.menuTools)
+            self.mw.mainWin.menuTools.addMenu(ToolMenuHook.pinyinToolkitMenu)
+        
+        # Store the action on the class.  Storing a reference to it is necessary to avoid it getting garbage collected.
+        self.action = QtGui.QAction(self.__class__.menutext, self.mw)
+        self.action.setStatusTip(self.__class__.menutooltip)
+        self.action.setEnabled(True)
+        
+        # HACK ALERT: must use lambda here, or the signal never gets raised! I think this is due to garbage collection...
+        # We try and make sure that we don't run the action if there is no deck presently, to at least suppress some errors
+        # in situations where the users select the menu items (this is possible on e.g. OS X). It would be better to disable
+        # the menu items entirely in these situations, but there is no suitable hook for that presently.
+        self.mw.connect(self.action, QtCore.SIGNAL('triggered()'), lambda: self.mw.deck is not None and self.triggered())
+        ToolMenuHook.pinyinToolkitMenu.addAction(self.action)
+
+class MassFillHook(ToolMenuHook):
     def triggered(self):
         field = self.__class__.field
         log.info("User triggered missing information fill for %s" % field)
