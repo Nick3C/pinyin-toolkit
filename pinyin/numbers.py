@@ -172,7 +172,7 @@ def parsewesternnumberlike(expression, integerhandler, decimalhandler, yearhandl
     
     # If that's followed by a decimal seperator and some digits we
     # can generate a Chinese decimal reading
-    if expression.startswith("."):
+    if expression.startswith(".") or expression.startswith(u"。"):
         trailingdigits, expression = parsemany(parsedigit)(expression[1:])
         if len(trailingdigits) == 0 or expression.strip() != u"":
             # Something after the trailing digits that we don't understand
@@ -336,6 +336,7 @@ if __name__=='__main__':
         
         def testDecimalMeaning(self):
             self.assertMeaning("25.25", "25.25")
+            self.assertMeaning("25.25", u"25。25")
             self.assertMeaning("25.25", u"二十五点二五")
         
         def testYearMeaning(self):
@@ -359,6 +360,7 @@ if __name__=='__main__':
             self.assertMeaning(None, u"8921A")
             self.assertMeaning(None, u"八千九百二十一A")
             self.assertMeaning(None, u"25.25A")
+            self.assertMeaning(None, u"25。25A")
             self.assertMeaning(None, u"二十五点二五A")
             self.assertMeaning(None, u"1998年A")
             self.assertMeaning(None, u"一九九八年A")
