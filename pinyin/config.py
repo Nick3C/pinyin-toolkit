@@ -44,6 +44,7 @@ defaultsettings = {
                                             # note: the setting "prefersimptrad" controls what is populated into the Expression field
     
     "forcereadingtobeformatted"    : True,  # Should we try and update the reading with a colored, appropriately tonified variant?
+    "forcemeaningtobeformatted"    : True,  # Should we try and format numbers in the meaning as their fancy variant?
     
     # Unimplemented flags (for dev purposes)
     "posgeneration"                : True, # Should we try to generate the POS (part of Speech) from dictionaries?
@@ -294,23 +295,26 @@ class Config(object):
     meaningnumberingstrings = property(lambda self: meaningnumberingstringss[self.meaningnumbering])
     meaningseperatorstring = property(lambda self: meaningseperatorstrings.get(self.meaningseperator) or self.custommeaningseperator)
     
+    def meaningnumber(self, n):
+        if self.meaningnumberingstrings is None:
+            return ""
+        
+        if n <= len(self.meaningnumberingstrings):
+            number = self.meaningnumberingstrings[n - 1]
+        else:
+            # Ensure that we fall back on normal (n) numbers if there are more numbers than we have in the supplied list
+            number = '(' + str(n) + ')'
+
+        if self.colormeaningnumbers:
+            return '<span style="color:' + self.meaningnumberingcolor + '">' + number + '</span>'
+        else:
+            return number
+    
     def formatmeanings(self, meanings):
         # Don't add meaning numbers if it is disabled or there is only one meaning
         if len(meanings) > 1 and self.meaningnumberingstrings != None:
-            def meaningnumber(n):
-                if n < len(self.meaningnumberingstrings):
-                    number = self.meaningnumberingstrings[n]
-                else:
-                    # Ensure that we fall back on normal (n) numbers if there are more numbers than we have in the supplied list
-                    number = '(' + str(n + 1) + ')'
-
-                if self.colormeaningnumbers:
-                    return '<span style="color:' + self.meaningnumberingcolor + '">' + number + '</span>'
-                else:
-                    return number
-        
             # Add numbers to all the meanings in the list
-            meanings = [meaningnumber(n) + " " + meaning for n, meaning in enumerate(meanings)]
+            meanings = [self.meaningnumber(n + 1) + " " + meaning for n, meaning in enumerate(meanings)]
         
         # Use the seperator to join the meanings together
         return self.meaningseperatorstring.join(meanings)
@@ -412,6 +416,18 @@ if __name__=='__main__':
             self.assertTrue(Config({ "meaninggeneration" : False, "detectmeasurewords" : True }).needmeanings)
             self.assertFalse(Config({ "meaninggeneration" : False, "detectmeasurewords" : False }).needmeanings)
         
+        def testMeaningNumber(self):
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "arabicParens", "colormeaningnumbers" : False }).meaningnumber(n), [2, 10, 21]),
+                              [u"(2)", u"(10)", u"(21)"])
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "circledChinese", "colormeaningnumbers" : False }).meaningnumber(n), [2, 10, 21]),
+                              [u"㊁", u"㊉", u"(21)"])
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "circledArabic", "colormeaningnumbers" : False }).meaningnumber(n), [2, 10, 21]),
+                              [u"②", u"⑩", u"(21)"])
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "none", "colormeaningnumbers" : False }).meaningnumber(n), [2, 10, 21]),
+                              [u"", u"", u""])
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "arabicParens", "colormeaningnumbers" : True, "meaningnumberingcolor" : "#aabbcc" }).meaningnumber(n), [2, 10, 21]),
+                              [u'<span style="color:#aabbcc">(2)</span>', u'<span style="color:#aabbcc">(10)</span>', u'<span style="color:#aabbcc">(21)</span>'])
+
         def testFormatMeaningsOptions(self):
             self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "lines", "colormeaningnumbers" : False }).formatmeanings([u"a", u"b"]),
                               u"(1) a<br />(2) b")

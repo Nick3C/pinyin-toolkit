@@ -22,6 +22,30 @@ def preparetokens(config, tokens):
 
     return pinyin.flatten(tokens, tonify=config.shouldtonify)
 
+class FieldUpdaterFromMeaning(object):
+    def __init__(self, config):
+        self.config = config
+    
+    def reformatmeaning(self, meaning):
+        output = u""
+        for recognised, match in utils.regexparse(re.compile(ur"\(([0-9]+)\)"), meaning):
+            if recognised:
+                # Should reformat the number
+                output += self.config.meaningnumber(int(match.group(1)))
+            else:
+                # Output is just unicode, append it directly
+                output += match
+        
+        return output
+    
+    def updatefact(self, fact, meaning):
+        # Don't bother if the appropriate configuration option is off or update will fail
+        if not(self.config.forcemeaningtobeformatted) or 'meaning' not in fact:
+            return
+
+        # Simply replace any occurences of (n) with the string self.config.meaningnumber(n)
+        fact['meaning'] = self.reformatmeaning(meaning)
+
 class FieldUpdaterFromReading(object):
     def __init__(self, config):
         self.config = config
@@ -294,12 +318,41 @@ if __name__ == "__main__":
     # Shared dictionary
     englishdict = Thunk(lambda: dictionary.PinyinDictionary.load("en"))
     
+    class FieldUpdaterFromMeaningTest(unittest.TestCase):
+        def testDoesntDoAnythingWhenDisabled(self):
+            self.assertEquals(self.updatefact(u"(1) yes (2) no", { "meaning" : "", "expression" : "junk" }, forcemeaningtobeformatted = False),
+                              { "meaning" : "", "expression" : "junk" })
+        
+        def testWorksIfFieldMissing(self):
+            self.assertEquals(self.updatefact(u"(1) yes (2) no", { "expression" : "junk" }, forcemeaningtobeformatted = True),
+                              { "expression" : "junk" })
+
+        def testLeavesOtherFieldsAlone(self):
+            self.assertEquals(self.updatefact(u"", { "meaning" : "junk", "expression" : "junk" }, forcemeaningtobeformatted = True),
+                              { "meaning" : u"", "expression" : "junk" })
+
+        def testReformatsAccordingToConfig(self):
+            self.assertEquals(
+                self.updatefact(u"(1) yes (2) no", { "meaning" : "junky" },
+                    forcemeaningtobeformatted = True, meaningnumbering = "circledArabic", colormeaningnumbers = False),
+                    { "meaning" : u"① yes ② no" })
+            self.assertEquals(
+                self.updatefact(u"(10) yes 2 no", { "meaning" : "junky" },
+                    forcemeaningtobeformatted = True, meaningnumbering = "none", colormeaningnumbers = False),
+                    { "meaning" : u" yes 2 no" })
+        
+        # Test helpers
+        def updatefact(self, reading, fact, **kwargs):
+            factclone = copy.deepcopy(fact)
+            FieldUpdaterFromMeaning(config.Config(kwargs)).updatefact(factclone, reading)
+            return factclone
+    
     class FieldUpdaterFromReadingTest(unittest.TestCase):
         def testDoesntDoAnythingWhenDisabled(self):
             self.assertEquals(self.updatefact(u"hen3 hǎo", { "reading" : "", "expression" : "junk" }, forcereadingtobeformatted = False),
                               { "reading" : "", "expression" : "junk" })
         
-        def testWorksIfReadingFieldMissing(self):
+        def testWorksIfFieldMissing(self):
             self.assertEquals(self.updatefact(u"hen3 hǎo", { "expression" : "junk" }, forcereadingtobeformatted = True),
                               { "expression" : "junk" })
 
