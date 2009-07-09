@@ -8,7 +8,7 @@ from pinyin import *
 import utils
 
 class MeaningFormatter(object):
-    embeddedchineseregex = re.compile(r"(?:(?:([^\|\[\s]*)\|([^\|\[\s]*))|([^\|\[\s]+))(?:\s*\[([^\]]*)\])?")
+    embeddedchineseregex = re.compile(r"(?:(?:([^\|\[\s]+)\|([^\|\[\s]+)(?:\s*\[([^\]]*)\])?)|(?:([^\|\[\s]+)\s*\[([^\]]*)\]))")
     
     def __init__(self, simplifiedcharindex, prefersimptrad):
         self.simplifiedcharindex = simplifiedcharindex
@@ -37,8 +37,9 @@ class MeaningFormatter(object):
                     # A match - we can append a representation of the words it contains
                     self.formatmatch(words, thing, tonedchars_callback)
                 else:
-                    # Just a string: append it as-is
-                    words.append(Word(Text(thing)))
+                    # Just a string: append it as a list of tokens, trying to extract any otherwise-unmarked
+                    # pinyin in the sentence for colorisation etc
+                    words.append(Word(*tokenize(thing, forcenumeric=True)))
             
             # Add the tokens to the right pile
             if ismeasureword:
@@ -49,9 +50,9 @@ class MeaningFormatter(object):
         return meanings, measurewords
     
     def formatmatch(self, words, match, tonedchars_callback):
-        if match.group(3) != None:
+        if match.group(4) != None:
             # A single character standing by itself, with no | - just use the character
-            character = match.group(3)
+            character = match.group(4)
         elif self.prefersimptrad == "simp":
             # A choice of characters, and we want the simplified one
             character = match.group(1 + self.simplifiedcharindex)
@@ -60,8 +61,15 @@ class MeaningFormatter(object):
             character = match.group(1 + (1 - self.simplifiedcharindex))
         
         if match.group(4) != None:
+            # Pinyin tokens (if any) will be present in single-character match case
+            rawpinyin = match.group(5)
+        else:
+            # Pinyin tokens (if any) will be present in conjunctive character match case
+            rawpinyin = match.group(3)
+        
+        if rawpinyin != None:
             # There was some pinyin for the character after it - include it
-            pinyintokens = tokenizespaceseperated(match.group(4))
+            pinyintokens = tokenizespaceseperated(rawpinyin)
             words.append(Word(*(tonedcharactersfromreading(character, pinyintokens))))
             words.append(Word(Text(" - ")))
             words.append(Word.spacedwordfromunspacedtokens(pinyintokens))
@@ -133,13 +141,19 @@ if __name__=='__main__':
     
         def testCallback(self):
             means, mws = self.parse(1, "simp", self.shu_def, tonedchars_callback=lambda x: [Text(u"JUNK")])
-            self.assertEquals(means, [u'JUNK', u'JUNK', u'JUNK JUNK JUNK JUNK JUNK JUNK'])
+            self.assertEquals(means, [u'book', u'letter', u'same as JUNK Book of History'])
     
         def testColorsAttachedToBothHanziAndPinyin(self):
             means, mws = self.parseunflat(1, "simp", u"/sound of breaking or snapping (onomatopoeia)/also written 喀嚓|喀嚓 [ka1 cha1]/")
             self.assertEquals(flatten(means[0]), "sound of breaking or snapping (onomatopoeia)")
             self.assertEquals(means[1][-3], Word(TonedCharacter(u"喀", 1), TonedCharacter(u"嚓", 1)))
     
+        def testColorsAttachedToHangingPinyin(self):
+            means, mws = self.parseunflat(1, "simp", u"/silly hen3 definition hao3/a hen is not pinyin")
+            self.assertEquals(means[0][0][2], Pinyin(u"hen", 3))
+            self.assertEquals(means[0][0][-1], Pinyin(u"hao", 3))
+            self.assertEquals(means[1][0][2], Text(u"hen"))
+            
         # Test helpers
         def parse(self, *args, **kwargs):
             means, mws = self.parseunflat(*args, **kwargs)
