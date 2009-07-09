@@ -63,7 +63,7 @@ class FieldUpdaterFromAudio(object):
     
     def updatefact(self, fact, audio):
         # Don't bother if the appropriate configuration option is off or update will fail
-        if not(self.config.forceaudiotobeformatted) or 'audio' not in fact:
+        if not(self.config.forcepinyininaudiotosoundtags) or 'audio' not in fact:
             return
         
         # Identify probable pinyin in the user's freeform input, look up audio for it, and replace
@@ -87,7 +87,7 @@ class FieldUpdaterFromMeaning(object):
     
     def updatefact(self, fact, meaning):
         # Don't bother if the appropriate configuration option is off or update will fail
-        if not(self.config.forcemeaningtobeformatted) or 'meaning' not in fact:
+        if not(self.config.forcemeaningnumberstobeformatted) or 'meaning' not in fact:
             return
 
         # Simply replace any occurences of (n) with the string self.config.meaningnumber(n)
@@ -349,33 +349,33 @@ if __name__ == "__main__":
     
     class FieldUpdaterFromAudioTest(unittest.TestCase):
         def testDoesntDoAnythingWhenDisabled(self):
-            self.assertEquals(self.updatefact(u"hen3 hao3", { "audio" : "", "expression" : "junk" }, forceaudiotobeformatted = False),
+            self.assertEquals(self.updatefact(u"hen3 hao3", { "audio" : "", "expression" : "junk" }, forcepinyininaudiotosoundtags = False),
                               { "audio" : "", "expression" : "junk" })
         
         def testWorksIfFieldMissing(self):
-            self.assertEquals(self.updatefact(u"hen3 hao3", { "expression" : "junk" }, forceaudiotobeformatted = True),
+            self.assertEquals(self.updatefact(u"hen3 hao3", { "expression" : "junk" }, forcepinyininaudiotosoundtags = True),
                               { "expression" : "junk" })
 
         def testLeavesOtherFieldsAlone(self):
-            self.assertEquals(self.updatefact(u"", { "audio" : "junk", "expression" : "junk" }, forceaudiotobeformatted = True),
+            self.assertEquals(self.updatefact(u"", { "audio" : "junk", "expression" : "junk" }, forcepinyininaudiotosoundtags = True),
                               { "audio" : u"", "expression" : "junk" })
 
         def testReformatsAccordingToConfig(self):
             henhaoaudio = u"[sound:" + os.path.join("Test", "hen3.mp3") + "][sound:" + os.path.join("Test", "hao3.mp3") + "]"
 
             self.assertEquals(
-                self.updatefact(u"hen3 hao3", { "audio" : "junky" }, forceaudiotobeformatted = True),
+                self.updatefact(u"hen3 hao3", { "audio" : "junky" }, forcepinyininaudiotosoundtags = True),
                 { "audio" : henhaoaudio })
             self.assertEquals(
-                self.updatefact(u"hen3,hǎo", { "audio" : "junky" }, forceaudiotobeformatted = True),
+                self.updatefact(u"hen3,hǎo", { "audio" : "junky" }, forcepinyininaudiotosoundtags = True),
                 { "audio" : henhaoaudio })
         
         def testDoesntModifySoundTags(self):
             self.assertEquals(
-                self.updatefact(u"[sound:aeuth34t0914bnu.mp3][sound:ae390n32uh2ub.mp3]", { "audio" : "" }, forceaudiotobeformatted = True),
+                self.updatefact(u"[sound:aeuth34t0914bnu.mp3][sound:ae390n32uh2ub.mp3]", { "audio" : "" }, forcepinyininaudiotosoundtags = True),
                 { "audio" : u"[sound:aeuth34t0914bnu.mp3][sound:ae390n32uh2ub.mp3]" })
             self.assertEquals(
-                self.updatefact(u"[sound:hen3.mp3][sound:hao3.mp3]", { "audio" : "" }, forceaudiotobeformatted = True),
+                self.updatefact(u"[sound:hen3.mp3][sound:hao3.mp3]", { "audio" : "" }, forcepinyininaudiotosoundtags = True),
                 { "audio" : u"[sound:hen3.mp3][sound:hao3.mp3]" })
         
         # Test helpers
@@ -399,25 +399,25 @@ if __name__ == "__main__":
     
     class FieldUpdaterFromMeaningTest(unittest.TestCase):
         def testDoesntDoAnythingWhenDisabled(self):
-            self.assertEquals(self.updatefact(u"(1) yes (2) no", { "meaning" : "", "expression" : "junk" }, forcemeaningtobeformatted = False),
+            self.assertEquals(self.updatefact(u"(1) yes (2) no", { "meaning" : "", "expression" : "junk" }, forcemeaningnumberstobeformatted = False),
                               { "meaning" : "", "expression" : "junk" })
         
         def testWorksIfFieldMissing(self):
-            self.assertEquals(self.updatefact(u"(1) yes (2) no", { "expression" : "junk" }, forcemeaningtobeformatted = True),
+            self.assertEquals(self.updatefact(u"(1) yes (2) no", { "expression" : "junk" }, forcemeaningnumberstobeformatted = True),
                               { "expression" : "junk" })
 
         def testLeavesOtherFieldsAlone(self):
-            self.assertEquals(self.updatefact(u"", { "meaning" : "junk", "expression" : "junk" }, forcemeaningtobeformatted = True),
+            self.assertEquals(self.updatefact(u"", { "meaning" : "junk", "expression" : "junk" }, forcemeaningnumberstobeformatted = True),
                               { "meaning" : u"", "expression" : "junk" })
 
         def testReformatsAccordingToConfig(self):
             self.assertEquals(
                 self.updatefact(u"(1) yes (2) no", { "meaning" : "junky" },
-                    forcemeaningtobeformatted = True, meaningnumbering = "circledArabic", colormeaningnumbers = False),
+                    forcemeaningnumberstobeformatted = True, meaningnumbering = "circledArabic", colormeaningnumbers = False),
                     { "meaning" : u"① yes ② no" })
             self.assertEquals(
                 self.updatefact(u"(10) yes 2 no", { "meaning" : "junky" },
-                    forcemeaningtobeformatted = True, meaningnumbering = "none", colormeaningnumbers = False),
+                    forcemeaningnumberstobeformatted = True, meaningnumbering = "none", colormeaningnumbers = False),
                     { "meaning" : u" yes 2 no" })
         
         # Test helpers

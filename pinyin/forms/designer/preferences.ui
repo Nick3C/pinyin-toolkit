@@ -281,6 +281,73 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="fieldImproversTab">
+      <attribute name="title">
+       <string>Field Improvers</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_6">
+       <item>
+        <widget class="QGroupBox" name="fieldImproversGroupBox">
+         <property name="title">
+          <string>Fact Editor Field Improvers</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_12">
+          <item>
+           <widget class="QLabel" name="fieldImproversLabel">
+            <property name="text">
+             <string>The Pinyin Toolkit can attempt to make a number of improvements to the information you enter in the fact editor. Here, you can enable and disable the various available tweaks, each of which is typically applied when the relevant field loses focus:</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="forceExpressionCharacterSystemCheckBox">
+            <property name="text">
+             <string>Force expression character system to your preference</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="forceFormatReadingCheckBox">
+            <property name="text">
+             <string>Format the reading field's pinyin according to your settings</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="forceMeaningNumberFormatCheckBox">
+            <property name="text">
+             <string>Replace (1), (2), ... in the meaning with real numbering</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="forcePinyinToSoundTagsCheckBox">
+            <property name="text">
+             <string>Replace pinyin in the audio field with [sound] tags</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="colorsTab">
       <attribute name="title">
        <string>Colors</string>
@@ -504,7 +571,7 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_9">
        <item>
-        <widget class="QGroupBox" name="groupBox">
+        <widget class="QGroupBox" name="audioPacksGroupBox">
          <property name="title">
           <string>Audio Packs</string>
          </property>

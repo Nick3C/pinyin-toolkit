@@ -40,6 +40,7 @@ class PreferencesController(object):
         self.mappings = []
         self.setUpViewPreview()
         self.setUpText()
+        self.setUpFieldImprovers()
         self.setUpColors()
         self.setUpAudio()
 
@@ -129,6 +130,13 @@ class PreferencesController(object):
         
         setUpHanziPinyin()
         setUpMeanings()
+    
+    def setUpFieldImprovers(self):
+        # The Fact Editor Field Improvers panel
+        self.registerCheckMapping("forceexpressiontobesimptrad", self.view.controls.forceExpressionCharacterSystemCheckBox)
+        self.registerCheckMapping("forcereadingtobeformatted", self.view.controls.forceFormatReadingCheckBox)
+        self.registerCheckMapping("forcemeaningnumberstobeformatted", self.view.controls.forceMeaningNumberFormatCheckBox)
+        self.registerCheckMapping("forcepinyininaudiotosoundtags", self.view.controls.forcePinyinToSoundTagsCheckBox)
     
     def setUpColors(self):
         # The Tone Colors panel
