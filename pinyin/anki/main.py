@@ -42,7 +42,8 @@ class PinyinToolkit(object):
         # Build the updaters
         updaters = {
             'expression' : pinyin.updater.FieldUpdaterFromExpression(thenotifier, themediamanager, config),
-            'reading'    : pinyin.updater.FieldUpdaterFromReading(config)
+            'reading'    : pinyin.updater.FieldUpdaterFromReading(config),
+            'meaning'    : pinyin.updater.FieldUpdaterFromMeaning(config)
           }
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
