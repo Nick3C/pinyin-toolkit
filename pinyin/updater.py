@@ -98,12 +98,21 @@ class FieldUpdaterFromReading(object):
         self.config = config
     
     def updatefact(self, fact, reading):
-        # Don't bother if the appropriate configuration option is off or update will fail
-        if not(self.config.forcereadingtobeformatted) or 'reading' not in fact:
+        # Don't bother if the appropriate configuration option is off
+        if not(self.config.forcereadingtobeformatted):
             return
         
-        # First order of business: identify probable pinyin in the user's freeform input,
-        # reformat it according to the current rules, and pop the result back into the field
+        # Use the unprotected update method to do the bulk of the work.
+        # The unprotected version is used for the mass filler.
+        self.updatefactalways(fact, reading)
+    
+    def updatefactalways(self, fact, reading):
+        # We better still give it a miss if the update will fail
+        if 'reading' not in fact:
+            return
+    
+        # Identify probable pinyin in the user's freeform input, reformat them according to the
+        # current rules, and pop the result back into the field
         fact['reading'] = preparetokens(self.config, [pinyin.Word(*pinyin.tokenize(reading))])
 
 class FieldUpdaterFromExpression(object):
@@ -430,6 +439,11 @@ if __name__ == "__main__":
         def testDoesntDoAnythingWhenDisabled(self):
             self.assertEquals(self.updatefact(u"hen3 hǎo", { "reading" : "", "expression" : "junk" }, forcereadingtobeformatted = False),
                               { "reading" : "", "expression" : "junk" })
+        
+        def testDoesSomethingWhenDisabledIfAlways(self):
+            fact = { "reading" : "", "expression" : "junk" }
+            FieldUpdaterFromReading(config.Config({ "forcereadingtobeformatted" : False })).updatefactalways(fact, u"also junk")
+            self.assertEquals(fact, { "reading" : "also junk", "expression" : "junk" })
         
         def testWorksIfFieldMissing(self):
             self.assertEquals(self.updatefact(u"hen3 hǎo", { "expression" : "junk" }, forcereadingtobeformatted = True),
