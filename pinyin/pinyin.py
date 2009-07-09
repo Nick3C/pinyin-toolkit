@@ -264,14 +264,14 @@ def tokenizeone(possible_token, forcenumeric=False):
 Turns an arbitrary string containing pinyin into a sequence of tokens. Does its best
 to seperate pinyin out from normal text, but no guarantees!
 """
-def tokenize(text):
+def tokenize(text, forcenumeric=False):
     # To recognise pinyin amongst the rest of the text, for now just look for maximal
     # sequences of alphanumeric characters as defined by Unicode. This should catch
     # the pinyin, its tone marks, tone numbers (if any) and allow umlauts.
     tokens = []
     for recognised, match in utils.regexparse(re.compile(u"\w+", re.UNICODE), text):
         if recognised:
-            tokens.append(tokenizeone(match.group(0)))
+            tokens.append(tokenizeone(match.group(0), forcenumeric=forcenumeric))
         else:
             tokens.append(Text(match))
     
@@ -714,6 +714,11 @@ if __name__ == "__main__":
             self.assertEquals([Pinyin.parse(u"hen3"), Text(","), Pinyin.parse(u"hao3")], tokenize(u"hen3,hao3"))
             self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3"), Text(", "), Text("my"), Text(" "), Pinyin.parse(u"xiǎo"), Text(" "), Text("one"), Text("!")],
                               tokenize(u"hen3 hao3, my xiǎo one!"))
+        
+        def testTokenizeForceNumeric(self):
+          self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3")], tokenize(u"hen3 hao3"))
+          self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3"), Text(", "), Text("my"), Text(" "), Text(u"xiǎo"), Text(" "), Text("one"), Text("!")],
+                            tokenize(u"hen3 hao3, my xiǎo one!", forcenumeric=True))
         
         def testTokenizeHTML(self):
             self.assertEquals([Text(u'<'), Text(u'span'), Text(u' '), Text(u'style'), Text(u'="'), Text(u'color'), Text(u':#'), Text(u'123456'), Text(u'">'),
