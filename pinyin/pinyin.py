@@ -65,7 +65,7 @@ class ToneInfo(object):
         return u"ToneInfo(written=%s, spoken=%s)" % (repr(self.written), repr(self.spoken))
     
     def __eq__(self, other):
-        if other is None:
+        if other is None or other.__class__ != self.__class__:
             return False
         
         return other.written == self.written and other.spoken == self.spoken
@@ -121,7 +121,7 @@ class Pinyin(object):
         return u"Pinyin(%s, %s)" % (repr(self.word), repr(self.toneinfo))
     
     def __eq__(self, other):
-        if other == None:
+        if other == None or other.__class__ != self.__class__:
             return False
         
         return self.toneinfo == other.toneinfo and self.word == other.word
@@ -218,7 +218,7 @@ class TonedCharacter(unicode):
         return self
     
     def __eq__(self, other):
-        if other == None:
+        if other == None or other.__class__ != self.__class__:
             return False
         
         return unicode.__eq__(self, other) and self.toneinfo == other.toneinfo
@@ -498,6 +498,10 @@ if __name__ == "__main__":
             self.assertEquals(ToneInfo(written=1, spoken=3), ToneInfo(written=1, spoken=3))
             self.assertNotEquals(ToneInfo(written=1, spoken=3), ToneInfo(written=2, spoken=3))
             self.assertNotEquals(ToneInfo(written=1, spoken=3), ToneInfo(written=1, spoken=5))
+        
+        def testEqDissimilar(self):
+            self.assertNotEquals(ToneInfo(written=1, spoken=3), "ToneInfo(written=1, spoken=3)")
+            self.assertNotEquals("ToneInfo(written=1, spoken=3)", ToneInfo(written=1, spoken=3))
     
         def testMustBeNonEmpty(self):
             self.assertRaises(ValueError, lambda: ToneInfo())
@@ -602,6 +606,14 @@ if __name__ == "__main__":
         def testRepr(self):
             self.assertEquals(repr(Text(u"hello")), "Text(u'hello')")
         
+        def testEq(self):
+            self.assertEquals(Text(u"hello"), Text(u"hello"))
+            self.assertNotEquals(Text(u"hello"), Text(u"bye"))
+        
+        def testEqDissimilar(self):
+            self.assertNotEquals(Text(u"hello"), 'Text(u"hello")')
+            self.assertNotEquals('Text(u"hello")', Text(u"hello"))
+        
         def testIsEr(self):
             self.assertFalse(Text("r5").iser)
     
@@ -688,6 +700,10 @@ if __name__ == "__main__":
             self.assertEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", 2))
             self.assertNotEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", 3))
             self.assertNotEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"兒", 2))
+        
+        def testEqDissimilar(self):
+            self.assertNotEquals(TonedCharacter(u"儿", 2), "TonedCharacter(u'儿', 2)")
+            self.assertNotEquals("TonedCharacter(u'儿', 2)", TonedCharacter(u"儿", 2))
         
         def testIsEr(self):
             self.assertTrue(TonedCharacter(u"儿", 5).iser)
