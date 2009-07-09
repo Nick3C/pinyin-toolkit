@@ -45,6 +45,7 @@ defaultsettings = {
     
     "forcereadingtobeformatted"    : True,  # Should we try and update the reading with a colored, appropriately tonified variant?
     "forcemeaningtobeformatted"    : True,  # Should we try and format numbers in the meaning as their fancy variant?
+    "forceaudiotobeformatted"      : True,  # Should we try and replace pinyin in the audio field with the corresponding audio?
     
     # Unimplemented flags (for dev purposes)
     "posgeneration"                : True, # Should we try to generate the POS (part of Speech) from dictionaries?

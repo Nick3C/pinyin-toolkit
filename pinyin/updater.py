@@ -22,6 +22,53 @@ def preparetokens(config, tokens):
 
     return pinyin.flatten(tokens, tonify=config.shouldtonify)
 
+def generateaudio(notifier, mediamanager, config, dictreading):
+    mediapacks = mediamanager.discovermediapacks()
+    if len(mediapacks) == 0:
+        # Show a warning the first time we detect that we're missing a sound pack
+        notifier.infoOnce("The Pinyin Toolkit cannot find an audio pack for text-to-speech.  We reccomend you either disable the audio functionality "
+                          + "or install the free Chinese-Lessons.com Mandarin Sounds audio pack using the Audio tab in Tool > Preferences.")
+        
+        # There is no way we can generate an audio reading with no packs - give up
+        return None
+    
+    # Get the best media pack to generate the audio, along with the string of files from that pack we need to take
+    mediapack, output, _mediamissing = transformations.PinyinAudioReadings(mediapacks, config.audioextensions).audioreading(dictreading)
+    
+    # Construct the string of audio tags from the optimal choice of sounds
+    output_tags = u""
+    for outputfile in output:
+        # Install required media in the deck as we go, getting the canonical string to insert into the sound field upon installation
+        output_tags += "[sound:%s]" % mediamanager.importtocurrentdeck(os.path.join(mediapack.packpath, outputfile))
+    
+    return output_tags
+
+class FieldUpdaterFromAudio(object):
+    def __init__(self, notifier, mediamanager, config):
+        self.notifier = notifier
+        self.mediamanager = mediamanager
+        self.config = config
+    
+    def reformataudio(self, audio):
+        output = u""
+        for recognised, match in utils.regexparse(re.compile(ur"\[sound:([^\]]*)\]"), audio):
+            if recognised:
+                # Must be a sound tag - leave it well alone
+                output += match.group(0)
+            else:
+                # Process as if this non-sound tag were a reading, in order to turn it into some tags
+                output += generateaudio(self.notifier, self.mediamanager, self.config, [pinyin.Word(*pinyin.tokenize(match))])
+        
+        return output
+    
+    def updatefact(self, fact, audio):
+        # Don't bother if the appropriate configuration option is off or update will fail
+        if not(self.config.forceaudiotobeformatted) or 'audio' not in fact:
+            return
+        
+        # Identify probable pinyin in the user's freeform input, look up audio for it, and replace
+        fact['audio'] = self.reformataudio(audio)
+
 class FieldUpdaterFromMeaning(object):
     def __init__(self, config):
         self.config = config
@@ -75,25 +122,7 @@ class FieldUpdaterFromExpression(object):
         return preparetokens(self.config, dictreading).lower()
     
     def generateaudio(self, dictreading):
-        mediapacks = self.mediamanager.discovermediapacks()
-        if len(mediapacks) == 0:
-            # Show a warning the first time we detect that we're missing a sound pack
-            self.notifier.infoOnce("The Pinyin Toolkit cannot find an audio pack for text-to-speech.  We reccomend you either disable the audio functionality "
-                                   + "or install the free Chinese-Lessons.com Mandarin Sounds audio pack using the Audio tab in Tool > Preferences.")
-            
-            # There is no way we can generate an audio reading with no packs - give up
-            return None
-        
-        # Get the best media pack to generate the audio, along with the string of files from that pack we need to take
-        mediapack, output, _mediamissing = transformations.PinyinAudioReadings(mediapacks, self.config.audioextensions).audioreading(dictreading)
-        
-        # Construct the string of audio tags from the optimal choice of sounds
-        output_tags = u""
-        for outputfile in output:
-            # Install required media in the deck as we go, getting the canonical string to insert into the sound field upon installation
-            output_tags += "[sound:%s]" % self.mediamanager.importtocurrentdeck(os.path.join(mediapack.packpath, outputfile))
-        
-        return output_tags
+        return generateaudio(self.notifier, self.mediamanager, self.config, dictreading)
     
     def generatemeanings(self, expression, dictmeanings):
         if dictmeanings == None:
@@ -317,6 +346,56 @@ if __name__ == "__main__":
     
     # Shared dictionary
     englishdict = Thunk(lambda: dictionary.PinyinDictionary.load("en"))
+    
+    class FieldUpdaterFromAudioTest(unittest.TestCase):
+        def testDoesntDoAnythingWhenDisabled(self):
+            self.assertEquals(self.updatefact(u"hen3 hao3", { "audio" : "", "expression" : "junk" }, forceaudiotobeformatted = False),
+                              { "audio" : "", "expression" : "junk" })
+        
+        def testWorksIfFieldMissing(self):
+            self.assertEquals(self.updatefact(u"hen3 hao3", { "expression" : "junk" }, forceaudiotobeformatted = True),
+                              { "expression" : "junk" })
+
+        def testLeavesOtherFieldsAlone(self):
+            self.assertEquals(self.updatefact(u"", { "audio" : "junk", "expression" : "junk" }, forceaudiotobeformatted = True),
+                              { "audio" : u"", "expression" : "junk" })
+
+        def testReformatsAccordingToConfig(self):
+            henhaoaudio = u"[sound:" + os.path.join("Test", "hen3.mp3") + "][sound:" + os.path.join("Test", "hao3.mp3") + "]"
+
+            self.assertEquals(
+                self.updatefact(u"hen3 hao3", { "audio" : "junky" }, forceaudiotobeformatted = True),
+                { "audio" : henhaoaudio })
+            self.assertEquals(
+                self.updatefact(u"hen3,hǎo", { "audio" : "junky" }, forceaudiotobeformatted = True),
+                { "audio" : henhaoaudio })
+        
+        def testDoesntModifySoundTags(self):
+            self.assertEquals(
+                self.updatefact(u"[sound:aeuth34t0914bnu.mp3][sound:ae390n32uh2ub.mp3]", { "audio" : "" }, forceaudiotobeformatted = True),
+                { "audio" : u"[sound:aeuth34t0914bnu.mp3][sound:ae390n32uh2ub.mp3]" })
+            self.assertEquals(
+                self.updatefact(u"[sound:hen3.mp3][sound:hao3.mp3]", { "audio" : "" }, forceaudiotobeformatted = True),
+                { "audio" : u"[sound:hen3.mp3][sound:hao3.mp3]" })
+        
+        # Test helpers
+        def updatefact(self, *args, **kwargs):
+            infos, fact = self.updatefactwithinfos(*args, **kwargs)
+            return fact
+
+        def updatefactwithinfos(self, audio, fact, mediapacks = None, **kwargs):
+            notifier = MockNotifier()
+
+            if mediapacks == None:
+                mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
+                                                        "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
+                                                        "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
+            mediamanager = MockMediaManager(mediapacks)
+
+            factclone = copy.deepcopy(fact)
+            FieldUpdaterFromAudio(notifier, mediamanager, config.Config(kwargs)).updatefact(factclone, audio)
+
+            return notifier.infos, factclone
     
     class FieldUpdaterFromMeaningTest(unittest.TestCase):
         def testDoesntDoAnythingWhenDisabled(self):
