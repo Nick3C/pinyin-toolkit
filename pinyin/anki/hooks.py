@@ -131,7 +131,7 @@ class PreferencesHook(Hook):
     
     def install(self):
         # Store the action on the class.  Storing a reference to it is necessary to avoid it getting garbage collected.
-        self.action = QtGui.QAction("Pinyin &Toolkit Preferences", self.mw)
+        self.action = QtGui.QAction("Pinyin Tool&kit Preferences", self.mw)
         self.action.setStatusTip("Configure the Pinyin Toolkit")
         self.action.setMenuRole(QtGui.QAction.PreferencesRole)
         self.action.setEnabled(True)
