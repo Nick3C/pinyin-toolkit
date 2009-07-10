@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 import logging
 
@@ -9,7 +12,7 @@ logfilepath = os.path.join(utils.pinyindir(), "../Pinyin Toolkit.log")
 try:
     # Try to use a rotating file if possible:
     import logging.handlers
-    loghandler = logging.handlers.RotatingFileHandler(logfilepath, maxBytes=40000, backupCount=0)
+    loghandler = logging.handlers.RotatingFileHandler(logfilepath, encoding="UTF-8", maxBytes=40000, backupCount=0)
 except ImportError:
     # Delete the log file first to make sure it doesn't grow /too/ much
     try:
@@ -22,10 +25,10 @@ except ImportError:
         pass
     
     # Fall back on non-rotating handler
-    loghandler = logging.FileHandler(logfilepath)
+    loghandler = logging.FileHandler(logfilepath, encoding="UTF-8")
 
 # Format quite verbosely, so we can grep for WARN
-loghandler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+loghandler.setFormatter(logging.Formatter(u"%(asctime)s - %(levelname)s - %(message)s"))
 
 # Create logger with that handler
 log = logging.getLogger('Pinyin Toolkit')
