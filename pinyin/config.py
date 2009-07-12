@@ -136,7 +136,7 @@ defaultsettings = {
         'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
         'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
         'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
-        'mw'         : ["MW", "Measure Word", "Classifier", u"量词"],
+        'mw'         : ["MW", "Measure Word","Measure Words", "Classifier", "Classifiers", u"量词"],
         #'weblinks'   : ["Links", "Link", "LinksBar", "Links Bar", "Link Bar", "LinkBar", "Web", "Dictionary", "URL", "URLs"],
         #'pos'        : ["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] ,
         'trad'       : ["Traditional", "Trad", "Traditional Chinese", "HK", u'繁体字', u'繁体', u"繁體字", u"繁體"],
