@@ -5,6 +5,7 @@ import copy
 
 import dictionary
 import dictionaryonline
+import utils
 from logger import log
 
 # TODO: expose these things in the UI
@@ -27,6 +28,7 @@ defaultsettings = {
     "colorizedcharactergeneration" : True, # Should we try and fill out a field called Color with a colored version of the character?
     
     "audiogeneration"              : True, # Should we try and fill out a field called Audio with text-to-speech commands?
+    "mwaudiogeneration"            : True, # Should we try and fill out a field called MW Audio with measure word text-to-speech commands?
     "readinggeneration"            : True, # Should we try and fill out a field called Reading with pinyin?
     
     "meaninggeneration"            : True, # Should we try and fill out a field called Meaning with the definition? 
@@ -137,6 +139,7 @@ defaultsettings = {
         'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
         'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
         'mw'         : ["MW", "Measure Word", "Classifier", u"量词"],
+        'mwaudio'    : utils.concat([[x + " " + y for y in ["Audio", "Sound", "Spoken"]] for x in ["MW", "Measure Word", "Classifier"]]) + [u"量词声音"],
         #'weblinks'   : ["Links", "Link", "LinksBar", "Links Bar", "Link Bar", "LinkBar", "Web", "Dictionary", "URL", "URLs"],
         #'pos'        : ["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] ,
         'trad'       : ["Traditional", "Trad", "Traditional Chinese", "HK", u'繁体字', u'繁体', u"繁體字", u"繁體"],
@@ -150,6 +153,7 @@ updatecontrolflags = {
     'meaning'    : "meaninggeneration",
     'mw'         : "detectmeasurewords",
     'audio'      : "audiogeneration",
+    'mwaudio'    : "mwaudiogeneration",
     'color'      : "colorizedcharactergeneration",
     'trad'       : "tradgeneration",
     'simp'       : "simpgeneration",

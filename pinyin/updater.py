@@ -16,6 +16,8 @@ import re
 
 from logger import log
 
+import random
+
 def preparetokens(config, tokens):
     if config.colorizedpinyingeneration:
         tokens = transformations.colorize(config.tonecolors, tokens)
@@ -122,7 +124,7 @@ class FieldUpdaterFromExpression(object):
         self.config = config
     
     #
-    # Generation
+    # Generation of field contents
     #
     
     def generatereading(self, dictreading):
@@ -167,6 +169,26 @@ class FieldUpdaterFromExpression(object):
         # Concatenate the measure words together with - before we put them into the MW field
         return preparetokens(self.config, dictionary.flattenmeasurewords(dictmeasurewords))
     
+    def generatemwaudio(self, noundictreading, dictmeasurewords):
+        if dictmeasurewords == None or len(dictmeasurewords) == 0:
+            # No measure word, so don't update the field
+            return None
+    
+        dictreading = []
+        for _, mwpinyinwords in dictmeasurewords:
+            # The audio field will contain <random number> <mw> <noun> for every possible MW
+            dictreading.extend(self.getdictreading(random.choice(numbers.hanziquantitydigits)))
+            dictreading.extend(mwpinyinwords)
+            dictreading.extend(noundictreading)
+            # This comma doesn't currently do anything, but it might come in useful if we
+            # add delay generation in the audio code later on
+            dictreading.append(pinyin.Word(pinyin.Text(", ")))
+        
+        # Only apply the sandhi generator at this point: we have carefully avoided doing it for the
+        # input up to now (especially for the noundictreading). Probably doesn't make a difference
+        # with the current implementation, but better safe than sorry.
+        return generateaudio(self.notifier, self.mediamanager, self.config, transformations.tonesandhi(dictreading))
+    
     def generatecoloredcharacters(self, expression):
         return pinyin.flatten(transformations.colorize(self.config.tonecolors, transformations.tonesandhi(self.config.dictionary.tonedchars(expression))))
 
@@ -205,8 +227,25 @@ class FieldUpdaterFromExpression(object):
         return " ".join(['[<a href="' + urltemplate.replace("{searchTerms}", utils.urlescape(expression)) + '" title="' + tooltip + '">' + text + '</a>]' for text, tooltip, urltemplate in self.config.weblinks])
 
     #
-    # Core updater routine
+    # Core updater routines
     #
+    
+    def getdictreading(self, expression):
+        dictreadingsources = [
+                # Get the reading by considering the text as a (Western) number
+                lambda: numbers.readingfromnumberlike(expression, self.config.dictionary),
+                # Use CEDICT to get reading (always succeeds)
+                lambda: self.config.dictionary.reading(expression)
+            ]
+        
+        # Find the first source that returns a sensible reading
+        for lookup in dictreadingsources:
+            dictreading = lookup()
+            if dictreading != None:
+                return dictreading
+  
+        raise AssertionError("The CEDICT reading lookup should always succeed, but it failed on %s" % expression)
+    
     def updatefact(self, fact, expression):
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
         # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
@@ -234,23 +273,10 @@ class FieldUpdaterFromExpression(object):
             # delay, but I'm not sure where the delay originates from, which worries me:
             return
         
-        # Figure out the reading for the expression field, with sandhi considered
-        dictreadingsources = [
-                # Get the reading by considering the text as a (Western) number
-                lambda: numbers.readingfromnumberlike(expression, self.config.dictionary),
-                # Use CEDICT to get reading (always succeeds)
-                lambda: self.config.dictionary.reading(expression)
-            ]
-        
-        # Find the first source that returns a sensible reading
-        for lookup in dictreadingsources:
-            dictreading = lookup()
-            if dictreading != None:
-                break
-  
         # Apply tone sandhi: this information is needed both by the sound generation
         # and the colorisation, so we can't do it in generatereading
-        dictreading = transformations.tonesandhi(dictreading)
+        dictreading = self.getdictreading(expression)
+        dictreadingsandhi = transformations.tonesandhi(dictreading)
   
         # Preload the meaning, but only if we absolutely must
         if self.config.needmeanings:
@@ -280,21 +306,15 @@ class FieldUpdaterFromExpression(object):
             # If the user wants the measure words to be folded into the definition or there
             # is no MW field for us to split them out into, fold them in there
             if not(self.config.detectmeasurewords) or "mw" not in fact:
-                dictmeanings, dictmeasurewords = dictionary.combinemeaningsmws(dictmeanings, dictmeasurewords), None
+                # NB: do NOT overwrite the old dictmeasurewords, because we still want to use the
+                # measure words for e.g. measure word audio generation
+                dictmeanings = dictionary.combinemeaningsmws(dictmeanings, dictmeasurewords)
             
             # NB: expression only used for Hanzi masking here
             meaning = self.generatemeanings(expression, dictmeanings)
             if meaning and dictmeaningssource:
                 # Append attribution to the meaning if we have any
                 meaning = meaning + dictmeaningssource
-            
-            # DEBUG: Nick wants to do something with audio for measure words here?
-            # yes, want the measure word to appear as:
-            #       [MW1] - [MWPY1]
-            #       [MW2] - [MWPY2]
-            #       [sound:mw1][sound:mw2]
-            # The measure word shouldn't be included on the main card because if so you break min-info rule (harder to learn it)
-            #' If testing seperately then putting audio in the MW field is a good idea (so it will play when the measure word question is answered)
 
         # Generate translations of the expression into simplified/traditional on-demand
         expressionviews = utils.FactoryDict(lambda simptrad: self.generateincharactersystem(expression, simptrad))
@@ -310,10 +330,11 @@ class FieldUpdaterFromExpression(object):
         # added it to the updatecontrolflags dictionary in Config as well!
         updaters = {
                 'expression' : lambda: expression,
-                'reading'    : lambda: self.generatereading(dictreading),
+                'reading'    : lambda: self.generatereading(dictreadingsandhi),
                 'meaning'    : lambda: meaning,
-                'mw'         : lambda: self.generatemeasureword(dictmeasurewords),
-                'audio'      : lambda: self.generateaudio(dictreading),
+                'mw'         : lambda: self.generatemeasureword(self.config.detectmeasurewords and dictmeasurewords or None),
+                'audio'      : lambda: self.generateaudio(dictreadingsandhi),
+                'mwaudio'    : lambda: self.generatemwaudio(dictreading, dictmeasurewords),
                 'color'      : lambda: self.generatecoloredcharacters(expression),
                 'trad'       : lambda: (expressionviews["trad"] != expressionviews["simp"]) and expressionviews["trad"] or None,
                 'simp'       : lambda: (expressionviews["trad"] != expressionviews["simp"]) and expressionviews["simp"] or None,
@@ -627,15 +648,15 @@ if __name__ == "__main__":
                         "weblinks" : u'[<a href="silly%E4%B8%80%E6%A6%82url" title="mytitle">YEAH!</a>] [<a href="verysilly%E4%B8%80%E6%A6%82url" title="myothertitle">NAY!</a>]'
                       })
 
-        def testReadingFromWesternNumbers(self):
-            self.assertEquals(self.updatefact(u"111", { "reading" : "" }, colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
-                                                      { "reading" : u'<span style="color:#333333">b\u01cei</span> <span style="color:#111111">y\u012b</span> <span style="color:#222222">sh\xed</span> <span style="color:#111111">y\u012b</span>' })
-        
         def testWebLinkFieldCanBeMissingAndStaysMissing(self):
             self.assertEquals(self.updatefact(u"一概", { }, weblinkgeneration = True), { })
         
         def testWebLinksNotBlankedIfDisabled(self):
             self.assertEquals(self.updatefact(u"一概", { "weblinks": "Nope!" }, weblinkgeneration = False), { "weblinks" : "Nope!" })
+        
+        def testReadingFromWesternNumbers(self):
+            self.assertEquals(self.updatefact(u"111", { "reading" : "" }, colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
+                                                      { "reading" : u'<span style="color:#333333">b\u01cei</span> <span style="color:#111111">y\u012b</span> <span style="color:#222222">sh\xed</span> <span style="color:#111111">y\u012b</span>' })
         
         def testNotifiedUponAudioGenerationWithNoPacks(self):
             infos, fact = self.updatefactwithinfos(u"三月", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
@@ -647,6 +668,19 @@ if __name__ == "__main__":
             self.assertEquals(len(infos), 1)
             self.assertTrue("cannot" in infos[0])
         
+        def testUpdateMeasureWordAudio(self):
+            mwaudio = self.updatefact(u"啤酒", { "mwaudio" : "" }, detectmeasurewords = False, mwaudiogeneration = True, audioextensions = [".mp3", ".ogg"])["mwaudio"]
+            for quantitydigit in ["yi1", "liang3", "san1", "si4", "wu3", "liu4", "qi1", "ba1", "jiu3"]:
+                mwaudio = mwaudio.replace(quantitydigit, "X")
+            
+            # jiu3 in the numbers aliases with jiu3 in the characters :(
+            sounds = ["X", "bei1", "pi2", "X",
+                      "X", "ping2", "pi2", "X",
+                      "X", "guan4", "pi2", "X",
+                      "X", "tong3", "pi2", "X",
+                      "X", "gang1", "pi2", "X"]
+            self.assertEquals(mwaudio, "".join([u"[sound:" + os.path.join("MWAudio", sound + ".mp3") + "]" for sound in sounds]))
+
         def testFallBackOnGoogleForPhrase(self):
             self.assertEquals(
                 self.updatefact(u"你好，你是我的朋友吗", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
@@ -716,7 +750,14 @@ if __name__ == "__main__":
             if mediapacks == None:
                 mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
                                                         "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
-                                                        "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
+                                                        "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" }),
+                              media.MediaPack("MWAudio", { "pi2.mp3" : "pi2.mp3", "jiu3.mp3" : "jiu3.mp3",
+                                                           "bei1.mp3" : "bei1.mp3", "ping2.mp3" : "ping2.mp3", "guan4.mp3" : "guan4.mp3", "tong3.mp3" : "tong3.mp3", "gang1.mp3" : "gang1.mp3",
+                                                           "yi1.mp3" : "yi1.mp3", "liang3.mp3" : "liang3.mp3", "san1.mp3" : "san1.mp3", "si4.mp3" : "si4.mp3", "wu3.mp3" : "wu3.mp3",
+                                                           "liu4.mp3" : "liu4.mp3", "qi1.mp3" : "qi1.mp3", "ba1.mp3" : "ba1.mp3", "jiu3.mp3" : "jiu3.mp3",
+                                                           # Sandhi variants of numerals:
+                                                           "wu2.mp3" : "wu2.mp3", "jiu2.mp3" : "jiu2.mp3" })
+                             ]
             mediamanager = MockMediaManager(mediapacks)
             
             factclone = copy.deepcopy(fact)
