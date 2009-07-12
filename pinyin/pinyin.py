@@ -217,6 +217,9 @@ class TonedCharacter(unicode):
             
         return self
     
+    def __repr__(self):
+        return u"TonedCharacter(%s, %s)" % (unicode.__repr__(self), repr(self.toneinfo))
+    
     def __eq__(self, other):
         if other == None or other.__class__ != self.__class__:
             return False
@@ -695,6 +698,9 @@ if __name__ == "__main__":
     class TonedCharacterTest(unittest.TestCase):
         def testConvenienceConstructor(self):
             self.assertEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", ToneInfo(written=2)))
+        
+        def testRepr(self):
+            self.assertEquals(repr(TonedCharacter(u"儿", 2)), "TonedCharacter(u'\\u513f', ToneInfo(written=2, spoken=2))")
         
         def testEq(self):
             self.assertEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", 2))
