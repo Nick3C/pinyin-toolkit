@@ -425,8 +425,15 @@ def bind_none(mx, f):
     else:
         return None
 
+def let(*stuff):
+    return stuff[-1](*(stuff[:-1]))
+
 if __name__=='__main__':
     import unittest
+    
+    class LetTest(unittest.TestCase):
+        def testLet(self):
+            self.assertEquals(let(1, "hello", lambda x, y: str(x) + y), "1hello")
     
     class ConcatTest(unittest.TestCase):
         def testConcatNothing(self):

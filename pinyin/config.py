@@ -132,19 +132,22 @@ defaultsettings = {
     "modelTag" : "Mandarin",
 
     # Field names are listed in descending order of priority
-    "candidateFieldNamesByKey" : {
+    "candidateFieldNamesByKey" : utils.let(
+            ["MW", "Measure Word", "Classifier", u"量词"],
+            ["Audio", "Sound", "Spoken", u"声音"],
+            lambda mwfields, audiofields: {
         'expression' : ["Expression", "Hanzi", "Chinese", "Character", "Characters", u"汉字", u"中文"],
         'reading'    : ["Reading", "Pinyin", "PY", u"拼音"],
         'meaning'    : ["Meaning", "Definition", "English", "German", "French", u"意思", u"翻译", u"英语", u"法语", u"德语"],
-        'audio'      : ["Audio", "Sound", "Spoken", u"声音"],
+        'audio'      : audiofields,
         'color'      : ["Color", "Colour", "Colored Hanzi", u"彩色"],
-        'mw'         : ["MW", "Measure Word", "Classifier", u"量词"],
-        'mwaudio'    : utils.concat([[x + " " + y for y in ["Audio", "Sound", "Spoken"]] for x in ["MW", "Measure Word", "Classifier"]]) + [u"量词声音"],
+        'mw'         : mwfields,
+        'mwaudio'    : utils.concat(utils.concat([[[x + " " + y, x + y] for x in mwfields] for y in audiofields])),
         #'weblinks'   : ["Links", "Link", "LinksBar", "Links Bar", "Link Bar", "LinkBar", "Web", "Dictionary", "URL", "URLs"],
         #'pos'        : ["POS", "Part", "Type", "Cat", "Class", "Kind", "Grammar"] ,
         'trad'       : ["Traditional", "Trad", "Traditional Chinese", "HK", u'繁体字', u'繁体', u"繁體字", u"繁體"],
         'simp'       : ["Simplified", "Simp", "Simplified Chinese", u"简体字", u"简体"]
-      }
+      })
   }
 
 updatecontrolflags = {
