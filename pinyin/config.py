@@ -37,7 +37,6 @@ defaultsettings = {
     "hanzimasking"                 : True, # Should Hanzi masking be turned on? i.e. if the expression appears in the meaning field be replaced with a "㊥" or "[~]"
     "colormeaningnumbers"          : True, # Should we color the index number for each translation a different color?
     "emphasisemainmeaning"         : True, # Should we format the meanings so that the most frequent one is called out?
-    "mainmeaningemphasistag"       : "br/",
     
     "weblinkgeneration"            : False, # Should we try to generate some online dictionary references for each card into a field called Links?
     
@@ -64,6 +63,10 @@ defaultsettings = {
     # "lines", "commas" or "custom"
     "meaningseperator" : "lines",
     "custommeaningseperator" : " | ",
+
+    # Tag to use to wrap around non-emphasised meanings: if it ends with a /, then
+    # the tag is treated as self-closing and only the leading tag will be added
+    "mainmeaningemphasistag" : "small",
 
     # "simp" or "trad" - used for both determining which kind of measure word to
     # show and which kind of character to use to fill the expression field
@@ -335,7 +338,7 @@ class Config(object):
             # Call out the first meaning specially
             starttag, endtag = self.mainmeaningemphasistag.endswith("/") and ("<%s />" % self.mainmeaningemphasistag[:-1], "") \
                                                                           or ("<%s>" % self.mainmeaningemphasistag, "</%s>" % self.mainmeaningemphasistag)
-            return meanings[0] + starttag + self.numbermeanings(meanings[1:], 1) + endtag
+            return meanings[0] + self.meaningseperatorstring + starttag + self.numbermeanings(meanings[1:], 1) + endtag
         else:
             # No header, just format all the meanings together
             return self.numbermeanings(meanings, 0)
@@ -471,18 +474,18 @@ if __name__=='__main__':
         def testFormatMeaningsWithEmphasis(self):
             self.assertEquals(Config({ "meaningnumbering" : "circledChinese", "meaningseperator" : "commas", "colormeaningnumbers" : False,
                                        "emphasisemainmeaning" : True, "mainmeaningemphasistag" : "br/" }).formatmeanings([u"a", u"b", u"c"]),
-                              u"a<br />㊁ b, ㊂ c")
+                              u"a, <br />㊁ b, ㊂ c")
             self.assertEquals(Config({ "meaningnumbering" : "none", "meaningseperator" : "custom", "custommeaningseperator" : " ^_^ ", "colormeaningnumbers" : False,
                                        "emphasisemainmeaning" : True, "mainmeaningemphasistag" : "small" }).formatmeanings([u"a", u"b", u"c", u"d"]),
-                              u"a<small>b ^_^ c ^_^ d</small>")
+                              u"a ^_^ <small>b ^_^ c ^_^ d</small>")
             self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "lines", "colormeaningnumbers" : True, "meaningnumberingcolor" : "#aabbcc",
                                        "emphasisemainmeaning" : True, "mainmeaningemphasistag" : "mehhh/" }).formatmeanings([u"a", u"b", u"c"]),
-                              u'a<mehhh /><span style="color:#aabbcc">(2)</span> b<br /><span style="color:#aabbcc">(3)</span> c')
+                              u'a<br /><mehhh /><span style="color:#aabbcc">(2)</span> b<br /><span style="color:#aabbcc">(3)</span> c')
         
         def testFormatMeaningsWithEmphasisSingleNonMainMeaning(self):
             self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "commas", "colormeaningnumbers" : False,
                                        "emphasisemainmeaning" : True, "mainmeaningemphasistag" : "br/" }).formatmeanings([u"a", u"b"]),
-                              u"a<br />b")
+                              u"a, <br />b")
         
         def testFormatMeaningsWithEmphasisSingleMeaning(self):
             self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "commas", "colormeaningnumbers" : False,
