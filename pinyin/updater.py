@@ -164,8 +164,8 @@ class FieldUpdaterFromExpression(object):
             # No measure word, so don't update the field
             return None
         
-        # Just use the first measure word meaning, if there was more than one
-        return preparetokens(self.config, dictmeasurewords[0])
+        # Concatenate the measure words together with - before we put them into the MW field
+        return preparetokens(self.config, dictionary.flattenmeasurewords(dictmeasurewords))
     
     def generatecoloredcharacters(self, expression):
         return pinyin.flatten(transformations.colorize(self.config.tonecolors, transformations.tonesandhi(self.config.dictionary.tonedchars(expression))))

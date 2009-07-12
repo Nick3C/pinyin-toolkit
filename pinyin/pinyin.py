@@ -787,6 +787,7 @@ if __name__ == "__main__":
             self.assertTrue(needsspacebeforeappend([Word(Text(","))]))
             self.assertFalse(needsspacebeforeappend([Word(Text("("))]))
             self.assertFalse(needsspacebeforeappend([Word(Text(")"))]))
+            self.assertFalse(needsspacebeforeappend([Word(Text('"'))]))
     
     class TonedCharactersFromReadingTest(unittest.TestCase):
         def testTonedTokens(self):
