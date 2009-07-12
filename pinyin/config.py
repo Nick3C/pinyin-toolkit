@@ -173,7 +173,13 @@ tonedisplayshouldtonify = {
 }
 
 meaningnumberingstringss = utils.let(
-    [u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳", u"㉑", u"㉒", u"㉓", u"㉔", u"㉕", u"㉖", u"㉗", u"㉘", u"㉙", u"㉚"],
+    # I would love to include u"㉑", u"㉒", u"㉓", u"㉔", u"㉕", u"㉖", u"㉗", u"㉘", u"㉙", u"㉚"
+    # as well, but they are part of "Enclosed CJK Letters and Months", and Windows font
+    # vendors don't seem to supply this group. Up to ⑳ are in "Enclosed Alphanumerics"
+    # and are supplied in at least Arial Unicode MS.
+    #
+    # Annoyingly, this means that non-broken platforms like OS X get bad numbers above 20.
+    [u"⑪", u"⑫", u"⑬", u"⑭", u"⑮", u"⑯", u"⑰", u"⑱", u"⑲", u"⑳"],
     lambda elevenOnwards: {
     # Cute Chinese symbols for first 10, then english up from there
     "circledChinese" : [u"㊀", u"㊁", u"㊂", u"㊃", u"㊄", u"㊅", u"㊆", u"㊇", u"㊈", u"㊉"] + elevenOnwards,
@@ -441,16 +447,16 @@ if __name__=='__main__':
             self.assertFalse(Config({ "meaninggeneration" : False, "detectmeasurewords" : False }).needmeanings)
         
         def testMeaningNumber(self):
-            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "arabicParens", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 31]),
-                              [u"(2)", u"(10)", u"(31)"])
-            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "circledChinese", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 31]),
-                              [u"㊁", u"㊉", u"(31)"])
-            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "circledArabic", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 31]),
-                              [u"②", u"⑩", u"(31)"])
-            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "none", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 31]),
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "arabicParens", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 21]),
+                              [u"(2)", u"(10)", u"(21)"])
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "circledChinese", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 21]),
+                              [u"㊁", u"㊉", u"(21)"])
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "circledArabic", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 21]),
+                              [u"②", u"⑩", u"(21)"])
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "none", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 21]),
                               [u"", u"", u""])
-            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "arabicParens", "colormeaningnumbers" : True, "meaningnumberingcolor" : "#aabbcc", "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 31]),
-                              [u'<span style="color:#aabbcc">(2)</span>', u'<span style="color:#aabbcc">(10)</span>', u'<span style="color:#aabbcc">(31)</span>'])
+            self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "arabicParens", "colormeaningnumbers" : True, "meaningnumberingcolor" : "#aabbcc", "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 21]),
+                              [u'<span style="color:#aabbcc">(2)</span>', u'<span style="color:#aabbcc">(10)</span>', u'<span style="color:#aabbcc">(21)</span>'])
 
         def testFormatMeaningsOptions(self):
             self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "lines", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).formatmeanings([u"a", u"b"]),
@@ -468,8 +474,8 @@ if __name__=='__main__':
             self.assertEquals(Config({ "meaningnumbering" : "arabicParens", "meaningseperator" : "lines", "emphasisemainmeaning" : False }).formatmeanings([u"a"]), u"a")
         
         def testFormatTooManyMeanings(self):
-            self.assertEquals(Config({ "meaningnumbering" : "circledChinese", "meaningseperator" : "commas", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).formatmeanings([str(n) for n in range(1, 32)]),
-                              u"㊀ 1, ㊁ 2, ㊂ 3, ㊃ 4, ㊄ 5, ㊅ 6, ㊆ 7, ㊇ 8, ㊈ 9, ㊉ 10, ⑪ 11, ⑫ 12, ⑬ 13, ⑭ 14, ⑮ 15, ⑯ 16, ⑰ 17, ⑱ 18, ⑲ 19, ⑳ 20, ㉑ 21, ㉒ 22, ㉓ 23, ㉔ 24, ㉕ 25, ㉖ 26, ㉗ 27, ㉘ 28, ㉙ 29, ㉚ 30, (31) 31")
+            self.assertEquals(Config({ "meaningnumbering" : "circledChinese", "meaningseperator" : "commas", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).formatmeanings([str(n) for n in range(1, 22)]),
+                              u"㊀ 1, ㊁ 2, ㊂ 3, ㊃ 4, ㊄ 5, ㊅ 6, ㊆ 7, ㊇ 8, ㊈ 9, ㊉ 10, ⑪ 11, ⑫ 12, ⑬ 13, ⑭ 14, ⑮ 15, ⑯ 16, ⑰ 17, ⑱ 18, ⑲ 19, ⑳ 20, (21) 21")
     
         def testFormatMeaningsWithEmphasis(self):
             self.assertEquals(Config({ "meaningnumbering" : "circledChinese", "meaningseperator" : "commas", "colormeaningnumbers" : False,
