@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from PyQt4.QtCore import QUrl
-from PyQt4.QtGui import QBrush, QDesktopServices, QFont, QImage, QPalette, QPixmap
+from PyQt4.QtGui import QBrush, QDesktopServices, QFont, QImage, QKeySequence, QPalette, QPixmap
 
 
 # Substantially cribbed from Anki (main.py, onOpenPluginFolder):
@@ -14,6 +14,10 @@ def openFolder(path):
         subprocess.Popen(["explorer", path.encode(sys.getfilesystemencoding())])
     else:
         QDesktopServices.openUrl(QUrl("file://" + path))
+
+
+def nativeShortcutKeys(keys):
+    return QKeySequence(keys).toString(QKeySequence.NativeText)
 
 
 # Code to convert from QVariant taken from <http://www.opensubscriber.com/message/pyqt@riverbankcomputing.com/9900124.html>

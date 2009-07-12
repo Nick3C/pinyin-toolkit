@@ -8,6 +8,7 @@ import pinyin.config
 from pinyin.languages import languages
 import pinyin.media
 import pinyin.mocks
+from pinyin.anki.hooks import ColorShortcutKeysHook
 import pinyin.updater
 import pinyin.utils
 
@@ -148,8 +149,10 @@ class PreferencesController(object):
         
         # The Quick Access Colors panel
         def setUpQuickAccessColors():
-            helptext = "These colors, along with the tone colors, are available in the fact editor by pressing "\
-                       "Ctrl+F1 to Ctrl+F8 while some text is selected - press Shift to get the sandhi variant:"
+            helptext = "These colors, along with the tone colors, are available in the fact editor by pressing " +\
+                       utils.nativeShortcutKeys(ColorShortcutKeysHook.shortcutKeyFor(1)) + " to " +\
+                       utils.nativeShortcutKeys(ColorShortcutKeysHook.shortcutKeyFor(8)) + " while some text is selected - press " +\
+                       ColorShortcutKeysHook.sandhiModifier + " to get the sandhi variant:"
             if pinyin.utils.isosx():
                 self.view.controls.quickAccessLabel.setText(helptext.replace("Ctrl", "Option"))
             else:

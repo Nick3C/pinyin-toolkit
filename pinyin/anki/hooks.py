@@ -85,7 +85,7 @@ class ColorShortcutKeysHook(Hook):
         log.info("Setting up shortcut keys on fact editor")
         for i in range(1, 9):
             for sandhify in [True, False]:
-                keysequence = (sandhify and "Shift+" or "") + "Ctrl+F" + str(i)
+                keysequence = (sandhify and ColorShortcutKeysHook.sandhiModifier + "+" or "") + ColorShortcutKeysHook.shortcutKeyFor(i)
                 QtGui.QShortcut(QtGui.QKeySequence(keysequence), editor.widget,
                                 lambda i=i, sandhify=sandhify: self.setColor(editor, i, sandhify))
     
@@ -96,6 +96,19 @@ class ColorShortcutKeysHook(Hook):
         log.info("Installing color shortcut keys hook")
         ankiqt.ui.facteditor.FactEditor.setupFields = wrap(ankiqt.ui.facteditor.FactEditor.setupFields, self.setupShortcuts, "after")
         self.setupShortcuts(self.mw.editor)
+    
+    
+    sandhiModifier = "Shift"
+    
+    @classmethod
+    def shortcutKeyFor(cls, i):
+        if pinyin.utils.isosx():
+            # Alt maps to the Windows key on my keyboard, NOT the Alt key.
+            # NB: Ctrl maps to Option on OS X, and Option+Fx conflicts with
+            # some special meanings given to those keys on Mac laptops.
+            return "Alt+" + str(i)
+        else:
+            return "Ctrl+F" + str(i)
 
 class HelpHook(Hook):
     def install(self):
