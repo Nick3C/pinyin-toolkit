@@ -6,6 +6,32 @@ import pinyin
 import utils
 
 #
+# Raw data
+#
+
+hanzidigits = [u"零", u"一", u"二", u"三", u"四", u"五", u"六", u"七", u"八", u"九"]
+hanziquantitydigits = [u"一", u"两", u"三", u"四", u"五", u"六", u"七", u"八", u"九"]
+
+magnitudes = list(enumerate([
+    u"",     # units
+    u"十",    # tens
+    u"百",    # hundreds
+    u"千",    # thousands
+    u"万",    # ten-thousands
+    u"十万",   # hundred thousand
+    u"百万",   # 10^6
+    u"千万",   # 10^7
+    u"亿",    # 10^8
+    u"十亿",   # 10^9
+    u"百亿",   # 10^10
+    u"千亿",   # 10^11
+    u"兆",    # 10^12
+    u"十兆",   # 10^13
+    u"百兆",   # 10^14
+    u"千兆"    # 10^15
+  ]))
+
+#
 # These are the low-level functions that just convert between
 # hanzi representing integers and Python integers
 #
@@ -50,36 +76,15 @@ def parsedigit(text):
 
 parsedigitswithcommas = lambda text: parsemany(skipcommas(parsedigit))(text)
 
-digits = [u"零", u"一", u"二", u"三", u"四", u"五", u"六", u"七", u"八", u"九"]
-
 # Parsing a single digit: returns a digit (or None) and the rest of the string
 def parsehanzidigit(hanzi):
-    for digit, digittext in enumerate(digits):
+    for digit, digittext in enumerate(hanzidigits):
         if hanzi.startswith(digittext):
             return digit, hanzi[len(digittext):]
     
     return None, hanzi
 
 parsehanzidigits = lambda text: "".join(parsemany(parsehanzidigit)(text))
-
-magnitudes = list(enumerate([
-    u"",     # units
-    u"十",    # tens
-    u"百",    # hundreds
-    u"千",    # thousands
-    u"万",    # ten-thousands
-    u"十万",   # hundred thousand
-    u"百万",   # 10^6
-    u"千万",   # 10^7
-    u"亿",    # 10^8
-    u"十亿",   # 10^9
-    u"百亿",   # 10^10
-    u"千亿",   # 10^11
-    u"兆",    # 10^12
-    u"十兆",   # 10^13
-    u"百兆",   # 10^14
-    u"千兆"    # 10^15
-  ]))
 
 # Takes western numbers and converts them into Chinese characters so they can be use in the dictionary lookup
 def numberashanzi(n):  
@@ -88,7 +93,7 @@ def numberashanzi(n):
         # or the logic below will just return an empty string.
         # Likewise, for the number 1 - so we may as well
         # do this for all manifest digits.
-        return digits[n]
+        return hanzidigits[n]
     
     hanzi = u""
     needling = False
@@ -120,18 +125,18 @@ def numberashanzi(n):
         
         if needling:
             # Insert a ling marker before the digit
-            hanzi += digits[0]
+            hanzi += hanzidigits[0]
             needling = False
         
-        hanzi += digits[digit] + text
+        hanzi += hanzidigits[digit] + text
     
     return hanzi
 
 # Takes Chinese characters and attempts to convert them into an integer
 def parsehanziasnumber(hanzi):
     # The only valid form for 0 is 'ling'
-    if hanzi.startswith(digits[0]):
-        return 0, hanzi[len(digits[0]):]
+    if hanzi.startswith(hanzidigits[0]):
+        return 0, hanzi[len(hanzidigits[0]):]
     
     # Special case for the irregular 'liang'
     if hanzi.startswith(u"两"):

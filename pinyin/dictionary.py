@@ -220,10 +220,14 @@ class PinyinDictionary(object):
                 i += 1
 
 def combinemeaningsmws(dictmeanings, dictmeasurewords):
-    if dictmeanings != None or dictmeasurewords != None:
-        return (dictmeanings or []) + [[Word(Text("MW: "))] + dictmeasureword for dictmeasureword in (dictmeasurewords or [])]
+    if dictmeasurewords is not None and len(dictmeasurewords) > 0:
+        return (dictmeanings or []) + [[Word(Text("MW: "))] + flattenmeasurewords(dictmeasurewords)]
     else:
-        return None
+        return dictmeanings
+
+def flattenmeasurewords(dictmeasurewords):
+    measurewordss = [charwords + [Word(Text(" - "))] + pinyinwords for (charwords, pinyinwords) in dictmeasurewords]
+    return concat(intersperse([Word(Text(", "))], measurewordss))
 
 # Testsuite
 if __name__=='__main__':
@@ -240,6 +244,9 @@ if __name__=='__main__':
             self.assertEquals(flatten(toned), u"一个")
             self.assertEquals(toned[0][0].toneinfo, ToneInfo(written=1))
             self.assertEquals(toned[0][1].toneinfo, ToneInfo(written=4))
+        
+        def testTonedCharactersPreservesWhitespace(self):
+            self.assertEquals(flatten(pinyindict.tonedchars(u"\t一个")), u"\t一个")
 
         def testTonedTokensWithoutTone(self):
             toned = pinyindict.tonedchars(u"T恤")
@@ -329,7 +336,8 @@ if __name__=='__main__':
         def testNonFlatMeanings(self):
             dictmeanings, dictmeasurewords = englishdict.meanings(u"书", prefersimptrad="simp")
             self.assertEquals(self.flattenall(dictmeanings), [u"book", u"letter", u"same as 书经 Book of History"])
-            self.assertEquals(self.flattenall(dictmeasurewords), [u"本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])
+            self.assertEquals([(self.flattenall(dictmwcharacters)[0], self.flattenall(dictmwpinyin)[0]) for dictmwcharacters, dictmwpinyin in dictmeasurewords],
+                              [(u"本", u"ben3"), (u"册", u"ce4"), (u"部", u"bu4"), (u"丛", u"cong2")])
         
         # Test helper 
         def flatmeanings(self, dictionary, what, prefersimptrad="simp"):

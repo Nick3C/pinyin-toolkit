@@ -248,7 +248,7 @@ class PinyinAudioReadingsVisitor(TokenVisitor):
             self.output.append(media)
         else:
             # Otherwise, increment the count of missing media we use to determine optimality
-            log.warning("Couldn't find media for %s in %s", pinyin, self.mediapack)
+            log.warning("Couldn't find media for %s (%s) in %s", pinyin, pinyin.numericformat(tone="spoken"), self.mediapack)
             self.mediamissingcount += 1
 
     def visitTonedCharacter(self, tonedcharacter):

@@ -319,6 +319,17 @@ def striphtml(what):
 def concat(what):
     return sum(what, [])
 
+def intersperse(what, things):
+    first = True
+    result = []
+    for thing in things:
+        if not(first):
+            result.append(what)
+        result.append(thing)
+        first = False
+    
+    return result
+
 #
 # Color conversion appropriated from <http://code.activestate.com/recipes/576554/>
 # We can replace this with a use of the colorsys module when Anki uses Python 2.6

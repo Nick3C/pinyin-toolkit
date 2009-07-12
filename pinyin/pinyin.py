@@ -217,6 +217,9 @@ class TonedCharacter(unicode):
             
         return self
     
+    def __repr__(self):
+        return u"TonedCharacter(%s, %s)" % (unicode.__repr__(self), repr(self.toneinfo))
+    
     def __eq__(self, other):
         if other == None or other.__class__ != self.__class__:
             return False
@@ -388,7 +391,7 @@ class NeedsSpaceBeforeAppendVisitor(TokenVisitor):
     
     def visitText(self, text):
         lastchar = text[-1]
-        self.needsspacebeforeappend = (lastchar != " " and not(utils.ispunctuation(lastchar))) or utils.ispostspacedpunctuation(text)
+        self.needsspacebeforeappend = (not(lastchar.isspace()) and not(utils.ispunctuation(lastchar))) or utils.ispostspacedpunctuation(text)
     
     def visitPinyin(self, pinyin):
         self.needsspacebeforeappend = True
@@ -696,6 +699,9 @@ if __name__ == "__main__":
         def testConvenienceConstructor(self):
             self.assertEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", ToneInfo(written=2)))
         
+        def testRepr(self):
+            self.assertEquals(repr(TonedCharacter(u"儿", 2)), "TonedCharacter(u'\\u513f', ToneInfo(written=2, spoken=2))")
+        
         def testEq(self):
             self.assertEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", 2))
             self.assertNotEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", 3))
@@ -774,9 +780,10 @@ if __name__ == "__main__":
         def testEmptyDoesntNeedSpace(self):
             self.assertFalse(needsspacebeforeappend([]))
         
-        def testEndsWithSpace(self):
+        def testEndsWithWhitespace(self):
             self.assertFalse(needsspacebeforeappend([Word(Text("hello "))]))
             self.assertFalse(needsspacebeforeappend([Word(Text("hello"), Text(" "), Text("World"), Text(" "))]))
+            self.assertFalse(needsspacebeforeappend([Word(Text("hello"), Text(" "), Text("World"), Text("!\t"))]))
         
         def testNeedsSpace(self):
             self.assertTrue(needsspacebeforeappend([Word(Text("hello"))]))
@@ -786,6 +793,7 @@ if __name__ == "__main__":
             self.assertTrue(needsspacebeforeappend([Word(Text(","))]))
             self.assertFalse(needsspacebeforeappend([Word(Text("("))]))
             self.assertFalse(needsspacebeforeappend([Word(Text(")"))]))
+            self.assertFalse(needsspacebeforeappend([Word(Text('"'))]))
     
     class TonedCharactersFromReadingTest(unittest.TestCase):
         def testTonedTokens(self):

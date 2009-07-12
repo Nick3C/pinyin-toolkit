@@ -17,39 +17,56 @@ class MeaningFormatter(object):
     def parsedefinition(self, raw_definition, tonedchars_callback=None):
         log.info("Parsing the raw definition %s", raw_definition)
         
+        # Default the toned characters callback to something sensible
+        if tonedchars_callback is None:
+            tonedchars_callback = lambda characters: [Word(Text(characters))]
+        
         meanings, measurewords = [], []
         for definition in raw_definition.strip().lstrip("/").rstrip("/").split("/"):
-            # Remove spaces and replace all occurences of "CL:" with "MW:" as that is more meaningful
-            definition = definition.strip().replace("CL:", "MW:")
+            # Remove stray spaces
+            definition = definition.strip()
             
             # Detect measure-word ness
-            words = []
-            if definition.startswith("MW:"):
+            if definition.startswith("CL:"):
                 ismeasureword = True
                 
-                # Replace the commas with nicer ones that have spaces in
-                definition = ", ".join(definition.lstrip("MW:").strip().split(","))
+                # Measure words are comma-seperated
+                for mw in definition[3:].strip().split(","):
+                    # Attempt to parse the measure words as structured data
+                    match = self.embeddedchineseregex.match(mw)
+                    if match is None:
+                        log.info("Could not parse the apparent measure word %s", mw)
+                        continue
+                    
+                    # They SHOULD have pinyin information
+                    characterswords, pinyinwords = self.formatmatch(match, tonedchars_callback)
+                    if characterswords is None or pinyinwords is None:
+                        log.info("The measure word %s was missing some information in the dictionary", mw)
+                        continue
+                    
+                    measurewords.append((characterswords, pinyinwords))
             else:
-                ismeasureword = False
-            
-            for ismatch, thing in utils.regexparse(self.embeddedchineseregex, definition):
-                if ismatch:
-                    # A match - we can append a representation of the words it contains
-                    self.formatmatch(words, thing, tonedchars_callback)
-                else:
-                    # Just a string: append it as a list of tokens, trying to extract any otherwise-unmarked
-                    # pinyin in the sentence for colorisation etc
-                    words.append(Word(*tokenize(thing, forcenumeric=True)))
-            
-            # Add the tokens to the right pile
-            if ismeasureword:
-                measurewords.append(words)
-            else:
+                words = []
+                for ismatch, thing in utils.regexparse(self.embeddedchineseregex, definition):
+                    if ismatch:
+                        # A match - we can append a representation of the words it contains
+                        (characterwords, pinyinwords) = self.formatmatch(thing, tonedchars_callback)
+                        
+                        # Put the resulting words right into the output in a human-readable format
+                        words.extend(characterwords)
+                        if pinyinwords is not None:
+                            words.append(Word(Text(" - ")))
+                            words.extend(pinyinwords)
+                    else:
+                        # Just a string: append it as a list of tokens, trying to extract any otherwise-unmarked
+                        # pinyin in the sentence for colorisation etc
+                        words.append(Word(*tokenize(thing, forcenumeric=True)))
+                
                 meanings.append(words)
             
         return meanings, measurewords
     
-    def formatmatch(self, words, match, tonedchars_callback):
+    def formatmatch(self, match, tonedchars_callback):
         if match.group(4) != None:
             # A single character standing by itself, with no | - just use the character
             character = match.group(4)
@@ -70,16 +87,10 @@ class MeaningFormatter(object):
         if rawpinyin != None:
             # There was some pinyin for the character after it - include it
             pinyintokens = tokenizespaceseperated(rawpinyin)
-            words.append(Word(*(tonedcharactersfromreading(character, pinyintokens))))
-            words.append(Word(Text(" - ")))
-            words.append(Word.spacedwordfromunspacedtokens(pinyintokens))
+            return ([Word(*(tonedcharactersfromreading(character, pinyintokens)))], [Word.spacedwordfromunspacedtokens(pinyintokens)])
         else:
-            if tonedchars_callback:
-                # Look up the tone for the character so we can display it more nicely, as in the other branch
-                words.extend(tonedchars_callback(character))
-            else:
-                # No callback, so the best we can do is to include the characters verbatim
-                words.append(Word(Text(character)))
+            # Look up the tone for the character so we can display it more nicely, as in the other branch
+            return (tonedchars_callback(character), None)
 
 if __name__=='__main__':
     import unittest
@@ -87,14 +98,14 @@ if __name__=='__main__':
     class MeaningFormatterTest(unittest.TestCase):
         shangwu_def = u"/morning/CL:個|个[ge4]/"
         shangwu_meanings = [u"morning"]
-        shangwu_simp_mws = [u"个 - ge4"]
-        shangwu_trad_mws = [u"個 - ge4"]
+        shangwu_simp_mws = [(u'个', u'ge4')]
+        shangwu_trad_mws = [(u'個', u'ge4')]
         
         shu_def = u"/book/letter/same as 書經|书经 Book of History/CL:本[ben3],冊|册[ce4],部[bu4],叢|丛[cong2]/"
         shu_simp_meanings = [u"book", u"letter", u"same as 书经 Book of History"]
-        shu_simp_mws = [u"本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"]
+        shu_simp_mws = [(u"本", u"ben3"), (u"册", "ce4"), (u"部", u"bu4"), (u"丛", "cong2")]
         shu_trad_meanings = [u"book", u"letter", u"same as 書經 Book of History"]
-        shu_trad_mws = [u"本 - ben3, 冊 - ce4, 部 - bu4, 叢 - cong2"]
+        shu_trad_mws = [(u"本", u"ben3"), (u"冊", u"ce4"), (u"部", u"bu4"), (u"叢", u"cong2")]
         
         def testDatesInMeaning(self):
             means, mws = self.parseunflat(1, "simp", u"/Jane Austen (1775-1817), English novelist/also written 简・奧斯汀|简・奥斯汀[Jian3 · Ao4 si1 ting1]/")
@@ -137,10 +148,10 @@ if __name__=='__main__':
         def testSplitMultiEmbeddedPinyin(self):
             means, mws = self.parse(1, "simp", u"/dictionary (of Chinese compound words)/also written 辭典|辞典[ci2 dian3]/CL:部[bu4],本[ben3]/")
             self.assertEquals(means, [u"dictionary (of Chinese compound words)", u"also written 辞典 - ci2 dian3"])
-            self.assertEquals(mws, [u"部 - bu4, 本 - ben3"])
+            self.assertEquals(mws, [(u'部', 'bu4'), (u'本', u'ben3')])
     
         def testCallback(self):
-            means, mws = self.parse(1, "simp", self.shu_def, tonedchars_callback=lambda x: [Text(u"JUNK")])
+            means, mws = self.parse(1, "simp", self.shu_def, tonedchars_callback=lambda x: Word(Text(u"JUNK")))
             self.assertEquals(means, [u'book', u'letter', u'same as JUNK Book of History'])
     
         def testColorsAttachedToBothHanziAndPinyin(self):
@@ -157,7 +168,7 @@ if __name__=='__main__':
         # Test helpers
         def parse(self, *args, **kwargs):
             means, mws = self.parseunflat(*args, **kwargs)
-            return [flatten(mean) for mean in means], [flatten(mw) for mw in mws]
+            return [flatten(mean) for mean in means], [(flatten(mwcharwords), flatten(mwpinyinwords)) for (mwcharwords, mwpinyinwords) in mws]
         
         def parseunflat(self, simplifiedcharindex, prefersimptrad, definition, tonedchars_callback=None):
             return MeaningFormatter(simplifiedcharindex, prefersimptrad).parsedefinition(definition, tonedchars_callback=tonedchars_callback)

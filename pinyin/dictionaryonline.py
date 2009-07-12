@@ -232,6 +232,7 @@ if __name__ == "__main__":
         
         def testParseStringWithEscapes(self):
             self.assertEquals(parsegoogleresponse('"hello\\t\\"world\\""'), 'hello\t"world"')
+            self.assertEquals(parsegoogleresponse('"\\tleading whitespace"'), '\tleading whitespace')
         
         def testParseUnicodeString(self):
             self.assertEquals(parsegoogleresponse(u'"好"'), u'好')
@@ -274,6 +275,10 @@ if __name__ == "__main__":
         
         def testTranslateStripsHtml(self):
             self.assertEquals(gTrans(u"你好，你<b>是我的</b>朋友吗？"), [[Word(Text(u'Hello, You are my friend?'))]])
+
+        # Annoyingly, this fails. This means that simplified/traditional translation doesn't preserve whitespace:
+        # def testTranslatePreservesWhitespace(self):
+        #     self.assertEquals(gTrans(u"\t个个个\t个个\t", "zh-tw"), [[Word(Text(u'\t个个个\t个个\t'))]])
         
         def testTranslateDealsWithDefinition(self):
             self.assertEquals(gTrans(u"好"), [
