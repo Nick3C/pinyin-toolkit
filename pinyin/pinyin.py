@@ -263,6 +263,29 @@ def tokenizeone(possible_token, forcenumeric=False):
     except ValueError:
         return Text(possible_token)
 
+def tokenizeonewitherhua(possible_token, forcenumeric=False):
+    # The intention here is that if we fail to parse something as pinyin
+    # which has an 'r' suffix, then we'll try again without it:
+    
+    # TODO: be much smarter about parsing erhua. They can appear *inside* the pinyin too!
+    
+    # First attempt: parse as vanilla pinyin
+    try:
+        return [Pinyin.parse(possible_token, forcenumeric=forcenumeric)]
+    except ValueError:
+        pass
+        
+    if possible_token.lower().endswith("r"):
+        # We might be able to parse as erhua
+        try:
+            return [Pinyin.parse(possible_token[:-1], forcenumeric=forcenumeric),
+                    Pinyin(possible_token[-1], 5)]
+        except ValueError:
+            pass
+    
+    # Nope, we're just going to have to fail :(
+    return [Text(possible_token)]
+
 """
 Turns an arbitrary string containing pinyin into a sequence of tokens. Does its best
 to seperate pinyin out from normal text, but no guarantees!
@@ -274,7 +297,7 @@ def tokenize(text, forcenumeric=False):
     tokens = []
     for recognised, match in utils.regexparse(re.compile(u"\w+", re.UNICODE), text):
         if recognised:
-            tokens.append(tokenizeone(match.group(0), forcenumeric=forcenumeric))
+            tokens.extend(tokenizeonewitherhua(match.group(0), forcenumeric=forcenumeric))
         else:
             tokens.append(Text(match))
     
@@ -736,6 +759,10 @@ if __name__ == "__main__":
             self.assertEquals([Pinyin.parse(u"hen3"), Text(","), Pinyin.parse(u"hao3")], tokenize(u"hen3,hao3"))
             self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3"), Text(", "), Text("my"), Text(" "), Pinyin.parse(u"xiǎo"), Text(" "), Text("one"), Text("!")],
                               tokenize(u"hen3 hao3, my xiǎo one!"))
+        
+        def testTokenizeErhua(self):
+            self.assertEquals([Pinyin.parse(u"wan4"), Pinyin(u"r", 5)], tokenize(u"wan4r"))
+            self.assertEquals([Text(u"color")], tokenize(u"color"))
         
         def testTokenizeForceNumeric(self):
           self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3")], tokenize(u"hen3 hao3"))
