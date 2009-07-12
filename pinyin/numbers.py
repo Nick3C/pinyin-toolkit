@@ -10,7 +10,7 @@ import utils
 #
 
 hanzidigits = [u"零", u"一", u"二", u"三", u"四", u"五", u"六", u"七", u"八", u"九"]
-hanziquantitydigits = [u"一", u"两", u"三", u"四", u"五", u"六", u"七", u"八", u"九"]
+hanziquantitywords = [u"一", u"两", u"三", u"四", u"五", u"六", u"七", u"八", u"九", u"几"]
 
 magnitudes = list(enumerate([
     u"",     # units
