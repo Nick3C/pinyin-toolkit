@@ -89,7 +89,7 @@
             <item>
              <widget class="QRadioButton" name="numericPinyinTonesRadio">
               <property name="text">
-               <string>Numeric tones</string>
+               <string>Tone numbers</string>
               </property>
               <property name="checked">
                <bool>true</bool>
@@ -99,7 +99,7 @@
             <item>
              <widget class="QRadioButton" name="tonifiedPinyinTonesRadio">
               <property name="text">
-               <string>Tones as accents</string>
+               <string>Tone marks</string>
               </property>
              </widget>
             </item>
@@ -148,17 +148,17 @@
           <string>Meanings</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="3" column="0">
+          <item row="4" column="0">
            <widget class="QLabel" name="languageLabel">
             <property name="text">
              <string>Language:</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
+          <item row="5" column="0">
            <widget class="QComboBox" name="languageCombo"/>
           </item>
-          <item row="5" column="0">
+          <item row="6" column="0">
            <widget class="QCheckBox" name="googleTranslateCheck">
             <property name="text">
              <string>Fall back on Google Translate for unknown words</string>
@@ -172,7 +172,7 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="0">
+          <item row="7" column="0">
            <layout class="QGridLayout" name="gridLayout_5">
             <item row="0" column="0">
              <widget class="QLabel" name="numberingLabel">
@@ -256,10 +256,17 @@
             </item>
            </layout>
           </item>
-          <item row="2" column="0">
+          <item row="3" column="0">
            <widget class="QCheckBox" name="hanziMaskingCheck">
             <property name="text">
              <string>Mask occurrences of the expression in the meaning</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="meaningEmphasisCheckBox">
+            <property name="text">
+             <string>Emphasise the first (most frequent) meaning</string>
             </property>
            </widget>
           </item>

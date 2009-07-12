@@ -29,7 +29,7 @@ def generateaudio(notifier, mediamanager, config, dictreading):
     if len(mediapacks) == 0:
         # Show a warning the first time we detect that we're missing a sound pack
         notifier.infoOnce("The Pinyin Toolkit cannot find an audio pack for text-to-speech.  We reccomend you either disable the audio functionality "
-                          + "or install the free Chinese-Lessons.com Mandarin Sounds audio pack using the Audio tab in Tool > Preferences.")
+                          + "or install the free Chinese-Lessons.com Mandarin Sounds audio pack using the Audio tab in Settings > Pinyin Toolkit Preferences.")
         
         # There is no way we can generate an audio reading with no packs - give up
         return None
@@ -177,7 +177,7 @@ class FieldUpdaterFromExpression(object):
         dictreading = []
         for _, mwpinyinwords in dictmeasurewords:
             # The audio field will contain <random number> <mw> <noun> for every possible MW
-            dictreading.extend(self.getdictreading(random.choice(numbers.hanziquantitydigits)))
+            dictreading.extend(self.getdictreading(random.choice(numbers.hanziquantitywords)))
             dictreading.extend(mwpinyinwords)
             dictreading.extend(noundictreading)
             # This comma doesn't currently do anything, but it might come in useful if we
@@ -670,7 +670,7 @@ if __name__ == "__main__":
         
         def testUpdateMeasureWordAudio(self):
             mwaudio = self.updatefact(u"啤酒", { "mwaudio" : "" }, detectmeasurewords = False, mwaudiogeneration = True, audioextensions = [".mp3", ".ogg"])["mwaudio"]
-            for quantitydigit in ["yi1", "liang3", "san1", "si4", "wu3", "liu4", "qi1", "ba1", "jiu3"]:
+            for quantitydigit in ["yi1", "liang3", "liang2", "san1", "si4", "wu3", "wu2", "liu4", "qi1", "ba1", "jiu3", "jiu2", "ji3", "ji2"]:
                 mwaudio = mwaudio.replace(quantitydigit, "X")
             
             # jiu3 in the numbers aliases with jiu3 in the characters :(
@@ -754,9 +754,9 @@ if __name__ == "__main__":
                               media.MediaPack("MWAudio", { "pi2.mp3" : "pi2.mp3", "jiu3.mp3" : "jiu3.mp3",
                                                            "bei1.mp3" : "bei1.mp3", "ping2.mp3" : "ping2.mp3", "guan4.mp3" : "guan4.mp3", "tong3.mp3" : "tong3.mp3", "gang1.mp3" : "gang1.mp3",
                                                            "yi1.mp3" : "yi1.mp3", "liang3.mp3" : "liang3.mp3", "san1.mp3" : "san1.mp3", "si4.mp3" : "si4.mp3", "wu3.mp3" : "wu3.mp3",
-                                                           "liu4.mp3" : "liu4.mp3", "qi1.mp3" : "qi1.mp3", "ba1.mp3" : "ba1.mp3", "jiu3.mp3" : "jiu3.mp3",
+                                                           "liu4.mp3" : "liu4.mp3", "qi1.mp3" : "qi1.mp3", "ba1.mp3" : "ba1.mp3", "jiu3.mp3" : "jiu3.mp3", "ji3.mp3" : "ji3.mp3",
                                                            # Sandhi variants of numerals:
-                                                           "wu2.mp3" : "wu2.mp3", "jiu2.mp3" : "jiu2.mp3" })
+                                                           "wu2.mp3" : "wu2.mp3", "jiu2.mp3" : "jiu2.mp3", "ji2.mp3" : "ji2.mp3" })
                              ]
             mediamanager = MockMediaManager(mediapacks)
             

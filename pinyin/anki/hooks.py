@@ -62,6 +62,19 @@ class FocusHook(Hook):
         # Unconditionally add our new hook to Anki
         addHook('fact.focusLost', self.onFocusLost)
 
+class FieldShrinkingHook(Hook):
+    def adjustFieldHeight(self, widget, field):
+        for wanttoshrink in ["mw", "audio", "mwaudio"]:
+            if field.name in self.config.candidateFieldNamesByKey[wanttoshrink]:
+                log.info("Shrinking field %s", field.name)
+                widget.setFixedHeight(30)
+    
+    def install(self):
+        from anki.hooks import addHook
+        
+        log.info("Installing field height adjustment hook")
+        addHook("makeField", self.adjustFieldHeight)
+
 # Shrunk version of color shortcut plugin merged with Pinyin Toolkit to give that functionality without the seperate download.
 # Original version by Damien Elmes <anki@ichi2.net>
 class ColorShortcutKeysHook(Hook):
@@ -222,6 +235,8 @@ class ReformatReadingsHook(MassFillHook):
 hookbuilders = [
     # Focus hook
     FocusHook,
+    # Widget adjusting hooks
+    FieldShrinkingHook,
     # Keybord hooks
     ColorShortcutKeysHook,
     # Menu hooks

@@ -15,7 +15,10 @@ import pinyin.utils
 import utils
 
 
-previewexpression = u"书"
+previewexpressions = {
+    "simp" : u"书",
+    "trad" : u"書"
+  } 
 # Could also use:
 #previewexpression = u"住宅樓"
 
@@ -107,6 +110,8 @@ class PreferencesController(object):
                 self.addComboItem(self.view.controls.languageCombo, icon, name, langcode)
             
             self.registerCheckMapping("detectmeasurewords", self.view.controls.seperateMeasureWordCheck)
+            
+            self.registerCheckMapping("emphasisemainmeaning", self.view.controls.meaningEmphasisCheckBox)
             
             self.registerCheckMapping("hanzimasking", self.view.controls.hanziMaskingCheck)
             
@@ -220,7 +225,7 @@ class PreferencesController(object):
     def updateViewPreview(self):
         # Update a blank fact using the current model configuration
         fact = dict([(key, u"") for key in self.model.candidateFieldNamesByKey.keys()])
-        self.updaterfromexpr.updatefact(fact, previewexpression)
+        self.updaterfromexpr.updatefact(fact, previewexpressions[self.model.prefersimptrad])
         
         # Done: give the named values to the view to update it
         self.view.updateFields(fact)
