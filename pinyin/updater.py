@@ -198,7 +198,7 @@ class FieldUpdaterFromExpression(object):
             return expression
         else:
             # Conversion is stored in the first 'meaning'
-            return pinyin.flatten(meanings[0]).strip()
+            return pinyin.flatten(meanings[0])
     
     def weblinkgeneration(self, expression):
         # Generate a list of links to online dictionaries, etc to query the expression
@@ -506,6 +506,18 @@ if __name__ == "__main__":
                         "mw" : u'',
                         "audio" : u"[sound:" + os.path.join("Test", "shu1.ogg") + "]",
                         "color" : u'<span style="color:#ff0000">书</span>',
+                        "trad" : u"書", "simp" : u"书"
+                      })
+        
+        def testUpdatePreservesWhitespace(self):
+            self.assertEquals(
+                self.updatefact(u"\t书", { "reading" : "", "color" : "", "trad" : "", "simp" : "" },
+                    dictlanguage = "en",
+                    colorizedpinyingeneration = False, colorizedcharactergeneration = True, meaninggeneration = False,
+                    tonedisplay = "tonified", audiogeneration = False, tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False), {
+                        "reading" : u'\tshū',
+                        "color" : u'\t<span style="color:#ff0000">书</span>',
+                        # TODO: make the simp and trad fields preserve whitespace by moving away from Google Translate as the translator
                         "trad" : u"書", "simp" : u"书"
                       })
         

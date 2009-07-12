@@ -240,6 +240,9 @@ if __name__=='__main__':
             self.assertEquals(flatten(toned), u"一个")
             self.assertEquals(toned[0][0].toneinfo, ToneInfo(written=1))
             self.assertEquals(toned[0][1].toneinfo, ToneInfo(written=4))
+        
+        def testTonedCharactersPreservesWhitespace(self):
+            self.assertEquals(flatten(pinyindict.tonedchars(u"\t一个")), u"\t一个")
 
         def testTonedTokensWithoutTone(self):
             toned = pinyindict.tonedchars(u"T恤")
