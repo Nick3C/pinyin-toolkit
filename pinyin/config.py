@@ -137,7 +137,7 @@ defaultsettings = {
 
     # Field names are listed in descending order of priority
     "candidateFieldNamesByKey" : utils.let(
-            ["MW", "Measure Word", "Classifier", u"量词"],
+            ["MW", "Measure Word", "Classifier", "Classifiers", u"量词"],
             ["Audio", "Sound", "Spoken", u"声音"],
             lambda mwfields, audiofields: {
         'expression' : ["Expression", "Hanzi", "Chinese", "Character", "Characters", u"汉字", u"中文"],
