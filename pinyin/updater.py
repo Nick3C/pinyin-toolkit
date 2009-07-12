@@ -29,7 +29,7 @@ def generateaudio(notifier, mediamanager, config, dictreading):
     if len(mediapacks) == 0:
         # Show a warning the first time we detect that we're missing a sound pack
         notifier.infoOnce("The Pinyin Toolkit cannot find an audio pack for text-to-speech.  We reccomend you either disable the audio functionality "
-                          + "or install the free Chinese-Lessons.com Mandarin Sounds audio pack using the Audio tab in Tool > Preferences.")
+                          + "or install the free Chinese-Lessons.com Mandarin Sounds audio pack using the Audio tab in Settings > Pinyin Toolkit Preferences.")
         
         # There is no way we can generate an audio reading with no packs - give up
         return None
