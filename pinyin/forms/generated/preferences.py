@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'designer/preferences.ui'
 #
-# Created: Thu Jul  9 23:37:33 2009
+# Created: Sun Jul 12 17:07:54 2009
 #      by: PyQt4 UI code generator 4.4.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -89,13 +89,13 @@ class Ui_Preferences(object):
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.languageLabel = QtGui.QLabel(self.meaningsSettingsFrame)
         self.languageLabel.setObjectName("languageLabel")
-        self.gridLayout_2.addWidget(self.languageLabel, 3, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.languageLabel, 4, 0, 1, 1)
         self.languageCombo = QtGui.QComboBox(self.meaningsSettingsFrame)
         self.languageCombo.setObjectName("languageCombo")
-        self.gridLayout_2.addWidget(self.languageCombo, 4, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.languageCombo, 5, 0, 1, 1)
         self.googleTranslateCheck = QtGui.QCheckBox(self.meaningsSettingsFrame)
         self.googleTranslateCheck.setObjectName("googleTranslateCheck")
-        self.gridLayout_2.addWidget(self.googleTranslateCheck, 5, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.googleTranslateCheck, 6, 0, 1, 1)
         self.seperateMeasureWordCheck = QtGui.QCheckBox(self.meaningsSettingsFrame)
         self.seperateMeasureWordCheck.setObjectName("seperateMeasureWordCheck")
         self.gridLayout_2.addWidget(self.seperateMeasureWordCheck, 1, 0, 1, 1)
@@ -139,10 +139,13 @@ class Ui_Preferences(object):
         self.customSeperatorLineEdit.setObjectName("customSeperatorLineEdit")
         self.verticalLayout_4.addWidget(self.customSeperatorLineEdit)
         self.gridLayout_5.addLayout(self.verticalLayout_4, 1, 1, 1, 1)
-        self.gridLayout_2.addLayout(self.gridLayout_5, 6, 0, 1, 1)
+        self.gridLayout_2.addLayout(self.gridLayout_5, 7, 0, 1, 1)
         self.hanziMaskingCheck = QtGui.QCheckBox(self.meaningsSettingsFrame)
         self.hanziMaskingCheck.setObjectName("hanziMaskingCheck")
-        self.gridLayout_2.addWidget(self.hanziMaskingCheck, 2, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.hanziMaskingCheck, 3, 0, 1, 1)
+        self.meaningEmphasisCheckBox = QtGui.QCheckBox(self.meaningsSettingsFrame)
+        self.meaningEmphasisCheckBox.setObjectName("meaningEmphasisCheckBox")
+        self.gridLayout_2.addWidget(self.meaningEmphasisCheckBox, 2, 0, 1, 1)
         self.verticalLayout.addWidget(self.meaningsSettingsFrame)
         spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem)
@@ -353,6 +356,7 @@ class Ui_Preferences(object):
         self.commasSeperatorRadio.setText(QtGui.QApplication.translate("Preferences", "Commas", None, QtGui.QApplication.UnicodeUTF8))
         self.customSeperatorRadio.setText(QtGui.QApplication.translate("Preferences", "Custom:", None, QtGui.QApplication.UnicodeUTF8))
         self.hanziMaskingCheck.setText(QtGui.QApplication.translate("Preferences", "Mask occurrences of the expression in the meaning", None, QtGui.QApplication.UnicodeUTF8))
+        self.meaningEmphasisCheckBox.setText(QtGui.QApplication.translate("Preferences", "Emphasise the first (most frequent) meaning", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.textTab), QtGui.QApplication.translate("Preferences", "Text", None, QtGui.QApplication.UnicodeUTF8))
         self.fieldImproversGroupBox.setTitle(QtGui.QApplication.translate("Preferences", "Fact Editor Field Improvers", None, QtGui.QApplication.UnicodeUTF8))
         self.fieldImproversLabel.setText(QtGui.QApplication.translate("Preferences", "The Pinyin Toolkit can attempt to make a number of improvements to the information you enter in the fact editor. Here, you can enable and disable the various available tweaks, each of which is typically applied when the relevant field loses focus:", None, QtGui.QApplication.UnicodeUTF8))

@@ -108,6 +108,8 @@ class PreferencesController(object):
             
             self.registerCheckMapping("detectmeasurewords", self.view.controls.seperateMeasureWordCheck)
             
+            self.registerCheckMapping("emphasisemainmeaning", self.view.controls.meaningEmphasisCheckBox)
+            
             self.registerCheckMapping("hanzimasking", self.view.controls.hanziMaskingCheck)
             
             self.registerComboMapping("dictlanguage", self.view.controls.languageCombo)
