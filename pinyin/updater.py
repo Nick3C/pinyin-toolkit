@@ -148,6 +148,10 @@ class FieldUpdaterFromExpression(object):
         # Prepare all the meanings by flattening them and removing empty entries
         meanings = [meaning for meaning in [preparetokens(self.config, dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
         
+        # Scan through the meanings and replace instances of 'surname: Foo' with a masked version
+        lookslikesurname = lambda what: what.lower().startswith("surname") and " " not in what[len("surname ")]
+        meanings = [lookslikesurname(meaning) and "(a surname)" or meaning for meaning in meanings]
+        
         if len(meanings) == 0:
             # After flattening and stripping, we didn't get any meanings: don't update the field
             return None
@@ -537,6 +541,13 @@ if __name__ == "__main__":
                     tonedisplay = "tonified", meaningnumbering = "circledArabic", colormeaningnumbers = True, meaningnumberingcolor="#123456", meaningseperator = "custom", custommeaningseperator = " | ", prefersimptrad = "simp",
                     audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = True, hanzimaskingcharacter = "MASKED"), {
                         "meaning" : u'<span style="color:#123456">①</span> book | <span style="color:#123456">②</span> letter | <span style="color:#123456">③</span> same as <span style="color:#123456">MASKED</span><span style="color:#ff0000">\u7ecf</span> Book of History | <span style="color:#123456">④</span> MW: <span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
+                      })
+
+        def testMeaningSurnameMasking(self):
+            self.assertEquals(
+                self.updatefact(u"汪", { "meaning" : "" },
+                    meaninggeneration = True, meaningnumbering = "arabicParens", colormeaningnumbers = False, meaningseperator = "lines"), {
+                        "meaning" : u'(1) expanse of water<br />(2) ooze<br />(3) (a surname)',
                       })
 
         def testMeaningChineseNumbers(self):
