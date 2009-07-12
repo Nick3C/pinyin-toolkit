@@ -89,7 +89,7 @@
             <item>
              <widget class="QRadioButton" name="numericPinyinTonesRadio">
               <property name="text">
-               <string>Numeric tones</string>
+               <string>Tone numbers</string>
               </property>
               <property name="checked">
                <bool>true</bool>
@@ -99,7 +99,7 @@
             <item>
              <widget class="QRadioButton" name="tonifiedPinyinTonesRadio">
               <property name="text">
-               <string>Tones as accents</string>
+               <string>Tone marks</string>
               </property>
              </widget>
             </item>

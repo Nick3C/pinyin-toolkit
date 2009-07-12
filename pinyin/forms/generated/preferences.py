@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'designer/preferences.ui'
 #
-# Created: Sun Jul 12 17:07:54 2009
+# Created: Sun Jul 12 17:19:25 2009
 #      by: PyQt4 UI code generator 4.4.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -337,8 +337,8 @@ class Ui_Preferences(object):
         self.livePreviewGroupBox.setTitle(QtGui.QApplication.translate("Preferences", "Live Preview", None, QtGui.QApplication.UnicodeUTF8))
         self.hanziPinyinSettingsFrame.setTitle(QtGui.QApplication.translate("Preferences", "Hanzi And Pinyin", None, QtGui.QApplication.UnicodeUTF8))
         self.pinyinTonesLabel.setText(QtGui.QApplication.translate("Preferences", "Pinyin tone display method:", None, QtGui.QApplication.UnicodeUTF8))
-        self.numericPinyinTonesRadio.setText(QtGui.QApplication.translate("Preferences", "Numeric tones", None, QtGui.QApplication.UnicodeUTF8))
-        self.tonifiedPinyinTonesRadio.setText(QtGui.QApplication.translate("Preferences", "Tones as accents", None, QtGui.QApplication.UnicodeUTF8))
+        self.numericPinyinTonesRadio.setText(QtGui.QApplication.translate("Preferences", "Tone numbers", None, QtGui.QApplication.UnicodeUTF8))
+        self.tonifiedPinyinTonesRadio.setText(QtGui.QApplication.translate("Preferences", "Tone marks", None, QtGui.QApplication.UnicodeUTF8))
         self.hanziLabel.setText(QtGui.QApplication.translate("Preferences", "Preferred Hanzi character system:", None, QtGui.QApplication.UnicodeUTF8))
         self.simplifiedHanziRadio.setText(QtGui.QApplication.translate("Preferences", "Simplified (Mainland China, Singapore, Malaysia)", None, QtGui.QApplication.UnicodeUTF8))
         self.traditionalHanziRadio.setText(QtGui.QApplication.translate("Preferences", "Traditional (Taiwan, Hong Kong)", None, QtGui.QApplication.UnicodeUTF8))
