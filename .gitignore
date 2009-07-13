@@ -13,14 +13,16 @@ Thumbs.db
 *.LOCAL*
 *.REMOTE*
 
-# Media directory
-pinyin/media/*
+# Media download dir
+pinyin/media/downloads/*
 # Except the info files
 !pinyin/media/readme.txt
 !pinyin/media/getaudio.txt
 
-# Ignore Media any media that might not be covered by the above
+
+# Ignore Media files (except system files)
 *.mp3
+!pinyin/media/system/*
 *.mp4
 *.wav
 *.ogg
