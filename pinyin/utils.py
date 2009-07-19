@@ -63,14 +63,14 @@ def ispostspacedpunctuation(text):
     return text == u"。" or text == "." or text == u"，" or text == ","
 
 """
-Reports the absolute directory name that the pinyin/ directory has at runtime
+Reports the absolute directory name that the root toolkit directory has at runtime
 """
-def pinyindir():
+def toolkitdir():
     try:
-        return os.path.dirname(os.path.realpath( __file__ ))
+        return os.path.join(os.path.dirname(os.path.realpath( __file__ )), "..")
     except NameError:
         # That doesn't work in the interactive shell, so let's do this instead:
-        return os.path.dirname(sys._getframe(1).f_code.co_filename)
+        return os.path.join(os.path.dirname(sys._getframe(1).f_code.co_filename), "..")
 
 """
 Reports whether we can write a particular path. Just deals with permissions, so may

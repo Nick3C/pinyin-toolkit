@@ -56,7 +56,7 @@ class PinyinDictionary(object):
         self.__maxcharacterlen = 0
         self.__readings = {}
         self.__definition = {}
-        for dictpath in [os.path.join(pinyindir(), "dictionaries", dictname) for dictname in dictnames]:
+        for dictpath in [os.path.join(toolkitdir(), "pinyin", "dictionaries", dictname) for dictname in dictnames]:
             # Avoid loading dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
             if os.path.exists(dictpath):
                 log.info("Loading dictionary from %s, load meanings = %s", dictpath, needmeanings)

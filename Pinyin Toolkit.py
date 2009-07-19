@@ -40,6 +40,7 @@ CFDICT_Ver="Wed Jan 21 01:49:53 2009"
 # entries=593
 
 if __name__ != "__main__":
+    # Initialize the toolkit
     import pinyin.anki.main as main
     from ankiqt import mw
     

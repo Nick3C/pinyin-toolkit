@@ -7,7 +7,7 @@ import logging
 import utils
 
 # Output to file
-logfilepath = os.path.join(utils.pinyindir(), "../Pinyin Toolkit.log")
+logfilepath = os.path.join(utils.toolkitdir(), "Pinyin Toolkit.log")
 
 try:
     # Try to use a rotating file if possible:
