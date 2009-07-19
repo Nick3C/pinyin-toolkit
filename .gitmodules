@@ -1,0 +1,3 @@
+[submodule "vendor/cjklib"]
+	path = vendor/cjklib
+	url = git://github.com/batterseapower/cjklib.git
