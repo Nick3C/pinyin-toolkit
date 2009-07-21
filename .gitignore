@@ -32,6 +32,9 @@ pinyin/media/downloads/*
 # This prevents it being over-written on upgrades
 dict-userdict.txt
 
+# Generated database
+pinyin/db/cjklib.db
+
 # Generated UI stuff
 # NB: DON'T UNCOMMENT THIS LINE.
 # Generated data really must be checked in :-)
