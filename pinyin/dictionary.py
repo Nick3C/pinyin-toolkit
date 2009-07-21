@@ -20,8 +20,7 @@ class PinyinDictionary(object):
     languagedicts = {
             'en'     : (1, "CEDICT"),
             'de'     : (0, "HanDeDict"),
-            'fr'     : (0, "CFDICT"),
-            'pinyin' : (1, "CEDICT") # Not really a language, but handy for tests. TODO: remove
+            'fr'     : (0, "CFDICT")
         }
     
     # Regular expression used for pulling stuff out of the dictionary
