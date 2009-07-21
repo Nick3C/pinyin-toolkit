@@ -5,8 +5,7 @@ from PyQt4 import QtGui, QtCore
 
 import anki.utils
 
-import pinyin.forms.preferences
-import pinyin.forms.preferencescontroller
+import pinyin.anki.keys
 from pinyin.logger import log
 import pinyin.media
 import pinyin.transformations
@@ -98,7 +97,7 @@ class ColorShortcutKeysHook(Hook):
         log.info("Setting up shortcut keys on fact editor")
         for i in range(1, 9):
             for sandhify in [True, False]:
-                keysequence = (sandhify and ColorShortcutKeysHook.sandhiModifier + "+" or "") + ColorShortcutKeysHook.shortcutKeyFor(i)
+                keysequence = (sandhify and pinyin.anki.keys.sandhiModifier + "+" or "") + pinyin.anki.keys.shortcutKeyFor(i)
                 QtGui.QShortcut(QtGui.QKeySequence(keysequence), editor.widget,
                                 lambda i=i, sandhify=sandhify: self.setColor(editor, i, sandhify))
     
@@ -109,19 +108,6 @@ class ColorShortcutKeysHook(Hook):
         log.info("Installing color shortcut keys hook")
         ankiqt.ui.facteditor.FactEditor.setupFields = wrap(ankiqt.ui.facteditor.FactEditor.setupFields, self.setupShortcuts, "after")
         self.setupShortcuts(self.mw.editor)
-    
-    
-    sandhiModifier = "Shift"
-    
-    @classmethod
-    def shortcutKeyFor(cls, i):
-        if pinyin.utils.isosx():
-            # Alt maps to the Windows key on my keyboard, NOT the Alt key.
-            # NB: Ctrl maps to Option on OS X, and Option+Fx conflicts with
-            # some special meanings given to those keys on Mac laptops.
-            return "Alt+" + str(i)
-        else:
-            return "Ctrl+F" + str(i)
 
 class HelpHook(Hook):
     def install(self):
@@ -139,6 +125,10 @@ class PreferencesHook(Hook):
     menutooltip = "Configure the Pinyin Toolkit"
     
     def triggered(self):
+        # NB: must import these lazily to break a loop between preferencescontroller and here
+        import pinyin.forms.preferences
+        import pinyin.forms.preferencescontroller
+
         log.info("User opened preferences dialog")
         
         # Instantiate and show the preferences dialog modally

@@ -115,7 +115,6 @@ class Preferences(QDialog):
 if __name__ == "__main__":
     import sys
     import pinyin.config
-    import pinyin.dictionary
     import pinyin.forms.preferencescontroller
     import pinyin.mocks
     

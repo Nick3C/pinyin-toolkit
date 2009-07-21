@@ -28,7 +28,7 @@ import pinyin.utils
 class HanziGraphHook(hooks.Hook):
     # Color Gradient for HSK score: http://gotomy.com/color.html to find a smooth gradient
     gradeColorsShortNames = {
-        u'214 Radicals'     : (u'#FF9900', 'Radicals'),
+        #u'214 Radicals'     : (u'#FF9900', 'Radicals'),
         u'HSK Basic'        : (u'#FF0033', "Basic"),
         u'HSK Elementary'   : (u'#CC0066', "Element."),
         u'HSK Intermediate' : (u'#990099', "Intermed."),
@@ -205,4 +205,4 @@ class HanziGraphHook(hooks.Hook):
         except ImportError, e:
             self.notifier.exception("There was a problem setting up the Hanzi Graph! If you are using Linux, " +
                                     "you may need to install the package providing matplotlib to Python. On Ubuntu " +
-                                    "you can do that by running 'sudo apt-get install python-matplotlib' in the Terminal.", e)
+                                    "you can do that by running 'sudo apt-get install python-matplotlib' in the Terminal.")

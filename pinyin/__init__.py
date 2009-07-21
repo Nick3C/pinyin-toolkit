@@ -8,8 +8,9 @@ import utils
 # cjklib uses standard library functions from Python 2.5: we emulate
 # them until Anki upgrades
 if sys.version_info[0:2] < (2, 5):
-    sys.path.append(os.path.join(utils.toolkitdir(), "pinyin", "vendor", "python25"))
-sys.path.append(os.path.join(utils.toolkitdir(), "pinyin", "vendor", "cjklib"))
+    sys.path.append(utils.toolkitdir("pinyin", "vendor", "python25"))
+
+sys.path.append(utils.toolkitdir("pinyin", "vendor", "cjklib"))
 
 import config
 import dictionary
@@ -18,12 +19,16 @@ import logger
 import media
 import meanings
 import mocks
+import model
 import numbers
-import pinyin
 import statistics
 import transformations
-import weakcache
 
-#import anki # Don't import the anki submodule because it imports lots of anki stuff,
-             # and if we're running from the command line it won't be available
-import forms
+#import anki  # Don't import the anki submodule because it imports lots of anki stuff,
+              # and if we're running from the command line it won't be available
+#import forms # Same goes for this guy
+
+# Expose package metadata via the quasi-standard __version__
+# attribute: http://www.python.org/dev/peps/pep-0008/
+__version_info__ = ('0', '05')
+__version__ = '.'.join(__version_info__)

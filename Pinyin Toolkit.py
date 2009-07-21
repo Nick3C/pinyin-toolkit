@@ -24,8 +24,7 @@ A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-pinyin_toolkit="0.05"
-# Dictionary's last updated: 2009-06-06
+# Dictionaries last updated: 2009-06-06
 
 CEDICT_Ver="2009-06-19 03:11:57 GMT"
 # http://www.mdbg.net/chindict/chindict.php?page=cc-cedict
@@ -45,7 +44,7 @@ if __name__ != "__main__":
     from ankiqt import mw
     
     # Save a reference to the toolkit onto the mw, preventing garbage collection of PyQT objects
-    mw.pinyintoolkit = main.PinyinToolkit(mw).installhooks()
+    mw.pinyintoolkit = main.PinyinToolkit(mw)
 else:
     print "This is a plugin for the Anki Spaced Repition learning system and cannot be run directly."
     print "Please download Anki from <http://ichi2.net/anki/>"

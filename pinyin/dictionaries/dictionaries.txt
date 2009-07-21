@@ -14,11 +14,6 @@ Chinese-English CC-CEDICT
 available at: <http://www.mdbg.net/chindict/chindict.php?page=cc-cedict>
 Licensing of CC-CEDICT is Creative Commons Attribution-Share Alike 3.0 <http://creativecommons.org/licenses/by-sa/3.0/>
 
-cedict_pinyin.u8
-CC-CEDICT stripped down to remove English language entries and leave only Chinese & Pinyin
-It is created using Notepad2 <http://www.flos-freeware.ch/> and a regular expression replacing '].*$' with ']' 
-Licensing as above
-
 handedict_nb.u8
 Chinese-German dictionary HanDeDict [no examples edition]
 available at: <http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl>

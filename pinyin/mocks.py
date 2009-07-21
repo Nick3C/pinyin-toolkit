@@ -13,8 +13,8 @@ class MockNotifier(object):
         # Don't distinguish between once and many for now
         self.infos.append(what)
     
-    def exception(self, text, exception):
-        self.exceptions.append((text, exception))
+    def exception(self, text, exception_info=None):
+        self.exceptions.append((text, exception_info))
 
 """
 A notifier used in the live previewer.
