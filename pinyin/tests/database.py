@@ -1,2 +1,9 @@
+import cjklib.dbconnector
+import sqlalchemy
+
+import pinyin.utils
+
+
 # Globally shared database connection
-database = cjklib.dbconnector.DatabaseConnector.getDBConnector(sqlalchemy.engine.url.URL("sqlite", database=toolkitdir("pinyin", "db", "cjklib.db")))
+url = sqlalchemy.engine.url.URL("sqlite", database=pinyin.utils.toolkitdir("pinyin", "db", "cjklib.db"))
+database = cjklib.dbconnector.DatabaseConnector.getDBConnector(url)

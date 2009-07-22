@@ -102,6 +102,11 @@ class PinyinDictionaryTest(unittest.TestCase):
     # def testErhuaNotSpacedInReadingEvenForUnknownWords(self):
     #         self.assertEquals(flatten(englishdict.reading(u"土豆条儿")), "tu3 dou4 tiao2r")
 
+    # TODO: implement functionality
+    # def testUsesFrequencyInformation(self):
+    #         self.assertEquals(flatten(englishdict.reading(u"车")), "che1")
+    #         self.assertEquals(flatten(englishdict.reading(u"教")), "jiao4")
+
     def testErhuaSpacedInReadingForKnownWords(self):
         self.assertEquals(flatten(englishdict.reading(u"两头儿")), "liang3 tou2r")
 
