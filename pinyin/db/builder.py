@@ -77,7 +77,7 @@ def getSatisfiers():
         def inner():
             source = dictionarydir(path)
             if os.path.exists(source):
-                return os.path.getmtime(source), lambda target: shutil.copyfile(source, target)
+                return path, os.path.getmtime(source), lambda target: shutil.copyfile(source, target)
             else:
                 return None
         
@@ -98,7 +98,7 @@ def getSatisfiers():
                 finally:
                     targetfile.close()
             
-            return os.path.getmtime(zipsource), go
+            return path + ":" + pathinzip, os.path.getmtime(zipsource), go
         
         return inner
     
@@ -136,7 +136,8 @@ def getSatisfiers():
         for source in sources:
             timestampsatisfier = source()
             if timestampsatisfier:
-                timestamp, satisfier = timestampsatisfier
+                satisfiedby, timestamp, satisfier = timestampsatisfier
+                log.info("The requirement for %s was satisified by %s (with a timestamp of %d)", requirement, satisfiedby, timestamp)
                 
                 maxtimestamp = max(maxtimestamp, timestamp)
                 satisfiers.append((requirement, satisfier))
