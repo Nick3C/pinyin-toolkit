@@ -391,6 +391,6 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
         mediamanager = MockMediaManager(mediapacks)
         
         factclone = copy.deepcopy(fact)
-        FieldUpdaterFromExpression(notifier, mediamanager, config.Config(utils.updated({ "dictlanguage" : "en" }, kwargs))).updatefact(factclone, expression)
+        FieldUpdaterFromExpression(notifier, mediamanager, config.Config(utils.updated({ "dictlanguage" : "en" }, kwargs)), database).updatefact(factclone, expression)
         
         return notifier.infos, factclone

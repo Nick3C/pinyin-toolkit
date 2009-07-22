@@ -55,8 +55,8 @@ class PinyinDictionaryTest(unittest.TestCase):
 
     def testMissingDictionary(self):
         dict = PinyinDictionary(database,
-                    sqlalchemy.Table("CEDICT", dbconnect.metadata, autoload=True),
-                    sqlalchemy.Table("CharacterPinyin", dbconnect.metadata, autoload=True),
+                    sqlalchemy.Table("CEDICT", database.metadata, autoload=True),
+                    sqlalchemy.Table("CharacterPinyin", database.metadata, autoload=True),
                     False, 0, ['idontexist.txt'])
         # We're just looking for a lack of exceptions here
         dict.reading(u"个")
