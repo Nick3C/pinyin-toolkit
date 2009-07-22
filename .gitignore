@@ -7,6 +7,7 @@ Thumbs.db
 
 # Python droppings
 *.pyc
+*.profile
 
 *.BACKUP*
 *.BASE*
@@ -33,7 +34,7 @@ pinyin/media/downloads/*
 dict-userdict.txt
 
 # Generated database
-pinyin/db/cjklib.db
+pinyin/db/*.db
 
 # Generated UI stuff
 # NB: DON'T UNCOMMENT THIS LINE.
