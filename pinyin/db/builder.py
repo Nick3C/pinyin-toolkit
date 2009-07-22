@@ -151,4 +151,8 @@ def getSatisfiers():
     return maxtimestamp, satisfiers
 
 if __name__ == "__main__":
-    DBBuilder(getSatisfiers()[1]).build()
+    import shutil
+    
+    builder = DBBuilder(getSatisfiers()[1])
+    builder.build()
+    shutil.copyfile(builder.builtdatabasepath, pinyin.utils.toolkitdir("pinyin", "db", "cjklib.db"))

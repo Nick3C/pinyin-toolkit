@@ -79,7 +79,7 @@ class PinyinToolkit(object):
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
-        self.hooks = [hookbuilder(mw, thenotifier, themediamanager, config, updaters) for hookbuilder in hookbuilders]
+        self.hooks = [hookbuilder(mw, thenotifier, themediamanager, config, database, updaters) for hookbuilder in hookbuilders]
         for hook in self.hooks:
             hook.install()
     

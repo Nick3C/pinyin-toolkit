@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from PyQt4.QtGui import *
@@ -111,22 +110,3 @@ class Preferences(QDialog):
         # Update the text in every field we created
         for key, value in keyedvalues.items():
             self.fieldWidgets[key].setText(value)
-
-if __name__ == "__main__":
-    import sys
-    import pinyin.config
-    import pinyin.forms.preferencescontroller
-    import pinyin.mocks
-    
-    app = QApplication(sys.argv)
-
-    parent = QWidget()
-    parent.resize(250, 150)
-    parent.setWindowTitle('simple')
-    
-    preferences = Preferences(parent)
-    pinyin.forms.preferencescontroller.PreferencesController(preferences, pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager([]), pinyin.config.Config({}))
-    
-    preferences.show()
-    
-    sys.exit(app.exec_())
