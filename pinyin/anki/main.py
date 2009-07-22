@@ -93,12 +93,15 @@ class PinyinToolkit(object):
         
         if not(os.path.exists(dbpath)):
             # MUST rebuild
+            log.info("The database was missing entirely from %s. We had better build it!", dbpath)
             compulsory = True
         elif os.path.getmtime(dbpath) < timestamp:
             # SHOULD rebuild
+            log.info("The database had a timestamp of %d but we saw an update at %d - let's rebuild", os.path.getmtime(dbpath), timestamp)
             compulsory = False
         else:
             # Do nothing
+            log.info("Database up to date")
             compulsory = None
         
         if compulsory is not None:

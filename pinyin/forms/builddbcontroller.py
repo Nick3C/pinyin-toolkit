@@ -44,7 +44,7 @@ updateddatabasemessage = makerichtext([
 class BuildDBController(object):
     def __init__(self, view, notifier, dbbuilder, compulsory):
         # Reflect the initial setting values into the controls
-        view.controls.explanationLabel.setText(compulsory and firstrunmessage or updatedatabasemessage)
+        view.controls.explanationLabel.setText(compulsory and firstrunmessage or updateddatabasemessage)
         view.controls.cancelButtonBox.setEnabled(not(compulsory))
         
         # Create and run a thread that just constructs the database
