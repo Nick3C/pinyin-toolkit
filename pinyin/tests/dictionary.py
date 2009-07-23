@@ -91,9 +91,13 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(flatten(englishdict.reading(u"噔")), "deng1")
         self.assertEquals(self.flatmeanings(englishdict, u"噔"), None)
     
-    def testFrenchPinyinFallsBackOnCEDICT(self):
+    def testFallsBackOnCEDICTForMissingPinyinAndForeignLanguage(self):
         self.assertEquals(flatten(frenchdict.reading(u"数量积")), "shu4 liang4 ji1")
         self.assertEquals(self.flatmeanings(frenchdict, u"数量积"), None)
+    
+    # TODO: need to think carefully about how to match up data from different sources.
+    # def testFallsBackOnCEDICTForMissingMWAndForeignLanguage(self):
+    #         self.assertEquals(germandict.meanings(u"奖项", "simp")[1], [(u"项", u"xiang4")])
     
     # I've changed my mind about this test. We can't really say that an occurance of 儿
     # was meant to be an erhua one without having an entry explicitly in the dictionary

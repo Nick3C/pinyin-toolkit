@@ -13,6 +13,13 @@ import meanings
 from utils import *
 
 
+def parseMeaning(meaning, simptradindex):
+    meaning = zapempty(meaning)
+    if meaning is None:
+        return None
+    
+    return lambda prefersimptrad, tonedcharscallback: meanings.MeaningFormatter(simptradindex, prefersimptrad).parsedefinition(meaning, tonedcharscallback)
+
 def fileSource(dictname):
     filename = toolkitdir("pinyin", "dictionaries", dictname)
     
@@ -48,7 +55,7 @@ def fileSource(dictname):
     finally:
         file.close()
     
-    return maxcharacterlen, lambda word: [(reading, (0, zapempty(meaning))) for reading, meaning in readingsmeanings[word]]
+    return maxcharacterlen, lambda word: [(reading, parseMeaning(meaning, 0)) for reading, meaning in readingsmeanings[word]]
 
 def databaseDictionarySource(dbconnect, tablename, simptradindex):
     log.info("Loading full dictionary from database table %s", tablename)
@@ -62,7 +69,7 @@ def databaseDictionarySource(dbconnect, tablename, simptradindex):
                  dicttable.c.Translation],
                 sqlalchemy.or_(dicttable.c.HeadwordSimplified == word,
                                dicttable.c.HeadwordTraditional == word))):
-            yield (reading, (simptradindex, zapempty(meaning)))
+            yield (reading, parseMeaning(meaning, simptradindex))
     
     return maxcharacterlen, inner
 
@@ -77,8 +84,15 @@ def squelchMeaning(maxlensource):
     log.info("Preparing to squelch meanings")
     
     def inner(word):
-        for reading, meaning in maxlensource[1](word):
-            yield reading, None
+        for reading, meaningfun in maxlensource[1](word):
+            if meaningfun is None:
+                yield reading, None
+            else:
+                def squelch(*meanargs):
+                    meaning, measurewords = meaningfun(*meanargs)
+                    return None, measurewords
+                
+                yield reading, squelch
     
     return maxlensource[0], inner
 
@@ -201,7 +215,7 @@ class PinyinDictionary(object):
             
             if readingsmeanings is not None:
                 # A recognised thing!  Find the definition in the dictionary:
-                while len(readingsmeanings) > 0 and (readingsmeanings[0][1] is None or readingsmeanings[0][1][1] is None):
+                while len(readingsmeanings) > 0 and readingsmeanings[0][1] is None:
                     readingsmeanings.pop(0)
                 
                 # Did we actually have a non-null meaning in there?
@@ -211,9 +225,8 @@ class PinyinDictionary(object):
                     log.info("We found a reading but no meaning for some text")
                     return None, None
                 else:
-                    # We got a raw definition, but we need to clean up it before using it
-                    simptradindex, meaning = readingsmeanings[0][1]
-                    foundmeanings, foundmeasurewords = meanings.MeaningFormatter(simptradindex, prefersimptrad).parsedefinition(meaning, self.tonedchars)
+                    # Instantiate the raw definition with our particular requirements
+                    foundmeanings, foundmeasurewords = readingsmeanings[0][1](prefersimptrad, self.tonedchars)
                     
         return foundmeanings, foundmeasurewords
 
