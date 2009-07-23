@@ -98,7 +98,7 @@ class Pinyin(object):
     # From <http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108>. Should match all valid pinyin
     # while excluding most invalid pinyin. Compared to his blogpost, this has the fix for 'er' pinyin,
     # and can additionally deal with 'r', which crops up in CEDICT for erhua.
-    validpinyin = re.compile(u"(?:(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)(?:i(?:ao|[uae])?|u(?:ai|[iaeo])?|üe?))|(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)|')?(?:a[oi]?|ei?|ou?)))(?:(?:ng|n|r)(?![aeo]))?)|r", re.IGNORECASE + re.UNICODE)
+    validpinyin = re.compile(u"(?:(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)(?:i(?:ao|[uae])?|u(?:ai|[iaeo])?|üe?))|(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)|')?(?:a[oi]?|ei?|ou?)))(?:(?:ng|n|r)(?![aeo]))?)|r|xiong", re.IGNORECASE + re.UNICODE)
     
     def __init__(self, word, toneinfo):
         self.word = word
@@ -295,7 +295,7 @@ def tokenize(text, forcenumeric=False):
     # sequences of alphanumeric characters as defined by Unicode. This should catch
     # the pinyin, its tone marks, tone numbers (if any) and allow umlauts.
     tokens = []
-    for recognised, match in utils.regexparse(re.compile(u"\w+", re.UNICODE), text):
+    for recognised, match in utils.regexparse(re.compile(u"(\w|:)+", re.UNICODE), text):
         if recognised:
             tokens.extend(tokenizeonewitherhua(match.group(0), forcenumeric=forcenumeric))
         else:

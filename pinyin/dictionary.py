@@ -261,7 +261,7 @@ class PinyinDictionary(object):
                 yield (None, sentence[i:i+1])
                 i += 1
     
-    # The readings and meanings returned for a word should correspond to each other,
+    # The readings and meaning functions returned for a word should correspond to each other,
     # and be returned in priority order: highest priority first
     def parseexact(self, word):
         readingsmeanings = []

@@ -111,6 +111,15 @@ class PinyinTest(unittest.TestCase):
     def testParseUnicode(self):
         self.assertEquals(repr(Pinyin.parse(u"nü3")), u"Pinyin(u'n\\xfc', ToneInfo(written=3, spoken=3))")
     
+    def testParseAlternativeUUmlaut(self):
+        self.assertEquals(Pinyin.parse(u"nü3"), Pinyin.parse(u"nu:3"))
+        self.assertEquals(Pinyin.parse(u"nü3"), Pinyin.parse(u"nv3"))
+        self.assertEquals(Pinyin.parse(u"lü3"), Pinyin.parse(u"lu:3"))
+    
+    # TODO: fix this test (#138)
+    # def testParsesXiong(self):
+    #     self.assertEquals(Pinyin.parse(u"xiong1"), Pinyin("xiong", 1))
+    
     def testRejectsPinyinWithMultipleToneMarks(self):
         self.assertRaises(ValueError, lambda: Pinyin.parse(u"xíǎo"))
     
@@ -258,6 +267,9 @@ class TokenizeTest(unittest.TestCase):
         self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3"), Text(", "), Text("my"), Text(" "), Pinyin.parse(u"xiǎo"), Text(" "), Text("one"), Text("!")],
                           tokenize(u"hen3 hao3, my xiǎo one!"))
     
+    def testTokenizeUUmlaut(self):
+        self.assertEquals([Pinyin.parse(u"lu:3")], tokenize(u"lu:3"))
+    
     def testTokenizeErhua(self):
         self.assertEquals([Pinyin.parse(u"wan4"), Pinyin(u"r", 5)], tokenize(u"wan4r"))
         self.assertEquals([Text(u"color")], tokenize(u"color"))
@@ -268,9 +280,9 @@ class TokenizeTest(unittest.TestCase):
                         tokenize(u"hen3 hao3, my xiǎo one!", forcenumeric=True))
     
     def testTokenizeHTML(self):
-        self.assertEquals([Text(u'<'), Text(u'span'), Text(u' '), Text(u'style'), Text(u'="'), Text(u'color'), Text(u':#'), Text(u'123456'), Text(u'">'),
+        self.assertEquals([Text(u'<'), Text(u'span'), Text(u' '), Text(u'style'), Text(u'="'), Text(u'color:'), Text(u'#'), Text(u'123456'), Text(u'">'),
                            Pinyin(u'tou', ToneInfo(written=2, spoken=2)), Text(u'</'), Text(u'span'), Text(u'> <'), Text(u'span'), Text(u' '), Text(u'style'),
-                           Text(u'="'), Text(u'color'), Text(u':#'), Text(u'123456'), Text(u'">'), Pinyin(u'er', ToneInfo(written=4, spoken=4)), Text(u'</'), Text(u'span'), Text(u'>')],
+                           Text(u'="'), Text(u'color:'), Text(u'#'), Text(u'123456'), Text(u'">'), Pinyin(u'er', ToneInfo(written=4, spoken=4)), Text(u'</'), Text(u'span'), Text(u'>')],
                            tokenize(u'<span style="color:#123456">tou2</span> <span style="color:#123456">er4</span>'))
 
 class PinyinTonifierTest(unittest.TestCase):
