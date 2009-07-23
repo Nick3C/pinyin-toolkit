@@ -153,8 +153,8 @@ class FieldUpdaterFromExpression(object):
         # Prepare all the meanings by flattening them and removing empty entries
         meanings = [meaning for meaning in [preparetokens(self.config, dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
         
-        # Scan through the meanings and replace instances of 'surname: Foo' with a masked version
-        lookslikesurname = lambda what: what.lower().startswith("surname") and " " not in what[len("surname ")]
+        # Scan through the meanings and replace instances of 'surname Foo' with a masked version
+        lookslikesurname = lambda what: what.lower().startswith("surname ") and " " not in what[len("surname ")]
         meanings = [lookslikesurname(meaning) and "(a surname)" or meaning for meaning in meanings]
         
         if len(meanings) == 0:
