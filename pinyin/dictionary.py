@@ -50,8 +50,8 @@ def fileSource(dictname):
     
     return maxcharacterlen, lambda word: [(reading, (0, zapempty(meaning))) for reading, meaning in readingsmeanings[word]]
 
-def databaseDictionarySource(dbconnect, tablename, simptradindex, readingonly):
-    log.info("Loading full dictionary from database table %s %s", tablename, readingonly and "(only the reaings)" or "")
+def databaseDictionarySource(dbconnect, tablename, simptradindex):
+    log.info("Loading full dictionary from database table %s", tablename)
     
     dicttable = sqlalchemy.Table(tablename, dbconnect.metadata, autoload=True)
     maxcharacterlen = dbconnect.selectScalar(sqlalchemy.func.max(sqlalchemy.func.length(dicttable.c.HeadwordSimplified)))
@@ -62,7 +62,7 @@ def databaseDictionarySource(dbconnect, tablename, simptradindex, readingonly):
                  dicttable.c.Translation],
                 sqlalchemy.or_(dicttable.c.HeadwordSimplified == word,
                                dicttable.c.HeadwordTraditional == word))):
-            yield (reading, (simptradindex, not(readingonly) and zapempty(meaning) or None))
+            yield (reading, (simptradindex, zapempty(meaning)))
     
     return maxcharacterlen, inner
 
@@ -72,6 +72,15 @@ def databaseReadingSource(dbconnect):
     readingtable = sqlalchemy.Table("CharacterPinyin", dbconnect.metadata, autoload=True)
     
     return 1, lambda word: [(reading[0], None) for reading in dbconnect.selectRows(sqlalchemy.select([readingtable.c.Reading], readingtable.c.ChineseCharacter == word))]
+
+def squelchMeaning(maxlensource):
+    log.info("Preparing to squelch meanings")
+    
+    def inner(word):
+        for reading, meaning in maxlensource[1](word):
+            yield reading, None
+    
+    return maxlensource[0], inner
 
 """
 Encapsulates one or more Chinese dictionaries, and provides the ability to transform
@@ -85,20 +94,20 @@ class PinyinDictionary(object):
     def loadall(cls, dbconnect):
         def buildDictionary(usefallback, table, simptradindex):
             # DEBUG - this means that we will lose measure words for languages other than English - seperate the two
-            sources = [
+            rawsources = [
                     # User dictionary has absolute priority
                     fileSource('dict-userdict.txt'),
                     # Pinyin Toolkit specific overrides for system dictionaries
                     fileSource('pinyin_toolkit_sydict.u8'),
                     # Main language database
-                    table and databaseDictionarySource(dbconnect, table, simptradindex, False) or None,
+                    table and databaseDictionarySource(dbconnect, table, simptradindex) or None,
                     # Fallback databases for readings only if we have a non-english primary database
-                    usefallback and databaseDictionarySource(dbconnect, "CEDICT", 1, True) or None,
+                    usefallback and squelchMeaning(databaseDictionarySource(dbconnect, "CEDICT", 1)) or None,
                     # Unihan as a last resort - lowest quality data
                     databaseReadingSource(dbconnect)
                 ]
             
-            return PinyinDictionary([source for source in sources if source is not None])
+            return PinyinDictionary([source for source in rawsources if source is not None])
         
         dictionaries = {}
         for language, table, simptradindex in [('en', "CEDICT", 1), ('de', "HanDeDict", 0), ('fr', "CFDICT", 0), ('default', None, None)]:
