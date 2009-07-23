@@ -268,6 +268,12 @@ class PinyinDictionary(object):
         for source in self.__sources:
             readingsmeanings.extend(source(word))
         
+        # TODO: (perhaps) consolidate competing definitions from a single source if
+        # they occur as a result of simplification and we prefer simplified characters
+        
+        # TODO: match up definitions /across/ sources so that we can get measure word
+        # information in German (for example). (#120)
+        
         return readingsmeanings
 
 def combinemeaningsmws(dictmeanings, dictmeasurewords):
