@@ -245,7 +245,7 @@ class PinyinDictionary(object):
         # TODO
 
         # Check Unihan as well:
-        readingsmeanings.extend([(reading, None) for reading in self.__dbconnect.selectRows(sqlalchemy.select([self.__charpinyintable.c.Reading], self.__charpinyintable.c.ChineseCharacter == word))])
+        readingsmeanings.extend([(reading[0], None) for reading in self.__dbconnect.selectRows(sqlalchemy.select([self.__charpinyintable.c.Reading], self.__charpinyintable.c.ChineseCharacter == word))])
         
         return readingsmeanings
 
