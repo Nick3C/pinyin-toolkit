@@ -13,82 +13,65 @@ import meanings
 from utils import *
 
 
-def fileSource(auxdictname):
-    auxdictpath = toolkitdir("pinyin", "dictionaries", auxdictname)
+def fileSource(dictname):
+    filename = toolkitdir("pinyin", "dictionaries", dictname)
     
     # Avoid loading auxilliary dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
-    if os.path.exists(auxdictpath):
-        return FileSource(auxdictpath)
-    else:
-        log.warn("Skipping missing dictionary at %s", auxdictpath)
+    if not(os.path.exists(filename)):
+        log.warn("Skipping missing dictionary at %s", filename)
         return None
-
-class FileSource(object):
-    def __init__(self, filename):
-        log.info("Loading file-based dictionary from %s", filename)
-        
-        file = codecs.open(filename, "r", encoding='utf-8')
-        try:
-            readingsmeanings = FactoryDict(lambda _: [])
-            maxcharacterlen = 0
-            for line in file:
-                # Match this line
-                m = PinyinDictionary.lineregex.match(line)
-                if not(m):
-                    continue
+    
+    log.info("Loading file-based dictionary from %s", filename)
+    file = codecs.open(filename, "r", encoding='utf-8')
+    try:
+        readingsmeanings = FactoryDict(lambda _: [])
+        maxcharacterlen = 0
+        for line in file:
+            # Match this line
+            m = PinyinDictionary.lineregex.match(line)
+            if not(m):
+                continue
+            
+            # Extract information from dictionary
+            lcharacters = m.group(1)
+            rcharacters = m.group(2)
+            raw_pinyin = m.group(3)
+            raw_definition = m.group(5)
+            
+            # Save meanings and readings
+            for characters in [lcharacters, rcharacters]:
+                # Update the maximum character length
+                maxcharacterlen = max(maxcharacterlen, len(characters))
                 
-                # Extract information from dictionary
-                lcharacters = m.group(1)
-                rcharacters = m.group(2)
-                raw_pinyin = m.group(3)
-                raw_definition = m.group(5)
-                
-                # Save meanings and readings
-                for characters in [lcharacters, rcharacters]:
-                    # Update the maximum character length
-                    maxcharacterlen = max(maxcharacterlen, len(characters))
-                    
-                    # Save the readings and meanings for both simplified and traditional keys
-                    readingsmeanings[characters].append((raw_pinyin, raw_definition))
-        finally:
-            file.close()
-        
-        self.__readingsmeanings = readingsmeanings
-        self.maxcharacterlen = maxcharacterlen
+                # Save the readings and meanings for both simplified and traditional keys
+                readingsmeanings[characters].append((raw_pinyin, raw_definition))
+    finally:
+        file.close()
     
-    def parseexact(self, word):
-        return [(reading, (0, zapempty(meaning))) for reading, meaning in self.__readingsmeanings[word]]
+    return maxcharacterlen, lambda word: [(reading, (0, zapempty(meaning))) for reading, meaning in readingsmeanings[word]]
 
-class DatabaseDictionarySource(object):
-    def __init__(self, dbconnect, tablename, simptradindex, readingonly):
-        log.info("Loading full dictionary from database table %s %s", tablename, readingonly and "(only the reaings)" or "")
-        
-        self.__dbconnect = dbconnect
-        self.__simptradindex = simptradindex
-        self.__readingonly = readingonly
-        self.__dicttable = sqlalchemy.Table(tablename, dbconnect.metadata, autoload=True)
-        
-        self.maxcharacterlen = dbconnect.selectScalar(sqlalchemy.func.max(sqlalchemy.func.length(self.__dicttable.c.HeadwordSimplified)))
+def databaseDictionarySource(dbconnect, tablename, simptradindex, readingonly):
+    log.info("Loading full dictionary from database table %s %s", tablename, readingonly and "(only the reaings)" or "")
     
-    def parseexact(self, word):
-        for reading, meaning in self.__dbconnect.selectRows(sqlalchemy.select(
-                [self.__dicttable.c.Reading,
-                 self.__dicttable.c.Translation],
-                sqlalchemy.or_(self.__dicttable.c.HeadwordSimplified == word,
-                               self.__dicttable.c.HeadwordTraditional == word))):
-            yield (reading, (self.__simptradindex, not(self.__readingonly) and zapempty(meaning) or None))
+    dicttable = sqlalchemy.Table(tablename, dbconnect.metadata, autoload=True)
+    maxcharacterlen = dbconnect.selectScalar(sqlalchemy.func.max(sqlalchemy.func.length(dicttable.c.HeadwordSimplified)))
+    
+    def inner(word):
+        for reading, meaning in dbconnect.selectRows(sqlalchemy.select(
+                [dicttable.c.Reading,
+                 dicttable.c.Translation],
+                sqlalchemy.or_(dicttable.c.HeadwordSimplified == word,
+                               dicttable.c.HeadwordTraditional == word))):
+            yield (reading, (simptradindex, not(readingonly) and zapempty(meaning) or None))
+    
+    return maxcharacterlen, inner
 
-class DatabaseReadingSource(object):
-    def __init__(self, dbconnect):
-        log.info("Loading character reading database")
-        
-        self.__dbconnect = dbconnect
-        self.__readingtable = sqlalchemy.Table("CharacterPinyin", dbconnect.metadata, autoload=True)
-        
-        self.maxcharacterlen = 1
+def databaseReadingSource(dbconnect):
+    log.info("Loading character reading database")
     
-    def parseexact(self, word):
-        return [(reading[0], None) for reading in self.__dbconnect.selectRows(sqlalchemy.select([self.__readingtable.c.Reading], self.__readingtable.c.ChineseCharacter == word))]
+    readingtable = sqlalchemy.Table("CharacterPinyin", dbconnect.metadata, autoload=True)
+    
+    return 1, lambda word: [(reading[0], None) for reading in dbconnect.selectRows(sqlalchemy.select([readingtable.c.Reading], readingtable.c.ChineseCharacter == word))]
 
 """
 Encapsulates one or more Chinese dictionaries, and provides the ability to transform
@@ -108,15 +91,14 @@ class PinyinDictionary(object):
                     # Pinyin Toolkit specific overrides for system dictionaries
                     fileSource('pinyin_toolkit_sydict.u8'),
                     # Main language database
-                    table and DatabaseDictionarySource(dbconnect, table, simptradindex, False) or None,
+                    table and databaseDictionarySource(dbconnect, table, simptradindex, False) or None,
                     # Fallback databases for readings only if we have a non-english primary database
-                    usefallback and DatabaseDictionarySource(dbconnect, "CEDICT", 1, True) or None,
+                    usefallback and databaseDictionarySource(dbconnect, "CEDICT", 1, True) or None,
                     # Unihan as a last resort - lowest quality data
-                    DatabaseReadingSource(dbconnect)
+                    databaseReadingSource(dbconnect)
                 ]
             
-            sources = [source for source in sources if source is not None]
-            return PinyinDictionary(sources)
+            return PinyinDictionary([source for source in sources if source is not None])
         
         dictionaries = {}
         for language, table, simptradindex in [('en', "CEDICT", 1), ('de', "HanDeDict", 0), ('fr', "CFDICT", 0), ('default', None, None)]:
@@ -127,10 +109,9 @@ class PinyinDictionary(object):
         
         return inner
     
-    def __init__(self, sources):
-        # Save the dictionary table we will use for most lookups, and use it to initialize maximum character length
-        self.__sources = sources
-        self.__maxcharacterlen = max([s.maxcharacterlen for s in sources])
+    def __init__(self, maxlenssources):
+        maxlens, self.__sources = unzip(maxlenssources)
+        self.__maxcharacterlen = max(maxlens)
 
     """
     Given a string of Hanzi, return the result rendered into a list of Pinyin and unrecognised tokens (as strings).
@@ -263,7 +244,7 @@ class PinyinDictionary(object):
     def parseexact(self, word):
         readingsmeanings = []
         for source in self.__sources:
-            readingsmeanings.extend(source.parseexact(word))
+            readingsmeanings.extend(source(word))
         
         return readingsmeanings
 

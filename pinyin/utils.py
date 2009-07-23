@@ -248,6 +248,11 @@ def pluralize(what, count):
         return what + "s"
 
 """
+Unzip a list.
+"""
+unzip = lambda l: tuple(zip(*l))
+
+"""
 Given a red, green and blue component of a color, return the corresponding HTML color.
 """
 def toHtmlColor(r, g, b):
