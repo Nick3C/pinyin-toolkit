@@ -122,9 +122,9 @@ class FieldUpdaterFromExpression(object):
         self.notifier = notifier
         self.mediamanager = mediamanager
         self.config = config
-        self.database = database
+        self.dictionaries = dictionary.PinyinDictionary.loadall(database)
     
-    dictionary = property(lambda self: dictionary.PinyinDictionary.load(self.config.dictlanguage, self.database))
+    dictionary = property(lambda self: self.dictionaries(self.config.dictlanguage))
     
     #
     # Generation of field contents

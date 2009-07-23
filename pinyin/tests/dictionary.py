@@ -6,9 +6,8 @@ from pinyin.dictionary import *
 from database import *
 
 
-# Thunk commonly-used dictionaries to prevent reading them several times
-englishdict = PinyinDictionary.load('en', database)
-germandict = PinyinDictionary.load('de', database)
+dictionaries = PinyinDictionary.loadall(database)
+englishdict, frenchdict, germandict = dictionaries('en'), dictionaries('fr'), dictionaries('de')
 
 class PinyinDictionaryTest(unittest.TestCase):
     def testTonedTokens(self):
@@ -54,16 +53,10 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(self.flatmeanings(englishdict, u"English"), None)
 
     def testMissingDictionary(self):
-        dict = PinyinDictionary(database,
-                    sqlalchemy.Table("CEDICT", database.metadata, autoload=True),
-                    sqlalchemy.Table("CharacterPinyin", database.metadata, autoload=True),
-                    False, 0, ['idontexist.txt'])
-        # We're just looking for a lack of exceptions here
-        dict.reading(u"个")
-        self.flatmeanings(dict, u"个")
+        self.assertEquals(fileSource('idontexist.txt'), None)
     
     def testMissingLanguage(self):
-        dict = PinyinDictionary.load('foobar', database)
+        dict = dictionaries('foobar')
         self.assertEquals(flatten(dict.reading(u"个")), "ge4")
         self.assertEquals(self.flatmeanings(dict, u"个"), None)
     
@@ -78,10 +71,9 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(self.flatmeanings(englishdict, u"鼓聲"), ["sound of a drum", "drumbeat"])
 
     def testFrenchDictionary(self):
-        dict = PinyinDictionary.load('fr', database)
-        self.assertEquals(flatten(dict.reading(u"白天")), "bai2 tian")
-        self.assertEquals(flatten(dict.reading(u"白天")), "bai2 tian")
-        self.assertEquals(self.flatmeanings(dict, u"白天"), [u"journée (n.v.) (n)"])
+        self.assertEquals(flatten(frenchdict.reading(u"白天")), "bai2 tian")
+        self.assertEquals(flatten(frenchdict.reading(u"白天")), "bai2 tian")
+        self.assertEquals(self.flatmeanings(frenchdict, u"白天"), [u"journée (n.v.) (n)"])
 
     def testWordsWhosePrefixIsNotInDictionary(self):
         self.assertEquals(flatten(germandict.reading(u"生日")), "sheng1 ri4")
@@ -98,6 +90,10 @@ class PinyinDictionaryTest(unittest.TestCase):
     def testPinyinFromUnihan(self):
         self.assertEquals(flatten(englishdict.reading(u"噔")), "deng1")
         self.assertEquals(self.flatmeanings(englishdict, u"噔"), None)
+    
+    def testFrenchPinyinFallsBackOnCEDICT(self):
+        self.assertEquals(flatten(frenchdict.reading(u"数量积")), "shu4 liang4 ji1")
+        self.assertEquals(self.flatmeanings(frenchdict, u"数量积"), None)
     
     # I've changed my mind about this test. We can't really say that an occurance of 儿
     # was meant to be an erhua one without having an entry explicitly in the dictionary
@@ -129,13 +125,13 @@ class PinyinDictionaryTest(unittest.TestCase):
     # Test helper 
     def flatmeanings(self, dictionary, what, prefersimptrad="simp"):
         dictmeanings = combinemeaningsmws(*(dictionary.meanings(what, prefersimptrad)))
-        if dictmeanings:
-            return self.flattenall(dictmeanings)
-        else:
-            return None
+        return self.flattenall(dictmeanings)
     
     def flattenall(self, tokens):
-        return [flatten(token) for token in tokens]
+        if tokens:
+            return [flatten(token) for token in tokens]
+        else:
+            return None
 
 class PinyinConverterTest(unittest.TestCase):
     # Test data:

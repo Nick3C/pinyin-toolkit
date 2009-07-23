@@ -7,7 +7,7 @@ from pinyin.numbers import *
 from database import *
 
 
-englishdict = dictionary.PinyinDictionary.load('en', database)
+englishdict = dictionary.PinyinDictionary.loadall(database)('en')
 
 class ReadingFromNumberlikeTest(unittest.TestCase):
     def testIntegerReading(self):

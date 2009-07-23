@@ -11,7 +11,7 @@ from pinyin.updater import *
 from database import *
 
 
-englishdict = dictionary.PinyinDictionary.load("en", database)
+englishdict = dictionary.PinyinDictionary.loadall(database)('en')
 
 class FieldUpdaterFromAudioTest(unittest.TestCase):
     def testDoesntDoAnythingWhenDisabled(self):

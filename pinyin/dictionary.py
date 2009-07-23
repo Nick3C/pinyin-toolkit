@@ -12,61 +12,28 @@ from model import *
 import meanings
 from utils import *
 
-"""
-Encapsulates one or more Chinese dictionaries, and provides the ability to transform
-strings of Hanzi into their pinyin equivalents.
-"""
-class PinyinDictionary(object):
-    languagedicts = {
-            'en'     : (1, "CEDICT"),
-            'de'     : (0, "HanDeDict"),
-            'fr'     : (0, "CFDICT")
-        }
+
+def fileSource(auxdictname):
+    auxdictpath = toolkitdir("pinyin", "dictionaries", auxdictname)
     
-    # Regular expression used for pulling stuff out of the dictionary
-    lineregex = re.compile(r"^([^#\s]+)\s+([^\s]+)\s+\[([^\]]+)\](\s+)?(.*)$")
-    
-    @classmethod
-    def load(cls, language, dbconnect):
-        # Default to the pinyin-only dictionary if this language doesn't have a dictionary.
-        # DEBUG - this means that we will lose measure words for languages other than English - seperate the two
-        langdata = cls.languagedicts.get(language, None)
-        if langdata is None:
-            (dicttablesimptradindex, languagedict), discardmeanings = cls.languagedicts['en'], True
-        else:
-            (dicttablesimptradindex, languagedict), discardmeanings = langdata, False
+    # Avoid loading auxilliary dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
+    if os.path.exists(auxdictpath):
+        return FileSource(auxdictpath)
+    else:
+        log.warn("Skipping missing dictionary at %s", auxdictpath)
+        return None
+
+class FileSource(object):
+    def __init__(self, filename):
+        log.info("Loading file-based dictionary from %s", filename)
         
-        log.info("Beginning load of dictionary for language code %s (%s)", language, languagedict)
-        languagedicttable = sqlalchemy.Table(languagedict, dbconnect.metadata, autoload=True)
-        charpinyintable = sqlalchemy.Table("CharacterPinyin", dbconnect.metadata, autoload=True)
-        return PinyinDictionary(dbconnect, languagedicttable, charpinyintable, discardmeanings, dicttablesimptradindex,
-                                ['pinyin_toolkit_sydict.u8', 'dict-userdict.txt'])
-    
-    def __init__(self, dbconnect, dicttable, charpinyintable, discardmeanings, dicttablesimptradindex, auxdictnames):
-        # Save the dictionary table we will use for most lookups, and use it to initialize maximum character length
-        self.__dbconnect = dbconnect
-        self.__dicttable = dicttable
-        self.__charpinyintable = charpinyintable
-        self.__discardmeanings = discardmeanings
-        self.__dicttablesimptradindex = dicttablesimptradindex
-        self.__maxcharacterlen = max(dbconnect.selectScalar(sqlalchemy.func.max(sqlalchemy.func.length(dicttable.c.HeadwordSimplified))), 1)
-        
-        # Build the auxilliary dictionary, giving precedence to dictionaries later on in the input list
-        self.__auxreadingsmeanings = FactoryDict(lambda _: [])
-        for auxdictpath in [toolkitdir("pinyin", "dictionaries", auxdictname) for auxdictname in auxdictnames]:
-            # Avoid loading auxilliary dictionaries that aren't there (e.g. the dict-userdict.txt if the user hasn't created it)
-            if os.path.exists(auxdictpath):
-                log.info("Loading auxilliary dictionary from %s", auxdictpath)
-                self.loadsingledict(auxdictpath)
-            else:
-                log.warn("Skipping missing dictionary at %s", auxdictpath)
-    
-    def loadsingledict(self, auxdictpath):
-        file = codecs.open(auxdictpath, "r", encoding='utf-8')
+        file = codecs.open(filename, "r", encoding='utf-8')
         try:
+            readingsmeanings = FactoryDict(lambda _: [])
+            maxcharacterlen = 0
             for line in file:
                 # Match this line
-                m = self.lineregex.match(line)
+                m = PinyinDictionary.lineregex.match(line)
                 if not(m):
                     continue
                 
@@ -79,12 +46,91 @@ class PinyinDictionary(object):
                 # Save meanings and readings
                 for characters in [lcharacters, rcharacters]:
                     # Update the maximum character length
-                    self.__maxcharacterlen = max(self.__maxcharacterlen, len(characters))
+                    maxcharacterlen = max(maxcharacterlen, len(characters))
                     
                     # Save the readings and meanings for both simplified and traditional keys
-                    self.__auxreadingsmeanings[characters].append((raw_pinyin, raw_definition))
+                    readingsmeanings[characters].append((raw_pinyin, raw_definition))
         finally:
             file.close()
+        
+        self.__readingsmeanings = readingsmeanings
+        self.maxcharacterlen = maxcharacterlen
+    
+    def parseexact(self, word):
+        return [(reading, (0, zapempty(meaning))) for reading, meaning in self.__readingsmeanings[word]]
+
+class DatabaseDictionarySource(object):
+    def __init__(self, dbconnect, tablename, simptradindex, readingonly):
+        log.info("Loading full dictionary from database table %s %s", tablename, readingonly and "(only the reaings)" or "")
+        
+        self.__dbconnect = dbconnect
+        self.__simptradindex = simptradindex
+        self.__readingonly = readingonly
+        self.__dicttable = sqlalchemy.Table(tablename, dbconnect.metadata, autoload=True)
+        
+        self.maxcharacterlen = dbconnect.selectScalar(sqlalchemy.func.max(sqlalchemy.func.length(self.__dicttable.c.HeadwordSimplified)))
+    
+    def parseexact(self, word):
+        for reading, meaning in self.__dbconnect.selectRows(sqlalchemy.select(
+                [self.__dicttable.c.Reading,
+                 self.__dicttable.c.Translation],
+                sqlalchemy.or_(self.__dicttable.c.HeadwordSimplified == word,
+                               self.__dicttable.c.HeadwordTraditional == word))):
+            yield (reading, (self.__simptradindex, not(self.__readingonly) and zapempty(meaning) or None))
+
+class DatabaseReadingSource(object):
+    def __init__(self, dbconnect):
+        log.info("Loading character reading database")
+        
+        self.__dbconnect = dbconnect
+        self.__readingtable = sqlalchemy.Table("CharacterPinyin", dbconnect.metadata, autoload=True)
+        
+        self.maxcharacterlen = 1
+    
+    def parseexact(self, word):
+        return [(reading[0], None) for reading in self.__dbconnect.selectRows(sqlalchemy.select([self.__readingtable.c.Reading], self.__readingtable.c.ChineseCharacter == word))]
+
+"""
+Encapsulates one or more Chinese dictionaries, and provides the ability to transform
+strings of Hanzi into their pinyin equivalents.
+"""
+class PinyinDictionary(object):
+    # Regular expression used for pulling stuff out of the dictionary
+    lineregex = re.compile(r"^([^#\s]+)\s+([^\s]+)\s+\[([^\]]+)\](\s+)?(.*)$")
+    
+    @classmethod
+    def loadall(cls, dbconnect):
+        def buildDictionary(usefallback, table, simptradindex):
+            # DEBUG - this means that we will lose measure words for languages other than English - seperate the two
+            sources = [
+                    # User dictionary has absolute priority
+                    fileSource('dict-userdict.txt'),
+                    # Pinyin Toolkit specific overrides for system dictionaries
+                    fileSource('pinyin_toolkit_sydict.u8'),
+                    # Main language database
+                    table and DatabaseDictionarySource(dbconnect, table, simptradindex, False) or None,
+                    # Fallback databases for readings only if we have a non-english primary database
+                    usefallback and DatabaseDictionarySource(dbconnect, "CEDICT", 1, True) or None,
+                    # Unihan as a last resort - lowest quality data
+                    DatabaseReadingSource(dbconnect)
+                ]
+            
+            sources = [source for source in sources if source is not None]
+            return PinyinDictionary(sources)
+        
+        dictionaries = {}
+        for language, table, simptradindex in [('en', "CEDICT", 1), ('de', "HanDeDict", 0), ('fr', "CFDICT", 0), ('default', None, None)]:
+            dictionaries[language] = Thunk(lambda l=language, t=table, sti=simptradindex: buildDictionary(l != 'en', t, sti))
+        
+        def inner(language):
+            return (dictionaries.get(language, None) or dictionaries['default'])()
+        
+        return inner
+    
+    def __init__(self, sources):
+        # Save the dictionary table we will use for most lookups, and use it to initialize maximum character length
+        self.__sources = sources
+        self.__maxcharacterlen = max([s.maxcharacterlen for s in sources])
 
     """
     Given a string of Hanzi, return the result rendered into a list of Pinyin and unrecognised tokens (as strings).
@@ -145,11 +191,6 @@ class PinyinDictionary(object):
     """
     def meanings(self, sentence, prefersimptrad):
         log.info("Requested meanings for %s", sentence)
-        
-        # If we loaded a dictionary in the wrong language, then we shouldn't return
-        # the English meanings from here or we will not fall back onto Google
-        if self.__discardmeanings:
-            return None, None
         
         isfirstparsedthing = True
         foundmeanings, foundmeasurewords = None, None
@@ -218,34 +259,11 @@ class PinyinDictionary(object):
                 i += 1
     
     # The readings and meanings returned for a word should correspond to each other,
-    # and be returned in frequency order: most frequent first
+    # and be returned in priority order: highest priority first
     def parseexact(self, word):
-        def zapempty(what):
-            if what == "":
-                return None
-            else:
-                return what
-        
-        # First port of call: the auxilliary dictionary. This contains user overrides,
-        # which have priority overy absolutely everything else
-        readingsmeanings = [(reading, (0, zapempty(meaning))) for reading, meaning in self.__auxreadingsmeanings[word]]
-        
-        # Now consider the main dictionary in the database (typically CEDICT):
-        for reading, meaning in self.__dbconnect.selectRows(sqlalchemy.select(
-                [self.__dicttable.c.Reading,
-                 self.__dicttable.c.Translation],
-                sqlalchemy.or_(self.__dicttable.c.HeadwordSimplified == word,
-                               self.__dicttable.c.HeadwordTraditional == word))):
-            if meaning == "":
-                meaning = None
-            readingsmeanings.append((reading, (self.__dicttablesimptradindex, zapempty(meaning))))
-        
-        # So far, we haven't applied any frequency information, but we can be a bit clever here and take
-        # advantage of the fact that Unihan returns readings in frequency order to permute the list so far
-        # TODO
-
-        # Check Unihan as well:
-        readingsmeanings.extend([(reading[0], None) for reading in self.__dbconnect.selectRows(sqlalchemy.select([self.__charpinyintable.c.Reading], self.__charpinyintable.c.ChineseCharacter == word))])
+        readingsmeanings = []
+        for source in self.__sources:
+            readingsmeanings.extend(source.parseexact(word))
         
         return readingsmeanings
 

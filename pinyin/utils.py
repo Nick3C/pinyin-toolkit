@@ -63,6 +63,15 @@ def ispostspacedpunctuation(text):
     return text == u"。" or text == "." or text == u"，" or text == ","
 
 """
+Turns the empty string into None and leaves everything else alone.
+"""
+def zapempty(what):
+    if what == "":
+        return None
+    else:
+        return what
+
+"""
 Reports the absolute directory name that the root toolkit directory has at runtime
 """
 def toolkitdir(*components):
