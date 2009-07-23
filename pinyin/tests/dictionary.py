@@ -95,6 +95,10 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(flatten(englishdict.reading(u"股指")), "gu3 zhi3")
         self.assertEquals(self.flatmeanings(englishdict, u"股指"), [u"stock market index", u"share price index", u"abbr. for 股票指数 - gu3 piao4 zhi3 shu4"])
     
+    def testPinyinFromUnihan(self):
+        self.assertEquals(flatten(englishdict.reading(u"噔")), "deng1")
+        self.assertEquals(self.flatmeanings(englishdict, u"噔"), None)
+    
     # I've changed my mind about this test. We can't really say that an occurance of 儿
     # was meant to be an erhua one without having an entry explicitly in the dictionary
     # for the erhua variant. This test used to pass with the old dictionary code because

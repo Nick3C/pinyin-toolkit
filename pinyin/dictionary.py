@@ -170,7 +170,7 @@ class PinyinDictionary(object):
             
             if readingsmeanings is not None:
                 # A recognised thing!  Find the definition in the dictionary:
-                while len(readingsmeanings) > 0 and readingsmeanings[0][1][1] is None:
+                while len(readingsmeanings) > 0 and (readingsmeanings[0][1] is None or readingsmeanings[0][1][1] is None):
                     readingsmeanings.pop(0)
                 
                 # Did we actually have a non-null meaning in there?
