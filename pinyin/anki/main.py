@@ -122,7 +122,7 @@ class PinyinToolkit(object):
                 return None
         
         # Finally, start the database connection to the (possibly fresh) DB
-        return cjklib.dbconnector.DatabaseConnector.getDBConnector(sqlalchemy.engine.url.URL("sqlite", database=dbpath))
+        return cjklib.dbconnector.DatabaseConnector.getDBConnector({ "url" : sqlalchemy.engine.url.URL("sqlite", database=dbpath) })
     
     def registerStandardModels(self):
         # This code was added at the request of Damien: one of the changes in the next

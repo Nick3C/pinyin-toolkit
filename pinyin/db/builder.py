@@ -49,7 +49,7 @@ class DBBuilder(object):
         
         # [2/4]: setup the database builder with a standard set of requirements
         log.info("Initializing builder")
-        database = cjklib.dbconnector.DatabaseConnector.getDBConnector(sqlalchemy.engine.url.URL("sqlite", database=self.builtdatabasepath))
+        database = cjklib.dbconnector.DatabaseConnector.getDBConnector({ "url" : sqlalchemy.engine.url.URL("sqlite", database=self.builtdatabasepath) })
         self.cjkdbbuilder = cjklib.build.DatabaseBuilder(
             dbConnectInst=database,
             # We need to turn quiet on, because Anki throws a hissy fit if you write to stderr

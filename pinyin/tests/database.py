@@ -6,4 +6,4 @@ import pinyin.utils
 
 # Globally shared database connection
 url = sqlalchemy.engine.url.URL("sqlite", database=pinyin.utils.toolkitdir("pinyin", "db", "cjklib.db"))
-database = cjklib.dbconnector.DatabaseConnector.getDBConnector(url)
+database = cjklib.dbconnector.DatabaseConnector.getDBConnector({ "url" : url })
