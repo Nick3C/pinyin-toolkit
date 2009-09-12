@@ -4,14 +4,13 @@ import copy
 import unittest
 
 import pinyin.config
-from pinyin.mocks import *
-from pinyin.utils import Thunk
+from pinyin.db import database
 from pinyin.updater import *
+from pinyin.utils import Thunk
+from pinyin.mocks import *
 
-from database import *
 
-
-englishdict = dictionary.PinyinDictionary.loadall(database)('en')
+englishdict = dictionary.PinyinDictionary.loadall()('en')
 
 class FieldUpdaterFromAudioTest(unittest.TestCase):
     def testDoesntDoAnythingWhenDisabled(self):
@@ -392,6 +391,6 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
         mediamanager = MockMediaManager(mediapacks)
         
         factclone = copy.deepcopy(fact)
-        FieldUpdaterFromExpression(notifier, mediamanager, config.Config(utils.updated({ "dictlanguage" : "en" }, kwargs)), database).updatefact(factclone, expression)
+        FieldUpdaterFromExpression(notifier, mediamanager, config.Config(utils.updated({ "dictlanguage" : "en" }, kwargs))).updatefact(factclone, expression)
         
         return notifier.infos, factclone

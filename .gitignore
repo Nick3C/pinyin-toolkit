@@ -14,6 +14,9 @@ Thumbs.db
 *.LOCAL*
 *.REMOTE*
 
+# Text editor nonsense
+*.tmproj
+
 # Media download dir
 pinyin/media/downloads/*
 # Except the info files

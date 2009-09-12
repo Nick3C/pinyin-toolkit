@@ -2,11 +2,11 @@
 
 import unittest
 
+from pinyin.db import database
 from pinyin.dictionary import *
-from database import *
 
 
-dictionaries = PinyinDictionary.loadall(database)
+dictionaries = PinyinDictionary.loadall()
 englishdict, frenchdict, germandict = dictionaries('en'), dictionaries('fr'), dictionaries('de')
 
 class PinyinDictionaryTest(unittest.TestCase):

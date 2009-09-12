@@ -54,7 +54,7 @@ class DBBuilder(object):
             dbConnectInst=database,
             # We need to turn quiet on, because Anki throws a hissy fit if you write to stderr
             # We turn disableFTS3 on because it makes my SELECTs 4 times faster on SQLite 3.4.0
-            quiet=True, disableFTS3=True, rebuildExisting=False, noFail=False,
+            quiet=True, enableFTS3=False, rebuildExisting=False, noFail=False,
             dataPath=[self.dictionarydatapath, self.cjkdatapath],
             prefer=['CharacterVariantBMPBuilder', 'CombinedStrokeCountBuilder',
                     'CombinedCharacterResidualStrokeCountBuilder',

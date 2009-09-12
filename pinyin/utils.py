@@ -177,7 +177,16 @@ class Thunk(object):
             return self.__result
         
         self.__called = True
-        self.__result = self.__function()
+        try:
+            self.__result = self.__function()
+        except Exception, e:
+            from pinyin.logger import log
+            # Thunked actions raising an exception is a massively bad idea, because there
+            # is no way to know whose exception handler will be on the stack at the time we
+            # realise it.  Nonetheless, our only recourse at this point is to let it bubble onwards...
+            log.exception("A thunked action raised an exception! Letting it go through and hoping for the best...")
+            raise
+            
         self.__function = None # For garbage collection
         return self.__result
 
@@ -230,6 +239,15 @@ def heador(list, orelse):
         return orelse
     else:
         return list[0]
+
+"""
+Return the first argument if it is not None, otherwise return the second argument.
+"""
+def orelse(thing, alternative):
+    if thing is not None:
+        return thing
+    else:
+        return alternative
 
 """
 Returns the left dictionary or set updated by the right one.

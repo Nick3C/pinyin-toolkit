@@ -2,12 +2,11 @@
 
 import unittest
 
+from pinyin.db import database
 from pinyin.numbers import *
 
-from database import *
 
-
-englishdict = dictionary.PinyinDictionary.loadall(database)('en')
+englishdict = dictionary.PinyinDictionary.loadall()('en')
 
 class ReadingFromNumberlikeTest(unittest.TestCase):
     def testIntegerReading(self):

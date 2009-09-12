@@ -13,6 +13,7 @@ if sys.version_info[0:2] < (2, 5):
 sys.path.append(utils.toolkitdir("pinyin", "vendor", "cjklib"))
 
 import config
+import db
 import dictionary
 import languages
 import logger

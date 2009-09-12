@@ -116,9 +116,9 @@ class PinyinTest(unittest.TestCase):
         self.assertEquals(Pinyin.parse(u"nü3"), Pinyin.parse(u"nv3"))
         self.assertEquals(Pinyin.parse(u"lü3"), Pinyin.parse(u"lu:3"))
     
-    # TODO: fix this test (#138)
-    # def testParsesXiong(self):
-    #     self.assertEquals(Pinyin.parse(u"xiong1"), Pinyin("xiong", 1))
+    # Bug #138 - kind of a relic of when we used a regex to recognise pinyin
+    def testParsesXiong(self):
+        self.assertEquals(Pinyin.parse(u"xiong1"), Pinyin("xiong", 1))
     
     def testRejectsPinyinWithMultipleToneMarks(self):
         self.assertRaises(ValueError, lambda: Pinyin.parse(u"xíǎo"))

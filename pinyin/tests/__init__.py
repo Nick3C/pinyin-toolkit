@@ -1,5 +1,4 @@
 import config
-import database
 import dictionary
 import dictionaryonline
 import meanings

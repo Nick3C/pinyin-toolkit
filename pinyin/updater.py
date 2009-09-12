@@ -4,6 +4,7 @@
 import os
 
 import config
+from db import database
 import dictionary
 import dictionaryonline
 import media
@@ -118,11 +119,11 @@ class FieldUpdaterFromReading(object):
         fact['reading'] = preparetokens(self.config, [model.Word(*model.tokenize(reading))])
 
 class FieldUpdaterFromExpression(object):
-    def __init__(self, notifier, mediamanager, config, database):
+    def __init__(self, notifier, mediamanager, config):
         self.notifier = notifier
         self.mediamanager = mediamanager
         self.config = config
-        self.dictionaries = dictionary.PinyinDictionary.loadall(database)
+        self.dictionaries = dictionary.PinyinDictionary.loadall()
     
     dictionary = property(lambda self: self.dictionaries(self.config.dictlanguage))
     

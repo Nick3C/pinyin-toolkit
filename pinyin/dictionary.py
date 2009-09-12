@@ -7,6 +7,7 @@ import re
 
 import sqlalchemy
 
+from db import database
 from logger import log
 from model import *
 import meanings
@@ -57,14 +58,14 @@ def fileSource(dictname):
     
     return maxcharacterlen, lambda word: [(reading, parseMeaning(meaning, 0)) for reading, meaning in readingsmeanings[word]]
 
-def databaseDictionarySource(dbconnect, tablename, simptradindex):
+def databaseDictionarySource(tablename, simptradindex):
     log.info("Loading full dictionary from database table %s", tablename)
     
-    dicttable = sqlalchemy.Table(tablename, dbconnect.metadata, autoload=True)
-    maxcharacterlen = dbconnect.selectScalar(sqlalchemy.func.max(sqlalchemy.func.length(dicttable.c.HeadwordSimplified)))
+    dicttable = sqlalchemy.Table(tablename, database.metadata, autoload=True)
+    maxcharacterlen = database.selectScalar(sqlalchemy.func.max(sqlalchemy.func.length(dicttable.c.HeadwordSimplified)))
     
     def inner(word):
-        for reading, meaning in dbconnect.selectRows(sqlalchemy.select(
+        for reading, meaning in database.selectRows(sqlalchemy.select(
                 [dicttable.c.Reading,
                  dicttable.c.Translation],
                 sqlalchemy.or_(dicttable.c.HeadwordSimplified == word,
@@ -73,12 +74,12 @@ def databaseDictionarySource(dbconnect, tablename, simptradindex):
     
     return maxcharacterlen, inner
 
-def databaseReadingSource(dbconnect):
+def databaseReadingSource():
     log.info("Loading character reading database")
     
-    readingtable = sqlalchemy.Table("CharacterPinyin", dbconnect.metadata, autoload=True)
+    readingtable = sqlalchemy.Table("CharacterPinyin", database.metadata, autoload=True)
     
-    return 1, lambda word: [(reading[0], None) for reading in dbconnect.selectRows(sqlalchemy.select([readingtable.c.Reading], readingtable.c.ChineseCharacter == word))]
+    return 1, lambda word: [(reading[0], None) for reading in database.selectRows(sqlalchemy.select([readingtable.c.Reading], readingtable.c.ChineseCharacter == word))]
 
 def squelchMeaning(maxlensource):
     log.info("Preparing to squelch meanings")
@@ -105,7 +106,7 @@ class PinyinDictionary(object):
     lineregex = re.compile(r"^([^#\s]+)\s+([^\s]+)\s+\[([^\]]+)\](\s+)?(.*)$")
     
     @classmethod
-    def loadall(cls, dbconnect):
+    def loadall(cls):
         def buildDictionary(usefallback, table, simptradindex):
             # DEBUG - this means that we will lose measure words for languages other than English - seperate the two
             rawsources = [
@@ -114,11 +115,11 @@ class PinyinDictionary(object):
                     # Pinyin Toolkit specific overrides for system dictionaries
                     fileSource('pinyin_toolkit_sydict.u8'),
                     # Main language database
-                    table and databaseDictionarySource(dbconnect, table, simptradindex) or None,
+                    table and databaseDictionarySource(table, simptradindex) or None,
                     # Fallback databases for readings only if we have a non-english primary database
-                    usefallback and squelchMeaning(databaseDictionarySource(dbconnect, "CEDICT", 1)) or None,
+                    usefallback and squelchMeaning(databaseDictionarySource("CEDICT", 1)) or None,
                     # Unihan as a last resort - lowest quality data
-                    databaseReadingSource(dbconnect)
+                    databaseReadingSource()
                 ]
             
             return PinyinDictionary([source for source in rawsources if source is not None])

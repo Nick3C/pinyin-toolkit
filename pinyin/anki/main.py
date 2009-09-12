@@ -3,12 +3,11 @@
 
 from PyQt4.QtGui import QDialog
 
-import cjklib.dbconnector
 import os
 import shutil
-import sqlalchemy
 
 import pinyin.config
+from pinyin.db import *
 import pinyin.db.builder
 import pinyin.forms.builddb
 import pinyin.forms.builddbcontroller
@@ -49,8 +48,7 @@ class PinyinToolkit(object):
         themediamanager = mediamanager.AnkiMediaManager(mw)
         
         # Open up the database
-        database = self.openDatabase(mw, thenotifier)
-        if database is None:
+        if not self.tryCreateAndLoadDatabase(mw, thenotifier):
             # Eeek! Database building failed, so we better turn off the toolkit
             log.error("Database construction failed: disabling the Toolkit")
             return
@@ -71,7 +69,7 @@ class PinyinToolkit(object):
         
         # Build the updaters
         updaters = {
-            'expression' : pinyin.updater.FieldUpdaterFromExpression(thenotifier, themediamanager, config, database),
+            'expression' : pinyin.updater.FieldUpdaterFromExpression(thenotifier, themediamanager, config),
             'reading'    : pinyin.updater.FieldUpdaterFromReading(config),
             'meaning'    : pinyin.updater.FieldUpdaterFromMeaning(config),
             'audio'      : pinyin.updater.FieldUpdaterFromAudio(thenotifier, themediamanager, config)
@@ -79,7 +77,7 @@ class PinyinToolkit(object):
         
         # Finally, build the hooks.  Make sure you store a reference to these, because otherwise they
         # get garbage collected, causing garbage collection of the actions they contain
-        self.hooks = [hookbuilder(mw, thenotifier, themediamanager, config, database, updaters) for hookbuilder in hookbuilders]
+        self.hooks = [hookbuilder(mw, thenotifier, themediamanager, config, updaters) for hookbuilder in hookbuilders]
         for hook in self.hooks:
             hook.install()
     
@@ -87,10 +85,9 @@ class PinyinToolkit(object):
         mw.registerPlugin("Mandarin Chinese Pinyin Toolkit", 4)
         self.registerStandardModels()
     
-    def openDatabase(self, mw, notifier):
+    def tryCreateAndLoadDatabase(self, mw, notifier):
         datatimestamp, satisfiers = pinyin.db.builder.getSatisfiers()
         cjklibtimestamp = os.path.getmtime(pinyin.utils.toolkitdir("pinyin", "vendor", "cjklib", "cjklib", "build", "builder.py"))
-        dbpath = pinyin.utils.toolkitdir("pinyin", "db", "cjklib.db")
         
         if not(os.path.exists(dbpath)):
             # MUST rebuild - DB doesn't exist
@@ -124,11 +121,12 @@ class PinyinToolkit(object):
             elif compulsory:
                 # Eeek! The dialog was "rejected" despite being compulsory. This can only happen if there
                 # was an error while building the database. Better give up now!
-                return None
+                return False
         
-        # Finally, start the database connection to the (possibly fresh) DB
-        return cjklib.dbconnector.DatabaseConnector.getDBConnector({ "url" : sqlalchemy.engine.url.URL("sqlite", database=dbpath) })
-    
+        # Finally, force the database connection to the (possibly fresh) DB to begin
+        database()
+        return True
+
     def registerStandardModels(self):
         # This code was added at the request of Damien: one of the changes in the next
         # Anki version will be to make language-specific toolkits into plugins.

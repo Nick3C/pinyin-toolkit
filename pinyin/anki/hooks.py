@@ -14,12 +14,11 @@ import pinyin.utils
 import utils
 
 class Hook(object):
-    def __init__(self, mw, notifier, mediamanager, config, database, updaters):
+    def __init__(self, mw, notifier, mediamanager, config, updaters):
         self.mw = mw
         self.notifier = notifier
         self.mediamanager = mediamanager
         self.config = config
-        self.database = database
         self.updaters = updaters
 
 class FocusHook(Hook):
@@ -134,7 +133,7 @@ class PreferencesHook(Hook):
         
         # Instantiate and show the preferences dialog modally
         preferences = pinyin.forms.preferences.Preferences(self.mw)
-        controller = pinyin.forms.preferencescontroller.PreferencesController(preferences, self.notifier, self.mediamanager, self.config, self.database)
+        controller = pinyin.forms.preferencescontroller.PreferencesController(preferences, self.notifier, self.mediamanager, self.config)
         result = preferences.exec_()
         
         # We only need to change the configuration if the user accepted the dialog

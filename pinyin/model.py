@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import re
+import sqlalchemy
 import unicodedata
 
+from db import database
 from logger import log
 import utils
 
@@ -33,6 +35,7 @@ def waysToSubstituteAwayUUmlaut(inwhat):
     else:
         # It makes a difference!
         return [strategy1, strategy2]
+
 
 # The basic data model is as follows:
 #  * Text is represented as lists of Words
@@ -95,10 +98,10 @@ class Text(unicode):
 Represents a single Pinyin character in the system.
 """
 class Pinyin(object):
-    # From <http://www.stud.uni-karlsruhe.de/~uyhc/zh-hans/node/108>. Should match all valid pinyin
-    # while excluding most invalid pinyin. Compared to his blogpost, this has the fix for 'er' pinyin,
-    # and can additionally deal with 'r', which crops up in CEDICT for erhua.
-    validpinyin = re.compile(u"(?:(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)(?:i(?:ao|[uae])?|u(?:ai|[iaeo])?|üe?))|(?:(?:(?:[bcdfghjklmnpqrstwxyz]|[zcs]h)|')?(?:a[oi]?|ei?|ou?)))(?:(?:ng|n|r)(?![aeo]))?)|r|xiong", re.IGNORECASE + re.UNICODE)
+    # Extract a simple regex of all the possible pinyin.
+    # NB: we have to delay-load  this in order to give the UI a chance to create the database if it is missing
+    # NB: we only need to consider the ü versions because the regex is used to check *after* we have normalised to ü
+    validpinyin = utils.Thunk(lambda: set(["r"] + [substituteForUUmlaut(pinyin[0]).lower() for pinyin in database.selectRows(sqlalchemy.select([sqlalchemy.Table("PinyinSyllables", database.metadata, autoload=True).c.Pinyin]))]))
     
     def __init__(self, word, toneinfo):
         self.word = word
@@ -192,8 +195,8 @@ class Pinyin(object):
             word = unicodedata.normalize('NFC', word)
         
         # Sanity check to catch English/French/whatever that doesn't look like pinyin
-        match = cls.validpinyin.match(word)
-        if match is None or match.end() < len(word):
+        if word.lower() not in cls.validpinyin():
+            log.info("Couldn't find %s in the valid pinyin list", word)
             raise ValueError(u"The proposed pinyin '%s' doesn't look like pinyin after all" % text)
         
         # We now have a word and tone info, whichever route we took

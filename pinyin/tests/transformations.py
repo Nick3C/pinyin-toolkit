@@ -2,14 +2,14 @@
 
 import unittest
 
+from pinyin.db import database
 import pinyin.dictionary
 from pinyin.media import MediaPack
 from pinyin.transformations import *
 
-from database import *
 
 # Shared dictionary
-englishdict = pinyin.dictionary.PinyinDictionary.loadall(database)('en')
+englishdict = pinyin.dictionary.PinyinDictionary.loadall()('en')
 
 # Default tone color list for tests
 colorlist = [

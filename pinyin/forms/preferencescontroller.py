@@ -26,7 +26,7 @@ previewexpressions = {
 previewmedia = [pinyin.media.MediaPack("Example", {"shu1.mp3" : "shu1.mp3"})]
 
 class PreferencesController(object):
-    def __init__(self, view, notifier, mediamanager, initialconfig, database):
+    def __init__(self, view, notifier, mediamanager, initialconfig):
         # Clone the configuration so we can change it at will
         self.model = pinyin.config.Config(initialconfig.settings)
     
@@ -38,7 +38,7 @@ class PreferencesController(object):
         # Set up an updater we will use to deal with the live preview, based off the current model
         # NB: use NullNotifier instead of the one we are passed because we don't want e.g. popups about
         # installing sound packs if we are just doing the live preview!
-        self.updaterfromexpr = pinyin.updater.FieldUpdaterFromExpression(pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager(previewmedia), self.model, database)
+        self.updaterfromexpr = pinyin.updater.FieldUpdaterFromExpression(pinyin.mocks.NullNotifier(), pinyin.mocks.MockMediaManager(previewmedia), self.model)
         
         # Set up the controls - one time only
         self.mappings = []
