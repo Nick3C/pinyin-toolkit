@@ -32,5 +32,5 @@ import transformations
 
 # Expose package metadata via the quasi-standard __version__
 # attribute: http://www.python.org/dev/peps/pep-0008/
-__version_info__ = ('0', '05')
+__version_info__ = ('0', '6')
 __version__ = '.'.join(__version_info__)

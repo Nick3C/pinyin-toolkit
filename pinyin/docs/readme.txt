@@ -1,6 +1,6 @@
 #################################################################################
 ###                   Mandarin-Chinese Pinyin Toolkit (PyKit)                 ### 
-###                          Version 0.05 (__/06/2009)                        ###
+###                          Version 0.6 (13/09/2009)                         ###
 ###                           pinyintoolkit@gmail.com                         ###
 #################################################################################
 # A Plugin for the Anki Spaced Repetition learning system http://ichi2.net/anki/#
@@ -185,6 +185,27 @@ Note that you can omit the meaning and surrounding "/"s but everything else is r
 ===       The authors can be contacted at: pinyintoolkit@gmail.com            ===
 
 Development Version:             http://batterseapower.github.com/pinyin-toolkit/
+
+
+Version 0.6    (13/09/2009)  Max Bolingbroke <batterseapower@hotmail.com>
+                             Nick Cook       <nick@n-line.co.uk>            [http://www.n-line.co.uk]
+
+* Big performance and memory-usage improvements
+  - This was obtained by moving to a sqlite based backend using cjklib <http://code.google.com/p/cjklib/>
+* Automatic reformatting of text in the "Reading" field to match your color and tone-indication preferences
+* Automatic introduction of audio corresponding to Pinyin entered in the "Audio" field
+* Generation of decent readings for Western numbers, decimals. dates, percentages and fractions
+* Generation of decent meanings for Chinese numbers, decimals. dates, percentages and fractions
+* Automatic filling of 'Traditional' and 'Simplified' fields on facts with the appropriate characters
+* Audio generation for a noun's measure words (using a random quantity or 几) in a field called something like "MW Audio"
+* Meaning emphasis: you can make all but the first meaning from the dictionary <small> automatically
+* Can now guess field purpose from a wider variety of field names
+* In the meaning field, mask the pinyin from CEDICT that appears when a character is a common surname
+* Lots of bug fixes, notably to:
+  - Ubuntu support
+  - Tone sandhi
+  - The configuration dialog
+  - ... and lots more small issues
 
 
 Version 0.05   (05/06/2009)  Max Bolingbroke <batterseapower@hotmail.com>
