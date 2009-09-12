@@ -2,7 +2,9 @@
 
 # You can get the list of fields you need to keep by examining
 # the output of the database builder:
-keepfields = ["kMandarin", "kXHC1983", "kHanyuPinlu"]
+keepfields = ["kMandarin",   # Reading available for almost all characters, in frequency order
+              "kXHC1983",    # Syllabised reading and unknown reference data from Xiàndài Hànyǔ Cídiǎn
+              "kHanyuPinlu"] # Reading and frequency data (relatively sparse) from Xiàndài Hànyǔ Pínlǜ Cídiǎn
 
 # Extract trimmed old data
 unihan = open('Unihan.txt','r')
