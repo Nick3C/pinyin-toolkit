@@ -275,9 +275,16 @@ class TrimErhuaTest(unittest.TestCase):
 
 class MaskHanziTest(unittest.TestCase):
     def testMaskText(self):
-        self.assertEquals(maskhanzi("ello", "mask", [Word(Text("World")), Word(Text("Hello!")), Word(Text(" "), Text("Jello"))]),
+        self.assertEquals(maskhanzi(u"爱", "mask", [Word(Text("World")), Word(Text(u"H爱!")), Word(Text(" "), Text(u"J爱"))]),
                           [Word(Text("World")), Word(Text("Hmask!")), Word(Text(" "), Text("Jmask"))])
     
     def testMaskCharacter(self):
-        self.assertEquals(maskhanzi("hen", "chicken", [Word(Pinyin.parse("hen3")), Word(TonedCharacter("hen", 3)), Word(TonedCharacter("mhh", 2))]),
+        self.assertEquals(maskhanzi(u"狠", "chicken", [Word(Pinyin.parse("hen3")), Word(TonedCharacter(u"狠", 3)), Word(TonedCharacter("mhh", 2))]),
                           [Word(Pinyin.parse("hen3")), Word(Text("chicken")), Word(TonedCharacter("mhh", 2))])
+
+    def testMaskMultiCharacter(self):
+        self.assertEquals(maskhanzi(u"没有", "XXX", [Word(TonedCharacter(u"没", 2)), Word(TonedCharacter(u"没", 2)), Word(TonedCharacter(u"有", 2)), Word(TonedCharacter(u"有", 2)), Word(Text(u"没有 le he said 有 to me! 没有!"))]),
+                          [Word(Text("XXX")), Word(Text("XXX")), Word(Text("XXX")), Word(Text("XXX")), Word(Text("XXX le he said XXX to me! XXX!"))])
+
+    def testDontMaskWesternForms(self):
+        self.assertEquals(maskhanzi("1000AD", "XXX", [Word(Text(u"In 1000AD..."))]), [Word(Text(u"In 1000AD..."))])

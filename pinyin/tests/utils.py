@@ -62,6 +62,14 @@ class HeadOrTest(unittest.TestCase):
     def testHeadOrEmpty(self):
         self.assertEquals(heador([], "Another"), "Another")
 
+class SubstringsTest(unittest.TestCase):
+    def testVanilla(self):
+        self.assertEquals(list(substrings("hello")), ["hello", "hell", "ello", "hel", "ell", "llo", "he", "el", "ll", "lo", "h", "e", "l", "l", "o"])
+
+    def testBoundaryConditions(self):
+        self.assertEquals(list(substrings("a")), ["a"])
+        self.assertEquals(list(substrings("")), [])
+
 class HtmlColorTest(unittest.TestCase):
     def testParseBadLength(self):
         self.assertRaises(ValueError, lambda: parseHtmlColor(""))

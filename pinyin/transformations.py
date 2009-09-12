@@ -266,13 +266,17 @@ class MaskHanziVisitor(TokenVisitor):
         self.maskingcharacter = maskingcharacter
     
     def visitText(self, text):
-        return Text(text.replace(self.expression, self.maskingcharacter))
+        for substring in substrings(self.expression):
+            if all([isHanzi(c) for c in substring]):
+                text = text.replace(substring, self.maskingcharacter)
+
+        return Text(text)
 
     def visitPinyin(self, pinyin):
         return pinyin
 
     def visitTonedCharacter(self, tonedcharacter):
-        if unicode(tonedcharacter) == self.expression:
+        if unicode(tonedcharacter) in self.expression:
             return Text(self.maskingcharacter)
         else:
             return tonedcharacter

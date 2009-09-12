@@ -77,19 +77,8 @@ hanzi500sTrad = [
 
 hanziGrades = [grade for grade, _ in hanziByGrades]
 
-# Blatantly duplicated from anki.stats.isKanji because I don't want this module
-# to depend on Anki stuff, and it's a tiny bit of code.
-def isHanzi(unichar):
-    import unicodedata
-    
-    try:
-        return unicodedata.name(unichar).find('CJK UNIFIED IDEOGRAPH') >= 0
-    except ValueError:
-        # A control character
-        return False
-
 def hanziGrade(hanzi):
-    if not isHanzi(hanzi):
+    if not utils.isHanzi(hanzi):
         return None
     
     for grade, hanzis in hanziByGrades:

@@ -362,6 +362,11 @@ def intersperse(what, things):
     
     return result
 
+def substrings(text):
+    for length in range(len(text), -1, -1):
+        for i in range(0, len(text) - length):
+            yield text[i:i+length+1]
+
 #
 # Color conversion appropriated from <http://code.activestate.com/recipes/576554/>
 # We can replace this with a use of the colorsys module when Anki uses Python 2.6
@@ -433,6 +438,19 @@ def isosx():
 
 def islinux():
     return sys.platform.lower().startswith("linux")
+
+def isHanzi(char):
+    # Originally based on anki.stats.isKanji
+    if type(char) == str:
+        return False
+    
+    import unicodedata
+
+    try:
+        return unicodedata.name(char).find('CJK UNIFIED IDEOGRAPH') >= 0
+    except ValueError:
+        # A control character
+        return False
 
 class FactoryDict(dict):
     def __init__(self, factory, *args, **kwargs):
