@@ -212,7 +212,13 @@ class ToneSandhiTest(unittest.TestCase):
         self.assertSandhi(Word(Pinyin.parse("lao3")), Word(Pinyin.parse("bao3"), Pinyin.parse("guan3")), "lao3bao2guan3")
     
     def testBugWithWordContour(self):
-        self.assertSandhi(*(englishdict.reading(u"酒水饮料") + ["jiu2 shui3 yin3 liao4"]))
+        # The original bug:
+        self.assertSandhi(Word(Pinyin(u'jiu', ToneInfo(written=3, spoken=3))), Word(Text(u' ')), Word(Pinyin(u'shui', ToneInfo(written=3, spoken=3))), Word(Text(u' ')),
+                          Word(Pinyin(u'yin', ToneInfo(written=3, spoken=3)), Text(u' '), Pinyin(u'liao', ToneInfo(written=4, spoken=4))),
+                          "jiu2 shui3 yin3 liao4")
+        # A test that used to find it, before the dictionary was updated with the
+        # compound 饮料 - modified to take the new information into account:
+        self.assertSandhi(*(englishdict.reading(u"酒水饮料") + ["jiu2 shui2 yin3 liao4"]))
     
     # TODO: improve tone sandhi such that the following tests pass:
     #
