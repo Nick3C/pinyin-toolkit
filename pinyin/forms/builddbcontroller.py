@@ -28,7 +28,7 @@ p, li { white-space: pre-wrap; }
 firstrunmessage = makerichtext([
     'Thanks for installing the Pinyin Toolkit!',
     '',
-    'Because this is the first time you\'ve run Anki with the Toolkit installed, we need to create a database of Chinese readings and meanings. This will only happen once, and means that the toolkit will be blazing fast in day-to-day use.',
+    'Because this is the first time you\'ve run Anki with this version of the Toolkit installed, we need to create a database of Chinese readings and meanings. This will only happen once, and means that the toolkit will be blazing fast in day-to-day use.',
     '',
     'This might take a few minutes even on a modern PC - while you are waiting you might want to take a look at our <a href="http://batterseapower.github.com/pinyin-toolkit/getit.html"><span style=" text-decoration: underline; color:#0000ff;">setup guide</span></a>.',
     ''

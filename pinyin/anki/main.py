@@ -88,16 +88,21 @@ class PinyinToolkit(object):
         self.registerStandardModels()
     
     def openDatabase(self, mw, notifier):
-        timestamp, satisfiers = pinyin.db.builder.getSatisfiers()
+        datatimestamp, satisfiers = pinyin.db.builder.getSatisfiers()
+        cjklibtimestamp = os.path.getmtime(pinyin.utils.toolkitdir("pinyin", "vendor", "cjklib", "cjklib", "build", "builder.py"))
         dbpath = pinyin.utils.toolkitdir("pinyin", "db", "cjklib.db")
         
         if not(os.path.exists(dbpath)):
-            # MUST rebuild
+            # MUST rebuild - DB doesn't exist
             log.info("The database was missing entirely from %s. We had better build it!", dbpath)
             compulsory = True
-        elif os.path.getmtime(dbpath) < timestamp:
+        elif os.path.getmtime(dbpath) < cjklibtimestamp:
+            # MUST rebuild - version upgrade might have changed DB format
+            log.info("The cjklib was upgraded at %d, which is since the database was built (at %d) - for safety we must rebuild", cjklibtimestamp, os.path.getmtime(dbpath))
+            compulsory = True
+        elif os.path.getmtime(dbpath) < datatimestamp:
             # SHOULD rebuild
-            log.info("The database had a timestamp of %d but we saw an update at %d - let's rebuild", os.path.getmtime(dbpath), timestamp)
+            log.info("The database had a timestamp of %d but we saw a data update at %d - let's rebuild", os.path.getmtime(dbpath), datatimestamp)
             compulsory = False
         else:
             # Do nothing
