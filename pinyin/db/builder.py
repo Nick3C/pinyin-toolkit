@@ -80,22 +80,30 @@ def getSatisfiers():
             if os.path.exists(source):
                 return path, os.path.getmtime(source), lambda target: shutil.copyfile(source, target)
             else:
+                log.info("Missing ordinary file at %s", source)
                 return None
         
         return inner
     
-    def plainArchiveSource(path, pathinzip):
+    def plainArchiveSource(path, pathinzipcomponents):
+        pathinzip = os.path.join(*pathinzipcomponents)
+        
         def inner():
+            # Ensure that the zip exists before we open it
             zipsource = dictionarydir(path)
             if not(os.path.exists(zipsource)):
+                log.info("Missing zip file at %s", zipsource)
                 return None
             
             def go(target):
+                # Load up the zip
                 sourcezip = zipfile.ZipFile(zipsource, "r")
-            
+                log.info("Available zip file contents %s", sourcezip.namelist())
+                
+                # Extract the selected file from the zip
                 targetfile = open(target, 'w')
                 try:
-                    targetfile.write(sourcezip.read(os.path.join(*pathinzip)))
+                    targetfile.write(sourcezip.read(pathinzip))
                 finally:
                     targetfile.close()
             
@@ -113,15 +121,16 @@ def getSatisfiers():
                     break
             
             if path is None:
+                log.info("Missing archive matching the timestamped pattern %s", pathpattern)
                 return None
             
-            return plainArchiveSource(path, [pizp % timestamp for pizp in pathinzippattern])
+            return plainArchiveSource(path, ["%s" in pizp and (pizp % timestamp) or pizp for pizp in pathinzippattern])()
         
         return inner
     
     requirements = {
         "cedict_ts.u8" : [fileSource("cedict_ts.u8"), plainArchiveSource("cedict_1_0_ts_utf-8_mdbg.zip", ["cedict_ts.u8"]),
-                          plainArchiveSource("shipped.zip", ["cedict_ts.u8"])],
+                          timestampedArchiveSource("cedict-%s.zip", ["cedict_ts.u8"]), plainArchiveSource("shipped.zip", ["cedict_ts.u8"])],
         "handedict.u8" : [fileSource("handedict_nb.u8"), timestampedArchiveSource("handedict-%s.zip", ["handedict-%s", "handedict_nb.u8"]),
                           plainArchiveSource("shipped.zip", ["handedict_nb.u8"])],
         "cfdict.u8"    : [fileSource("cfdict_nb.u8"), timestampedArchiveSource("cfdict-%s.zip", ["cfdict-%s", "cfdict_nb.u8"]),

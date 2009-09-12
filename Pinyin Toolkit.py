@@ -24,20 +24,6 @@ A Plugin for the Anki Spaced Repition learning system <http://ichi2.net/anki/>
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Dictionaries last updated: 2009-06-06
-
-CEDICT_Ver="2009-06-19 03:11:57 GMT"
-# http://www.mdbg.net/chindict/chindict.php?page=cc-cedict
-# entries=86142
-
-HanDeDict_Ver="Fri Jun 19 00:15:00 2009"
-# http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl&w=8
-# entries=172982
-
-CFDICT_Ver="Wed Jan 21 01:49:53 2009"
-# http://www.chinaboard.de/fr/cfdict.php?mode=dl&w=8
-# entries=593
-
 if __name__ != "__main__":
     # Initialize the toolkit
     import pinyin.anki.main as main
