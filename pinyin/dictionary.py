@@ -186,7 +186,7 @@ class PinyinDictionary(object):
             else:
                 # Got a recognised token sequence! Hooray! Use the user-supplied function to add
                 # the reading of this thing to the output
-                addword(words, text, tokenizespaceseperated(readingsmeanings[0][0]))
+                addword(words, text, tokenizespaceseperatedtext(readingsmeanings[0][0]))
         
         return words
 

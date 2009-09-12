@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import htmlentitydefs
 import re
+from sgmllib import SGMLParser
 import sqlalchemy
 import unicodedata
 
 from db import database
 from logger import log
 import utils
+
+
+def opt_dict_arg_repr(dict):
+    return len(dict) > 0 and ", " + repr(dict) or ""
 
 # Generally helpful pinyin utilities
 
@@ -80,16 +86,27 @@ class ToneInfo(object):
 Represents a purely textual token.
 """
 class Text(unicode):
-    def __new__(cls, text):
+    def __new__(cls, text, htmlattrs=None):
         if len(text) == 0:
             raise ValueError("All Text tokens must be non-empty")
         
-        return unicode.__new__(cls, text)
+        self = unicode.__new__(cls, text)
+        self.htmlattrs = htmlattrs or {}
+        return self
 
     iser = property(lambda self: False)
 
     def __repr__(self):
-        return u"Text(%s)" % unicode.__repr__(self)
+        return u"Text(%s%s)" % (unicode.__repr__(self), opt_dict_arg_repr(self.htmlattrs))
+
+    def __eq__(self, other):
+        if other is None or other.__class__ != self.__class__:
+            return False
+        
+        return unicode.__eq__(other, self) and other.htmlattrs == self.htmlattrs
+    
+    def __ne__(self, other):
+        return not(self == other)
 
     def accept(self, visitor):
         return visitor.visitText(self)
@@ -103,7 +120,7 @@ class Pinyin(object):
     # NB: we only need to consider the ü versions because the regex is used to check *after* we have normalised to ü
     validpinyin = utils.Thunk(lambda: set(["r"] + [substituteForUUmlaut(pinyin[0]).lower() for pinyin in database.selectRows(sqlalchemy.select([sqlalchemy.Table("PinyinSyllables", database.metadata, autoload=True).c.Pinyin]))]))
     
-    def __init__(self, word, toneinfo):
+    def __init__(self, word, toneinfo, htmlattrs=None):
         self.word = word
         
         if isinstance(toneinfo, int):
@@ -111,6 +128,8 @@ class Pinyin(object):
             self.toneinfo = ToneInfo(written=toneinfo)
         else:
             self.toneinfo = toneinfo
+        
+        self.htmlattrs = htmlattrs or {}
     
     iser = property(lambda self: self.word.lower() == u"r" and self.toneinfo.written == 5)
 
@@ -121,13 +140,13 @@ class Pinyin(object):
         return self.numericformat(hideneutraltone=True)
     
     def __repr__(self):
-        return u"Pinyin(%s, %s)" % (repr(self.word), repr(self.toneinfo))
+        return u"Pinyin(%s, %s%s)" % (repr(self.word), repr(self.toneinfo), opt_dict_arg_repr(self.htmlattrs))
     
     def __eq__(self, other):
         if other == None or other.__class__ != self.__class__:
             return False
         
-        return self.toneinfo == other.toneinfo and self.word == other.word
+        return self.toneinfo == other.toneinfo and self.word == other.word and self.htmlattrs == other.htmlattrs
     
     def __ne__(self, other):
         return not (self.__eq__(other))
@@ -206,7 +225,7 @@ class Pinyin(object):
 Represents a Chinese character with tone information in the system.
 """
 class TonedCharacter(unicode):
-    def __new__(cls, character, toneinfo):
+    def __new__(cls, character, toneinfo, htmlattrs=None):
         if len(character) == 0:
             raise ValueError("All TonedCharacters tokens must be non-empty")
         
@@ -217,17 +236,18 @@ class TonedCharacter(unicode):
             self.toneinfo = ToneInfo(written=toneinfo)
         else:
             self.toneinfo = toneinfo
-            
+        
+        self.htmlattrs = htmlattrs or {}
         return self
     
     def __repr__(self):
-        return u"TonedCharacter(%s, %s)" % (unicode.__repr__(self), repr(self.toneinfo))
+        return u"TonedCharacter(%s, %s%s)" % (unicode.__repr__(self), repr(self.toneinfo), opt_dict_arg_repr(self.htmlattrs))
     
     def __eq__(self, other):
         if other == None or other.__class__ != self.__class__:
             return False
         
-        return unicode.__eq__(self, other) and self.toneinfo == other.toneinfo
+        return unicode.__eq__(self, other) and self.toneinfo == other.toneinfo and self.htmlattrs == other.htmlattrs
     
     def __ne__(self, other):
         return not(self == other)
@@ -254,7 +274,7 @@ class TokenVisitor(object):
 Turns a space-seperated string of pinyin and English into a list of tokens,
 as best we can.
 """
-def tokenizespaceseperated(text):
+def tokenizespaceseperatedtext(text):
     # Read the pinyin into the array: 
     return [tokenizeone(possible_token, forcenumeric=True) for possible_token in text.split()]
 
@@ -289,11 +309,7 @@ def tokenizeonewitherhua(possible_token, forcenumeric=False):
     # Nope, we're just going to have to fail :(
     return [Text(possible_token)]
 
-"""
-Turns an arbitrary string containing pinyin into a sequence of tokens. Does its best
-to seperate pinyin out from normal text, but no guarantees!
-"""
-def tokenize(text, forcenumeric=False):
+def tokenizetext(text, forcenumeric):
     # To recognise pinyin amongst the rest of the text, for now just look for maximal
     # sequences of alphanumeric characters as defined by Unicode. This should catch
     # the pinyin, its tone marks, tone numbers (if any) and allow umlauts.
@@ -309,6 +325,140 @@ def tokenize(text, forcenumeric=False):
     # TODO: could be much smarter about segmentation here. For example, we could use the
     # pinyin regex to split up run on groups of pinyin-like characters.
     return tokens
+
+"""
+Turns an arbitrary string containing pinyin and HTML into a sequence of tokens. Does its best
+to seperate pinyin out from normal text, but no guarantees!
+"""
+def tokenize(html, forcenumeric=False):
+    tokenizer = HTMLAwareTokenizer(forcenumeric)
+    tokenizer.feed(html)
+    tokenizer.close()
+    
+    return tokenizer.tokens
+
+class HTMLAwareTokenizer(SGMLParser):
+    def __init__(self, forcenumeric):
+        self.forcenumeric = forcenumeric
+        SGMLParser.__init__(self)
+    
+    def reset(self):
+        self.tokens = []
+        self.attributesstack = []
+        SGMLParser.reset(self)
+    
+    def unknown_starttag(self, tag, attrs):
+        strattrs = "".join([' %s="%s"' % (key, value) for key, value in attrs])
+        self.tokens.append(Text("<%s%s>" % (tag, strattrs)))
+
+    def unknown_endtag(self, tag):
+        self.tokens.append(Text("</%s>" % tag))
+
+    def start_span(self, attrs):
+        def extract_attr_maybe(attr, into, extractor):
+            if attr not in attrs:
+                return {}
+            
+            res = extractor(attrs[attr])
+            if res is None:
+                return {}
+            
+            (extracted, newattrval) = res
+            if newattrval is not None:
+                attrs[attr] = newattrval
+            else:
+                del attrs[attr]
+            
+            return { into : extracted }
+
+        def take_dict_elem(dict, key):
+            if key in dict:
+                val = dict[key]
+                del dict[key]
+                return (val, dict)
+            else:
+                return None
+
+        # Quick, dirty and wrong:
+        def parse_style(style):
+            intelligible = {}
+            unintelligible = []
+            for pair in style.split(";"):
+                split = pair.split(":")
+                if len(split) == 2:
+                    k, v = split
+                    intelligible[k.strip().lower()] = v
+                else:
+                    unintelligible.append(pair)
+            
+            return (intelligible, unintelligible)
+            
+            return dict([(pair.split(":")[0].strip(), pair.split(":")[1].strip()) for pair in style.split(";")])
+
+        def unparse_style(parsed_style):
+            intelligible, unintelligible = parsed_style
+            return "; ".join([k + " : " + v for k, v in intelligible] + unintelligible)
+
+        # It's more convenient if we can see the attributes as a dictionary,
+        # although we might e.g. drop duplicates
+        attrs = dict([(k.lower(), v) for k, v in attrs])
+        
+        # For now, we only worry about the color attribute in the span tag's style
+        def take_style_val(key):
+            def go(style):
+                intelligible, unintelligible = parse_style(style)
+            
+                taken = take_dict_elem(intelligible, key)
+                if taken is not None:
+                    value, intelligible = taken
+                else:
+                    value = None
+            
+                return (value, unparse_style((intelligible, unintelligible)))
+            
+            return go
+            
+        self.attributesstack.append(extract_attr_maybe("style", "color", take_style_val("color")))
+        
+        # We are still interested in writing out the remainder of the <span> tag, in
+        # case it had other information in it (apart from the "style" attribute)
+        self.unknown_starttag("span", attrs.items())
+    
+    def end_span(self):
+        self.unknown_endtag("span")
+        self.attributesstack.pop()
+
+    def handle_charref(self, ref):
+        self.tokens.append(Text("&#%s;" % ref))
+
+    def handle_entityref(self, ref):
+        self.tokens.append(Text("&%s" % ref))
+        # standard HTML entities are closed with a semicolon; other entities are not
+        if htmlentitydefs.entitydefs.has_key(ref):
+            self.tokens.append(Text(";"))
+
+    def handle_comment(self, text):
+        self.tokens.append(Text("<!--%s-->" % text))
+    
+    def handle_data(self, text):
+        self.tokens.extend([self.contextify(token) for token in tokenizetext(text, self.forcenumeric)])
+
+    def handle_pi(self, text):
+        self.tokens.append(Text("<?%s>" % text))
+
+    def handle_decl(self, text):
+        self.tokens.append(Text("<!%s>" % text))
+    
+    def contextify(self, what):
+        # Get the most recent attributes to apply at this point in time
+        current_attrs = {}
+        for attrs in self.attributesstack:
+            current_attrs.update(attrs)
+        
+        for k, v in current_attrs.items():
+            what.htmlattrs[k] = v
+        
+        return what
 
 """
 Represents a word boundary in the system, where the tokens inside represent a complete Chinese word.
@@ -391,16 +541,21 @@ class FlattenTokensVisitor(TokenVisitor):
         self.tonify = tonify
 
     def visitText(self, text):
-        self.output += unicode(text)
+        self.wrapHtml(text, unicode(text))
 
     def visitPinyin(self, pinyin):
-        if self.tonify:
-            self.output += pinyin.tonifiedformat()
-        else:
-            self.output += unicode(pinyin)
+        self.wrapHtml(pinyin, self.tonify and pinyin.tonifiedformat() or unicode(pinyin))
 
     def visitTonedCharacter(self, tonedcharacter):
-        self.output += unicode(tonedcharacter)
+        self.wrapHtml(tonedcharacter, unicode(tonedcharacter))
+    
+    def wrapHtml(self, token, text):
+        if "color" in token.htmlattrs:
+            self.output += '<span style="color:%s">' % token.htmlattrs["color"]
+            self.output += text
+            self.output += '</span>'
+        else:
+            self.output += text
 
 """
 Report whether the supplied list of words ends with a space
@@ -417,7 +572,7 @@ class NeedsSpaceBeforeAppendVisitor(TokenVisitor):
     
     def visitText(self, text):
         lastchar = text[-1]
-        self.needsspacebeforeappend = (not(lastchar.isspace()) and not(utils.ispunctuation(lastchar))) or utils.ispostspacedpunctuation(text)
+        self.needsspacebeforeappend = (not(lastchar.isspace()) and not(utils.ispunctuation(lastchar))) or utils.ispostspacedpunctuation(unicode(text))
     
     def visitPinyin(self, pinyin):
         self.needsspacebeforeappend = True

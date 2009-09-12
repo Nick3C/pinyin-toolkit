@@ -42,6 +42,19 @@ class PinyinTest(unittest.TestCase):
     
     def testRepr(self):
         self.assertEquals(repr(Pinyin(u"hen", 3)), u"Pinyin(u'hen', ToneInfo(written=3, spoken=3))")
+        self.assertEquals(repr(Pinyin(u"hen", 3, { "attr" : "val" })), u"Pinyin(u'hen', ToneInfo(written=3, spoken=3), {'attr': 'val'})")
+    
+    def testEq(self):
+        self.assertEquals(Pinyin(u"hen", 3), Pinyin(u"hen", 3))
+        self.assertEquals(Pinyin(u"hen", 3, { "moo" : "cow" }), Pinyin(u"hen", 3, { "moo" : "cow" }))
+        self.assertNotEquals(Pinyin(u"hen", 3), Pinyin(u"hen", 2))
+        self.assertNotEquals(Pinyin(u"hen", 3), Pinyin(u"han", 3))
+        self.assertNotEquals(Pinyin(u"hen", 3), Pinyin(u"hen", 3, { "moo" : "cow" }))
+        self.assertNotEquals(Pinyin(u"hen", 3, { "moo" : "cow" }), Pinyin(u"hen", 3, { "moo" : "sheep" }))
+    
+    def testEqDissimilar(self):
+        self.assertNotEquals(Pinyin(u"hen", 3), "Pinyin(u'hen', 3)")
+        self.assertNotEquals("Pinyin(u'hen', 3)", Pinyin(u"hen", 3))
     
     def testStrNeutralTone(self):
         py = Pinyin(u"ma", 5)
@@ -138,10 +151,19 @@ class TextTest(unittest.TestCase):
     
     def testRepr(self):
         self.assertEquals(repr(Text(u"hello")), "Text(u'hello')")
+        self.assertEquals(repr(Text(u"hello", { "china" : "great" })), "Text(u'hello', {'china': 'great'})")
+    
+    def testUnicodeAndStr(self):
+        self.assertEquals(str(Text(u"hello")), u"hello")
+        self.assertEquals(unicode(Text(u"hello")), u"hello")
+        self.assertEquals(type(unicode(Text(u"hello"))), unicode)
     
     def testEq(self):
         self.assertEquals(Text(u"hello"), Text(u"hello"))
+        self.assertEquals(Text(u"hello", { "color" : "mah" }), Text(u"hello", { "color" : "mah" }))
         self.assertNotEquals(Text(u"hello"), Text(u"bye"))
+        self.assertNotEquals(Text(u"hello", { "color" : "mah" }), Text(u"hello"))
+        self.assertNotEquals(Text(u"hello", { "color" : "mah" }), Text(u"hello", { "color" : "meh" }))
     
     def testEqDissimilar(self):
         self.assertNotEquals(Text(u"hello"), 'Text(u"hello")')
@@ -231,11 +253,15 @@ class TonedCharacterTest(unittest.TestCase):
     
     def testRepr(self):
         self.assertEquals(repr(TonedCharacter(u"儿", 2)), "TonedCharacter(u'\\u513f', ToneInfo(written=2, spoken=2))")
+        self.assertEquals(repr(TonedCharacter(u"儿", ToneInfo(written=2, spoken=3), { "foo" : "bar" })), "TonedCharacter(u'\\u513f', ToneInfo(written=2, spoken=3), {'foo': 'bar'})")
     
     def testEq(self):
         self.assertEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", 2))
+        self.assertEquals(TonedCharacter(u"儿", 2, { "color" : "meh" }), TonedCharacter(u"儿", 2, { "color" : "meh" }))
         self.assertNotEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", 3))
         self.assertNotEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"兒", 2))
+        self.assertNotEquals(TonedCharacter(u"儿", 2), TonedCharacter(u"儿", 2, { "foo" : "bar" }))
+        self.assertNotEquals(TonedCharacter(u"儿", 2, { "color" : "moo" }), TonedCharacter(u"儿", 2, { "color" : "meh" }))
     
     def testEqDissimilar(self):
         self.assertNotEquals(TonedCharacter(u"儿", 2), "TonedCharacter(u'儿', 2)")
@@ -247,18 +273,18 @@ class TonedCharacterTest(unittest.TestCase):
         self.assertFalse(TonedCharacter(u"化", 2).iser)
         self.assertFalse(TonedCharacter(u"儿", 4).iser)
 
-class TokenizeSpaceSeperatedTest(unittest.TestCase):
+class TokenizeSpaceSeperatedTextTest(unittest.TestCase):
     def testFromSingleSpacedString(self):
-        self.assertEquals([Pinyin.parse(u"hen3")], tokenizespaceseperated(u"hen3"))
+        self.assertEquals([Pinyin.parse(u"hen3")], tokenizespaceseperatedtext(u"hen3"))
 
     def testFromMultipleSpacedString(self):
-        self.assertEquals([Pinyin.parse(u"hen3"), Pinyin.parse(u"hao3")], tokenizespaceseperated(u"hen3 hao3"))
+        self.assertEquals([Pinyin.parse(u"hen3"), Pinyin.parse(u"hao3")], tokenizespaceseperatedtext(u"hen3 hao3"))
 
     def testFromSpacedStringWithEnglish(self):
-        self.assertEquals([Text(u"T"), Pinyin.parse(u"xu4")], tokenizespaceseperated(u"T xu4"))
+        self.assertEquals([Text(u"T"), Pinyin.parse(u"xu4")], tokenizespaceseperatedtext(u"T xu4"))
 
     def testFromSpacedStringWithPinyinlikeEnglish(self):
-        self.assertEquals([Text(u"USB"), Pinyin.parse(u"xu4")], tokenizespaceseperated(u"USB xu4"))
+        self.assertEquals([Text(u"USB"), Pinyin.parse(u"xu4")], tokenizespaceseperatedtext(u"USB xu4"))
 
 class TokenizeTest(unittest.TestCase):
     def testTokenizeSimple(self):
@@ -275,16 +301,21 @@ class TokenizeTest(unittest.TestCase):
         self.assertEquals([Text(u"color")], tokenize(u"color"))
     
     def testTokenizeForceNumeric(self):
-      self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3")], tokenize(u"hen3 hao3"))
-      self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3"), Text(", "), Text("my"), Text(" "), Text(u"xiǎo"), Text(" "), Text("one"), Text("!")],
-                        tokenize(u"hen3 hao3, my xiǎo one!", forcenumeric=True))
+        self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3")], tokenize(u"hen3 hao3"))
+        self.assertEquals([Pinyin.parse(u"hen3"), Text(" "), Pinyin.parse(u"hao3"), Text(", "), Text("my"), Text(" "), Text(u"xiǎo"), Text(" "), Text("one"), Text("!")],
+                           tokenize(u"hen3 hao3, my xiǎo one!", forcenumeric=True))
     
     def testTokenizeHTML(self):
-        self.assertEquals([Text(u'<'), Text(u'span'), Text(u' '), Text(u'style'), Text(u'="'), Text(u'color:'), Text(u'#'), Text(u'123456'), Text(u'">'),
-                           Pinyin(u'tou', ToneInfo(written=2, spoken=2)), Text(u'</'), Text(u'span'), Text(u'> <'), Text(u'span'), Text(u' '), Text(u'style'),
-                           Text(u'="'), Text(u'color:'), Text(u'#'), Text(u'123456'), Text(u'">'), Pinyin(u'er', ToneInfo(written=4, spoken=4)), Text(u'</'), Text(u'span'), Text(u'>')],
-                           tokenize(u'<span style="color:#123456">tou2</span> <span style="color:#123456">er4</span>'))
-
+        self.assertEquals([Text(u'<b>'), Text("some"), Text(" "), Text("silly"), Text(" "), Text("text"), Text("</b>")],
+                          tokenize(u'<b>some silly text</b>'))
+        self.assertEquals([Text(u'<span style="">'), Pinyin(u'tou', 2, { "color" : "#123456" }), Text(u'</span>'), Text(u' '), Text(u'<span style="">'), Pinyin(u'er', 4, { "color" : "#123456" }), Text(u'</span>')],
+                          tokenize(u'<span style="color:#123456">tou2</span> <span style="color:#123456">er4</span>'))
+    
+    def testTokenizeUnrecognisedHTML(self):
+        # TODO: enable this test and make it pass somehow... SGMLParser doesn't support self-closing tags :-(
+        #self.assertEquals([Text(u'<b />')], tokenize(u'<b />'))
+        self.assertEquals([Text(u'<span style="mehhhh!">'), Text("</span>")], tokenize(u'<span style="mehhhh!"></span>'))
+        
 class PinyinTonifierTest(unittest.TestCase):
     def testEasy(self):
         self.assertEquals(PinyinTonifier().tonify(u"Han4zi4 bu4 mie4, Zhong1guo2 bi4 wang2!"),

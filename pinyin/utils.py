@@ -351,6 +351,20 @@ def striphtml(what):
 def concat(what):
     return sum(what, [])
 
+def first(f):
+    def go(xy):
+        x, y = xy
+        return (f(x), y)
+
+    return go
+    
+def second(f):
+    def go(xy):
+        x, y = xy
+        return (x, f(y))
+    
+    return go
+
 def intersperse(what, things):
     first = True
     result = []

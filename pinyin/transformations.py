@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import copy
+import cStringIO
 import random
 import re
-import cStringIO
 
 from logger import log
 from model import *
@@ -130,7 +131,7 @@ Colorize readings according to the reading in the Pinyin.
 * 2009 original version by Nick Cook <nick@n-line.co.uk> (http://www.n-line.co.uk)
 """
 def colorize(colorlist, words):
-    return [word.concatmap(ColorizerVisitor(colorlist)) for word in words]
+    return [word.map(ColorizerVisitor(colorlist)) for word in words]
 
 class ColorizerVisitor(TokenVisitor):
     def __init__(self, colorlist):
@@ -138,26 +139,31 @@ class ColorizerVisitor(TokenVisitor):
         log.info("Using color list %s", self.colorlist)
         
     def visitText(self, text):
-        return [text]
+        return text
 
     def visitPinyin(self, pinyin):
-        return self.colorize(pinyin)
+        return self.colorize(pinyin, lambda htmlattrs: Pinyin(pinyin.word, pinyin.toneinfo, htmlattrs))
 
     def visitTonedCharacter(self, tonedcharacter):
-        return self.colorize(tonedcharacter)
+        return self.colorize(tonedcharacter, lambda htmlattrs: TonedCharacter(unicode(tonedcharacter), tonedcharacter.toneinfo, htmlattrs))
     
-    def colorize(self, token):
+    def colorize(self, token, rebuild):
         # Colors should always be based on the written tone, but they will be
         # made lighter if a sandhi applies
         color = self.colorlist[token.toneinfo.written - 1]
         if token.toneinfo.spoken != token.toneinfo.written:
             color = sandhifycolor(color)
         
-        return [
-            Text(u'<span style="color:' + color + u'">'),
-            token,
-            Text(u'</span>')
-          ]
+        # Make sure we don't overwrite any colors that the user set up.
+        # Perhaps this is suboptimal, but it is the only sane thing to do -
+        # in particular since it means we don't screw up sandhi coloring
+        # when coloring a "Reading" field which was set up by the PyTK.
+        if "color" not in token.htmlattrs:
+            htmlattrs = token.htmlattrs.copy()
+            htmlattrs["color"] = color
+            return rebuild(htmlattrs)
+        else:
+            return token
 
 def sandhifycolor(color):
     # Lighten up the color by halving saturation and increasing value

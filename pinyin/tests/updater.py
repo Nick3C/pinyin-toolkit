@@ -116,6 +116,13 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
                 colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
                 { "reading" : u'<span style="color:#333333">hěn</span> <span style="color:#333333">hǎo</span>' })
     
+    def testReformattingRespectsExistingColorization(self):
+        self.assertEquals(
+            self.updatefact(u"<span style='color: red'>hen3</span> hǎo", { "reading" : "junky" },
+                forcereadingtobeformatted = True, tonedisplay = "numeric",
+                colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
+                { "reading" : u'<span style=\"\"><span style="color: red">hen3</span></span> <span style="color:#333333">hao3</span>' })
+
     # Test helpers
     def updatefact(self, reading, fact, **kwargs):
         factclone = copy.deepcopy(fact)

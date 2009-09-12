@@ -13,11 +13,11 @@ import numbers
 import model
 import transformations
 import utils
+import random
 import re
 
 from logger import log
 
-import random
 
 def preparetokens(config, tokens):
     if config.colorizedpinyingeneration:

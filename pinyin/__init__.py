@@ -10,7 +10,8 @@ import utils
 if sys.version_info[0:2] < (2, 5):
     sys.path.append(utils.toolkitdir("pinyin", "vendor", "python25"))
 
-sys.path.append(utils.toolkitdir("pinyin", "vendor", "cjklib"))
+for vendor_package in ["cjklib"]:
+    sys.path.append(utils.toolkitdir("pinyin", "vendor", vendor_package))
 
 import config
 import db
