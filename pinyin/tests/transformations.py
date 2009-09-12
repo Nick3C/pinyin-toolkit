@@ -214,6 +214,8 @@ class ToneSandhiTest(unittest.TestCase):
     def testBugWithWordContour(self):
         self.assertSandhi(*(englishdict.reading(u"酒水饮料") + ["jiu2 shui3 yin3 liao4"]))
     
+    # TODO: improve tone sandhi such that the following tests pass:
+    #
     # def testYiFollowedByFour(self):
     #     self.assertSandhi(Word(Pinyin.parse("yi1")), Word(Pinyin.parse("ding4")), "yi2ding4")
     # 

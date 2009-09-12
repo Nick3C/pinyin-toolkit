@@ -36,6 +36,11 @@ pinyin/media/downloads/*
 # This prevents it being over-written on upgrades
 dict-userdict.txt
 
+# Unzipped dictionaries (for developer convenience)
+pinyin/dictionaries/cedict-*/*
+pinyin/dictionaries/handedict-*/*
+pinyin/dictionaries/cfdict-*/*
+
 # Generated database
 pinyin/db/*.db
 

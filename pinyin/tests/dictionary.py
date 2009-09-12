@@ -20,9 +20,9 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(flatten(englishdict.tonedchars(u"\t一个")), u"\t一个")
 
     def testTonedTokensWithoutTone(self):
-        toned = englishdict.tonedchars(u"T恤")
-        self.assertEquals(flatten(toned), u"T恤")
-        self.assertEquals(toned[0][1].toneinfo, ToneInfo(written=4))
+        toned = englishdict.tonedchars(u"Ｕ盤")
+        self.assertEquals(flatten(toned), u"Ｕ盤")
+        self.assertEquals(toned[0][1].toneinfo, ToneInfo(written=2))
 
     def testTonedTokenNumbers(self):
         # Although it kind of makes sense to return the arabic numbers with tone colors, users don't expect it :-)
@@ -71,13 +71,13 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(self.flatmeanings(englishdict, u"鼓聲"), ["sound of a drum", "drumbeat"])
 
     def testFrenchDictionary(self):
-        self.assertEquals(flatten(frenchdict.reading(u"白天")), "bai2 tian")
-        self.assertEquals(flatten(frenchdict.reading(u"白天")), "bai2 tian")
-        self.assertEquals(self.flatmeanings(frenchdict, u"白天"), [u"journée (n.v.) (n)"])
+        self.assertEquals(flatten(frenchdict.reading(u"評論")), "ping2 lun4")
+        self.assertEquals(flatten(frenchdict.reading(u"评论")), "ping2 lun4")
+        self.assertEquals(self.flatmeanings(frenchdict, u"评论"), [u"commentaire (n.v.) (n)"])
 
     def testWordsWhosePrefixIsNotInDictionary(self):
         self.assertEquals(flatten(germandict.reading(u"生日")), "sheng1 ri4")
-        self.assertEquals(self.flatmeanings(germandict, u"生日"), [u"Geburtstag (S)"])
+        self.assertEquals(self.flatmeanings(germandict, u"生日"), [u"Geburtstag (u.E.) (S)"])
 
     def testProperName(self):
         self.assertEquals(flatten(englishdict.reading(u"珍・奥斯汀")), u"Zhen1 · Ao4 si1 ting1")
@@ -88,8 +88,8 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(self.flatmeanings(englishdict, u"股指"), [u"stock market index", u"share price index", u"abbr. for 股票指数 - gu3 piao4 zhi3 shu4"])
     
     def testPinyinFromUnihan(self):
-        self.assertEquals(flatten(englishdict.reading(u"噔")), "deng1")
-        self.assertEquals(self.flatmeanings(englishdict, u"噔"), None)
+        self.assertEquals(flatten(englishdict.reading(u"諓")), "jian4")
+        self.assertEquals(self.flatmeanings(englishdict, u"諓"), None)
     
     def testFallsBackOnCEDICTForMissingPinyinAndForeignLanguage(self):
         self.assertEquals(flatten(frenchdict.reading(u"数量积")), "shu4 liang4 ji1")
