@@ -50,16 +50,16 @@ class GoogleTranslateTest(unittest.TestCase):
         self.assertEquals(gTrans(""), None)
     
     def testTranslateEnglish(self):
-        self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), [[Word(Text(u'Hello, You are my friend?'))]])
+        self.assertEquals(gTrans(u"你好，你是我的朋友吗？"), [[Word(Text(u'Hello, you are my friend?'))]])
     
     def testTranslateFrench(self):
-        self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), [[Word(Text(u'Bonjour, Vous \xeates mon ami?'))]])
+        self.assertEquals(gTrans(u"你好，你是我的朋友吗？", "fr"), [[Word(Text(u'Bonjour, vous \xeates mon ami?'))]])
     
     def testTranslateIdentity(self):
         self.assertEquals(gTrans(u"canttranslatemefromchinese"), None)
     
     def testTranslateStripsHtml(self):
-        self.assertEquals(gTrans(u"你好，你<b>是我的</b>朋友吗？"), [[Word(Text(u'Hello, You are my friend?'))]])
+        self.assertEquals(gTrans(u"你好，你<b>是我的</b>朋友吗？"), [[Word(Text(u'Hello, you are my friend?'))]])
 
     # Annoyingly, this fails. This means that simplified/traditional translation doesn't preserve whitespace:
     # def testTranslatePreservesWhitespace(self):

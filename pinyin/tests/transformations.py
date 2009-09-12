@@ -9,7 +9,7 @@ from pinyin.transformations import *
 from database import *
 
 # Shared dictionary
-dictionary = pinyin.dictionary.PinyinDictionary.loadall(database)('en')
+englishdict = pinyin.dictionary.PinyinDictionary.loadall(database)('en')
 
 # Default tone color list for tests
 colorlist = [

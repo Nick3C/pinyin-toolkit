@@ -170,8 +170,9 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                 tonedisplay = "tonified", audiogeneration = False, tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False), {
                     "reading" : u'\tshū',
                     "color" : u'\t<span style="color:#ff0000">书</span>',
-                    # TODO: make the simp and trad fields preserve whitespace by moving away from Google Translate as the translator
-                    "trad" : u"書", "simp" : u"书"
+                    # TODO: make the simp and trad fields preserve whitespace more reliably by moving away
+                    # from Google Translate as the translator
+                    "trad" : u"\t書", "simp" : u"\t书"
                   })
     
     def testDontOverwriteFields(self):
@@ -325,7 +326,7 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                 colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
                 tonedisplay = "numeric", audiogeneration = False, hanzimasking = False), {
                     "reading" : u'ni3 hao3, ni3 shi4 wo3 de peng2 you ma',
-                    "meaning" : u'Hello, you are right my friend<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
+                    "meaning" : u'Hello, you are my friend do<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
                     "mw" : "", "audio" : "", "color" : ""
                   })
 
