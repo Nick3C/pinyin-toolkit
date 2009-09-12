@@ -367,6 +367,21 @@ def substrings(text):
         for i in range(0, len(text) - length):
             yield text[i:i+length+1]
 
+if sys.version_info[0:2] < (2, 5):
+    def all(xs):
+        for x in xs:
+            if not x:
+                return False
+    
+        return True
+
+    def any(xs):
+        for x in xs:
+            if x:
+                return True
+    
+        return False
+
 #
 # Color conversion appropriated from <http://code.activestate.com/recipes/576554/>
 # We can replace this with a use of the colorsys module when Anki uses Python 2.6
