@@ -86,8 +86,6 @@ def getSatisfiers():
         return inner
     
     def plainArchiveSource(path, pathinzipcomponents):
-        pathinzip = os.path.join(*pathinzipcomponents)
-        
         def inner():
             # Ensure that the zip exists before we open it
             zipsource = dictionarydir(path)
@@ -95,11 +93,27 @@ def getSatisfiers():
                 log.info("Missing zip file at %s", zipsource)
                 return None
             
+            # Load up the zip
+            sourcezip = zipfile.ZipFile(zipsource, "r")
+            log.info("Available zip file contents %s", sourcezip.namelist())
+            
+            # Find the correct file - we should try both sorts of slashes
+            # because the zip may have been created on Windows or Unix
+            pathinzip = None
+            for possiblepath in ["/".join(pathinzipcomponents), "\\".join(pathinzipcomponents)]:
+                try:
+                    sourcezip.getinfo(possiblepath)
+                    pathinzip = possiblepath
+                    break
+                except KeyError:
+                    pass
+            
+            # Maybe the file didn't exist at all?
+            if pathinzip is None:
+                log.info("Zip file at %s lacked a file called %s", path, os.path.join(*pathinzipcomponents))
+                return None
+            
             def go(target):
-                # Load up the zip
-                sourcezip = zipfile.ZipFile(zipsource, "r")
-                log.info("Available zip file contents %s", sourcezip.namelist())
-                
                 # Extract the selected file from the zip
                 targetfile = open(target, 'w')
                 try:
