@@ -97,8 +97,8 @@ def getSatisfiers():
             sourcezip = zipfile.ZipFile(zipsource, "r")
             log.info("Available zip file contents %s", sourcezip.namelist())
             
-            # Find the correct file - we should try both sorts of slashes
-            # because the zip may have been created on Windows or Unix
+            # Find the correct file in the zip: we should try both sorts of
+            # slashes because the zip may have been created on Windows or Unix
             pathinzip = None
             for possiblepath in ["/".join(pathinzipcomponents), "\\".join(pathinzipcomponents)]:
                 try:
