@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import sys
 
 import pinyin.utils
 
@@ -62,6 +63,19 @@ def get_content_type(filename):
 # End code from ActiveState recipe
 #
 
+def preflight_checks(repo_dir):
+    errors = []
+    
+    def visit(_arg, dirname, names):
+        for name in names:
+            full_path = os.path.join(dirname, name)
+            # See http://code.google.com/p/anki/issues/detail?id=1342&colspec=ID%20Type%20Status%20Priority%20Stars%20Summary
+            if os.path.isfile(full_path) and os.path.getsize(full_path) == 0L:
+                errors.append(full_path + " is 0 bytes long - a bug found in Anki 0.9.9.8.5 means that such files are not extracted")
+    
+    os.path.walk(repo_dir, visit, None)
+    
+    return errors
 
 def build_release(credentials, release_info, temp_dir):
     # 1) Clone the whole repository to a fresh location -
@@ -71,6 +85,12 @@ def build_release(credentials, release_info, temp_dir):
     print "Cloning current repo state to", temp_repo_dir
     subprocess.check_call(["git", "clone", repo_dir, temp_repo_dir])
     
+    # 1.5) Sanity check directory
+    errors = preflight_checks(temp_repo_dir)
+    if len(errors) > 0:
+        print "\n".join(errors)
+        sys.exit(1)
+    
     # 2) Build a ZIP of that fresh checkout, excluding the .git directory
     # and using maximal compression (-9) since the file is pretty big
     zip_file = os.path.join(temp_dir, "pinyin-toolkit.zip")
@@ -78,7 +98,7 @@ def build_release(credentials, release_info, temp_dir):
     subprocess.check_call(["zip", "-9", "-r", zip_file] + repo_contents, cwd=temp_repo_dir)
     
     # 3) Upload to Anki
-    upload_to_anki_online(credentials, release_info, zip_file)
+    #upload_to_anki_online(credentials, release_info, zip_file)
 
 def upload_to_anki_online(credentials, release_info, zip_file):
     # Login form (at http://anki.ichi2.net/account/login)
@@ -125,11 +145,12 @@ if __name__ == "__main__":
     
     # TODO: read release info from file
     release_info = {
-        "id" : "423",
+        "id" : "423", # PyTK: 14
         "title" : "Silly test plugin",
         "tags" : "test",
         "description" : "Still VERY silly"
       }
     
-    #upload_to_anki_online(config["credentials"], release_info, home_path("Junk", "test-plugin", "test-plugin.zip"))
-    #pinyin.utils.withtempdir(lambda tempdir: build_release(config["credentials"], release_info, tempdir))
+    pinyin.utils.withtempdir(lambda tempdir: build_release(config["credentials"], release_info, tempdir))
+
+#upload_to_anki_online(config["credentials"], release_info, home_path("Junk", "test-plugin", "test-plugin.zip"))
