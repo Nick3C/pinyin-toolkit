@@ -306,7 +306,7 @@ class Config(object):
     #
     
     shouldtonify = property(lambda self: tonedisplayshouldtonify[self.tonedisplay])
-    needmeanings = property(lambda self: self.meaninggeneration or self.detectmeasurewords)
+    needmeanings = property(lambda self: self.meaninggeneration or self.detectmeasurewords or self.mwaudiogeneration)
     meaningnumberingstrings = property(lambda self: meaningnumberingstringss[self.meaningnumbering])
     meaningseperatorstring = property(lambda self: meaningseperatorstrings.get(self.meaningseperator) or self.custommeaningseperator)
     

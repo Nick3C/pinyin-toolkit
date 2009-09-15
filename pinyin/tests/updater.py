@@ -313,7 +313,9 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
         
         pack = media.MediaPack("MWAudio", dict([(pinyin + ".mp3", pinyin + ".mp3") for pinyin in allpinyin]))
         
-        mwaudio = self.updatefact(u"啤酒", { "mwaudio" : "" }, detectmeasurewords = False, mwaudiogeneration = True, audioextensions = [".mp3", ".ogg"], mediapacks = [pack])["mwaudio"]
+        # NB: turning off meaninggeneration here triggers a bug that happened in 0.6 where
+        # we wouldn't set up the dictmeasurewords for the mwaudio
+        mwaudio = self.updatefact(u"啤酒", { "mwaudio" : "" }, meaninggeneration = False, detectmeasurewords = False, mwaudiogeneration = True, audioextensions = [".mp3", ".ogg"], mediapacks = [pack])["mwaudio"]
         for quantitydigit in quantitydigitpinyin:
             mwaudio = mwaudio.replace(quantitydigit, "X")
         
