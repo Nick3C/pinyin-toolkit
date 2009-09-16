@@ -1,0 +1,10 @@
+Thanks for downloading the Pinyin Toolkit!
+
+Please see our Wiki for all the documentation:
+http://wiki.github.com/batterseapower/pinyin-toolkit
+
+If you get stuck, email us:
+pinyintoolkit@gmail.com
+
+If you would prefer to report a bug using the bug tracker, you can do so here:
+http://github.com/batterseapower/pinyin-toolkit/issues
