@@ -1,3 +1,5 @@
+h1. Welcome!
+
 Thanks for downloading the Pinyin Toolkit!
 
 Please see our Wiki for all the documentation:
@@ -8,3 +10,123 @@ pinyintoolkit@gmail.com
 
 If you would prefer to report a bug using the bug tracker, you can do so here:
 http://github.com/batterseapower/pinyin-toolkit/issues
+
+
+h1. Changelog
+
+h2. Version 0.6 (13/09/2009)
+
+| Max Bolingbroke | "Email":mailto:batterseapower@hotmail.com | "Website":http://blog.omega-prime.co.uk |
+| Nick Cook       | "Email":mailto:nick@n-line.co.uk          | "Website":http://www.n-line.co.uk       |
+
+* Big performance and memory-usage improvements
+** This was obtained by moving to a sqlite based backend using "cjklib":http://code.google.com/p/cjklib/
+* Automatic reformatting of text in the "Reading" field to match your color and tone-indication preferences
+* Automatic introduction of audio corresponding to Pinyin entered in the "Audio" field
+* Generation of decent readings for Western numbers, decimals. dates, percentages and fractions
+* Generation of decent meanings for Chinese numbers, decimals. dates, percentages and fractions
+* Automatic filling of 'Traditional' and 'Simplified' fields on facts with the appropriate characters
+* Audio generation for a noun's measure words (using a random quantity or 几) in a field called something like "MW Audio"
+* Meaning emphasis: you can make all but the first meaning from the dictionary small automatically
+* Can now guess field purpose from a wider variety of field names
+* In the meaning field, mask the pinyin from CEDICT that appears when a character is a common surname
+* Lots of bug fixes, notably to:
+** Ubuntu support
+** Tone sandhi
+** The configuration dialog
+** ... and lots more small issues
+
+
+h2. Version 0.05 (05/06/2009)
+
+| Max Bolingbroke | "Email":mailto:batterseapower@hotmail.com | "Website":http://blog.omega-prime.co.uk |
+| Nick Cook       | "Email":mailto:nick@n-line.co.uk          | "Website":http://www.n-line.co.uk       |
+
+* Large-scale re-write and optimisation of the code by Max Bolingbroke (many thanks!)
+* ported KanjiGraph to Hanzigraph
+* Automatic translation of non-dictionary words & phrase (can be used for almost any language)
+* Add limited support for new CFDICT (French)
+* All distributions will now include all dictionaries for simplicity. Unwanted dictionaries can be deleted.
+* MW with pinyin added automatically to your deck if in dictionary (if enabled) only applies to English version
+* Dictionary definition and measure word have their simplified/traditional variant selected according
+  to user preferences
+* Don't generate audio tags if sounds are missing
+* Use a fifth tone audio sample if one is provided, otherwise switch to 4th tone
+* Try several file extensions when we need a bit of audio, using the order: .mp3, .ogg, .wav
+* Optional entry-number indicators in translations such as "(1)" "(2)" "(3)"
+* Internal refactoring of code to remove the incidence of unreliable string manipulations, leading to bugfixes:
+** Remove space at the end of colored pinyin
+** Remove spaces between punctuation in pinyin
+** Remove the space between erhua "r" suffix and main word in pinyin
+** Prevent loss of punctuation when colorizing hanzi
+* Erhua and third tone sandhi now handled properly
+* Line-index support and separator support added for dictionary lookup
+* Squash bug that means character colorisation to fail if audio generation off
+* Pinyin is recognised and colored anywhere in the text
+* Support for numbers has been greatly improved
+* Added code testsuite
+* Preferences window now used for config
+* Many smaller modifications to improve usability
+* Improved documentation & launch of website
+
+
+h2. Version 0.04 (19/05/2009)
+
+| Nick Cook | "Email":mailto:nick@n-line.co.uk | "Website":http://www.n-line.co.uk |
+
+* Two versions are now being distributed: English (using CC-CEDICT) and German (using HanDeDict)
+** Thanks to Rainer Menes for suggesting use of HanDeDict
+* New character colorization feature
+** If enabled, colored hanzi will be generated and placed in a field called "Color"
+** to get the benefit of this you should alter models in a way to make use of colored Hanzi
+* Fix to give better handle the formatting of dictionary entries
+** Customisable dictionary meaning separator (defaults to line break)
+* More reliable sound tag generation
+* Automatic blanking feature if hanzi field is emptied and de-focused (makes input faster)
+** Audio field is ignored if longer than 40 characters (i.e. if Anki has improved or recorded audio) [a better way to do this is in the works]
+* Strip html from expression field before doing anything (prevents formating bugs)
+* Several minor fixes and improvements to general usage
+* Assigned version numbers retroactively to v0.01 to v0.03
+
+
+h2. Version 0.03 (12/05/2009)
+
+| Nick Cook | "Email":mailto:nick@n-line.co.uk | "Website":http://www.n-line.co.uk |
+
+* Simplified and traditional generation now happens each lookup (no need to chose one or the other)
+* Automatic English generation from dictionary
+** English will only be generated for exact matches (words) not phrases
+* Automatic colorization of pinyin by tone
+* Text-to-speech feature (automatic auto generation)
+* Support for turning off new features
+* Tidy code (remove unused & rationalise messy bits)
+* Update dictionary to latest CC-CEDICT
+** Fix bug from 谁 [actually bug is no longer relevant under new directory structure]
+** Fix problems with pinyin generation of "v"/"u:"
+* Rearrange to more logical filenames (pinyinfetcher.py etc)
+* Change dictionary structure for better management, easier updates, and to allow new features
+** Split dictionary into 3 parts (CC-CEDICT, supplementary, and user) [entries prioritised from latter to former]
+** Supplementary dictionary contains previously hard-coded entries and new data such as numbers
+
+
+h2. Version 0.02.5 (21/03/2009)
+
+| Nick Cook | "Email":mailto:nick@n-line.co.uk | "Website":http://www.n-line.co.uk |
+
+* Dictionary updated to use adapted version of CC-CEDICT
+* Entries increasing from 44,783 to 82,941
+
+
+h2. Version 0.02 (03/2009)
+
+| Damien Elmes | | "Website":http://ichi2.net/ |
+
+* Ported to Anki 0.9.9.6 and tidied up
+* Brian Vaughan no longer maintaing plugin
+
+
+h2. Version 0.01 (2008)
+
+| Brian Vaughan | | "Website":http://brianvaughan.net |
+
+* Original release
