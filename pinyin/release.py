@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 import os
+import re
 import subprocess
 import sys
+import time
 
 import pinyin.utils
 
@@ -63,6 +65,15 @@ def get_content_type(filename):
 # End code from ActiveState recipe
 #
 
+def parse_releases(text):
+    # Drop everything before the Changelog line
+    text = text[text.find("h1. Changelog"):]
+    
+    # Split changelog into releases (the first list element is just from before the first release)
+    for raw_release in text.split("h2. ")[1:]:
+        m = re.match("Version ([^ ]+) \(([^\)]+)\)", raw_release)
+        yield m.group(1), m.group(2), raw_release
+
 def preflight_checks(repo_dir):
     errors = []
     
@@ -98,7 +109,7 @@ def build_release(credentials, release_info, temp_dir):
     subprocess.check_call(["zip", "-9", "-r", zip_file] + repo_contents, cwd=temp_repo_dir)
     
     # 3) Upload to Anki
-    #upload_to_anki_online(credentials, release_info, zip_file)
+    upload_to_anki_online(credentials, release_info, zip_file)
 
 def upload_to_anki_online(credentials, release_info, zip_file):
     # Login form (at http://anki.ichi2.net/account/login)
@@ -142,15 +153,32 @@ def file_contents(path, mode="r"):
 
 if __name__ == "__main__":
     config = eval(file_contents(home_path(".pinyin-toolkit-release")))
+    version, date, changelog = list(parse_releases(file_contents(pinyin.utils.toolkitdir("Pinyin Toolkit.txt"))))[0]
     
-    # TODO: read release info from file
+    print changelog
+    print "Press enter to upload version", version, "(" + date + ") ... ",
+    
+    try:
+        sys.stdin.read()
+    except KeyboardInterrupt, e:
+        sys.exit(1)
+    
+    description = ["The Pinyin Toolkit adds many useful features to Anki to assist the study of Mandarin. The aim of " +
+                   "the project is to greatly enhance the user-experience for students studying the Chinese language.",
+                   "",
+                   "Homepage: http://batterseapower.github.com/pinyin-toolkit/",
+                   "Full feature list: http://wiki.github.com/batterseapower/pinyin-toolkit/features",
+                   "Installation instructions: http://wiki.github.com/batterseapower/pinyin-toolkit/installation",
+                   "",
+                   "Changes in the most recent version:",
+                   ""] + changelog
+    
     release_info = {
-        "id" : "423", # PyTK: 14
-        "title" : "Silly test plugin",
-        "tags" : "test",
-        "description" : "Still VERY silly"
-      }
+        "id" : "14",
+        "title" : "Pinyin Toolkit (" + version + ") - Advanced Mandarin Chinese Support",
+        "tags" : "pinyin Mandarin Chinese English dictionary hanzi graph graphs",
+        "description" : "\r\n".join(description)
+    }
     
+    #upload_to_anki_online(config["credentials"], release_info, home_path("Junk", "test-plugin", "test-plugin.zip"))
     pinyin.utils.withtempdir(lambda tempdir: build_release(config["credentials"], release_info, tempdir))
-
-#upload_to_anki_online(config["credentials"], release_info, home_path("Junk", "test-plugin", "test-plugin.zip"))
