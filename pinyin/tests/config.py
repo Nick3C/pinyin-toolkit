@@ -65,10 +65,17 @@ class ConfigTest(unittest.TestCase):
         self.assertFalse(Config({ "tonedisplay" : "numeric" }).shouldtonify)
     
     def testNeedMeanings(self):
-        self.assertTrue(Config({ "meaninggeneration" : True, "detectmeasurewords" : True }).needmeanings)
-        self.assertTrue(Config({ "meaninggeneration" : True, "detectmeasurewords" : False }).needmeanings)
-        self.assertTrue(Config({ "meaninggeneration" : False, "detectmeasurewords" : True }).needmeanings)
-        self.assertFalse(Config({ "meaninggeneration" : False, "detectmeasurewords" : False }).needmeanings)
+        def row(mg, dmw, mwag, res):
+            self.assertEquals(Config({ "meaninggeneration" : mg, "detectmeasurewords" : dmw, "mwaudiogeneration" : mwag }).needmeanings, res)
+        
+        row(True, True, True, True)
+        row(True, True, False, True)
+        row(True, False, True, True)
+        row(True, False, False, True)
+        row(False, True, True, True)
+        row(False, True, False, True)
+        row(False, False, True, True)
+        row(False, False, False, False)
     
     def testMeaningNumber(self):
         self.assertEquals(map(lambda n: Config({ "meaningnumbering" : "arabicParens", "colormeaningnumbers" : False, "emphasisemainmeaning" : False }).meaningnumber(n), [2, 10, 21]),

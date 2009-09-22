@@ -1,6 +1,7 @@
 import config
 import dictionary
 import dictionaryonline
+import factproxy
 import meanings
 import media
 import model

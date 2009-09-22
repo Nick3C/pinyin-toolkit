@@ -6,6 +6,7 @@ from PyQt4 import QtGui, QtCore
 import anki.utils
 
 import pinyin.anki.keys
+import pinyin.factproxy
 from pinyin.logger import log
 import pinyin.media
 import pinyin.transformations
@@ -30,7 +31,7 @@ class FocusHook(Hook):
             return
         
         # Need a fact proxy because the updater works on dictionary-like objects
-        factproxy = utils.AnkiFactProxy(self.config.candidateFieldNamesByKey, fact)
+        factproxy = pinyin.factproxy.FactProxy(self.config.candidateFieldNamesByKey, fact)
         
         # Find which kind of field we have just moved off
         updater = None
@@ -186,7 +187,7 @@ class MassFillHook(ToolMenuHook):
         
         for fact in utils.suitableFacts(self.config.modelTag, self.mw.deck):
             # Need a fact proxy because the updater works on dictionary-like objects
-            factproxy = utils.AnkiFactProxy(self.config.candidateFieldNamesByKey, fact)
+            factproxy = pinyin.factproxy.FactProxy(self.config.candidateFieldNamesByKey, fact)
             if field not in factproxy:
                 continue
             
