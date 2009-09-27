@@ -126,6 +126,11 @@ class ThunkTest(unittest.TestCase):
     
     def testTransparency(self):
         self.assertEquals(Thunk(lambda: "hello!").rstrip("!"), "hello")
+    
+    def testBlackHole(self):
+        delay = []
+        delay.append(Thunk(lambda: delay[0].attribute))
+        self.assertRaises(ValueError, lambda: delay[0]())
 
 class RegexParseTest(unittest.TestCase):
     def testParseSimple(self):

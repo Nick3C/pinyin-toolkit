@@ -175,10 +175,13 @@ class Thunk(object):
     def __call__(self):
         if self.__called:
             return self.__result
+        elif self.__called is None:
+            raise ValueError("A thunked computation entered a black hole")
         
-        self.__called = True
         try:
+            self.__called = None # Indicates that this thunk has become a black hole
             self.__result = self.__function()
+            self.__called = True
         except Exception, e:
             from pinyin.logger import log
             # Thunked actions raising an exception is a massively bad idea, because there
