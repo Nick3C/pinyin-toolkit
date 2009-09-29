@@ -22,6 +22,9 @@ class FactProxy(object):
     def __contains__(self, key):
         return key in self.fieldnames
 
+    def __iter__(self):
+        return self.fieldnames.keys().__iter__()
+
     def __getitem__(self, key):
         return self.fact[self.fieldnames[key]]
     

@@ -70,6 +70,12 @@ class SubstringsTest(unittest.TestCase):
         self.assertEquals(list(substrings("a")), ["a"])
         self.assertEquals(list(substrings("")), [])
 
+class MarkLastTest(unittest.TestCase):
+    def testMarkLast(self):
+        self.assertEquals(list(marklast([])), [])
+        self.assertEquals(list(marklast([1])), [(True, 1)])
+        self.assertEquals(list(marklast([1, 2])), [(False, 1), (True, 2)])
+
 class HtmlColorTest(unittest.TestCase):
     def testParseBadLength(self):
         self.assertRaises(ValueError, lambda: parseHtmlColor(""))

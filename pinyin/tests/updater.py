@@ -183,12 +183,12 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
     
     def testDontOverwriteFields(self):
         self.assertEquals(
-            self.updatefact(u"书", { "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e", "trad" : "f", "simp" : "g" },
+            self.updatefact(u"书", { "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" },
                 colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
                 tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
                 audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = True,
                 tradgeneration = True, simpgeneration = True), {
-                    "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "d", "color" : "e", "trad" : "f", "simp" : "g"
+                    "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g"
                   })
     
     def testUpdateExpressionItself(self):

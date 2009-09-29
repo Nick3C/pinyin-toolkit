@@ -204,6 +204,11 @@ class WordTest(unittest.TestCase):
         word.append(None)
         self.assertEquals(word, Word(Text("yes"), Text("no")))
     
+    def testExtend(self):
+        word = Word(Text(u"hello"))
+        word.extend([Text(u"world"), None, Text(u"above")])
+        self.assertEquals(word, Word(Text(u"hello"), Text(u"world"), Text(u"above")))
+
     def testAccept(self):
         output = []
         class Visitor(object):

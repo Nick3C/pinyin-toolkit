@@ -60,7 +60,13 @@ def ispunctuation(text):
 Reports whether a string consists of only punctuation characters that should have a space added after them.
 """
 def ispostspacedpunctuation(text):
-    return text == u"。" or text == "." or text == u"，" or text == ","
+    return text in [u"·", u"。", u".", u"，", u","]
+
+"""
+Reports whether a string consists of only punctuation characters that should have a space added before them.
+"""
+def isprespacedpunctuation(text):
+    return text == u"·"
 
 """
 Turns the empty string into None and leaves everything else alone.
@@ -154,7 +160,7 @@ def md5(what):
     # Try hashlib first, as it's the newer library (Python 2.5 or later)
     try:
         import hashlib
-        hashlib.md5(what).hexdigest()
+        return hashlib.md5(what).hexdigest()
     except ImportError:
         pass
     
@@ -383,6 +389,10 @@ def substrings(text):
     for length in range(len(text), -1, -1):
         for i in range(0, len(text) - length):
             yield text[i:i+length+1]
+
+def marklast(things):
+    for i, thing in enumerate(things):
+        yield (i == len(things) - 1), thing
 
 if sys.version_info[0:2] < (2, 5):
     def all(xs):

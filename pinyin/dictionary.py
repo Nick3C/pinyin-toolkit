@@ -144,23 +144,9 @@ class PinyinDictionary(object):
         log.info("Requested reading for %s", sentence)
         
         def addword(words, _text, readingtokens):
-            # If we already have some text building up, add a preceding space.
-            # However, if the word we got looks like a period, don't do it.
-            # This ensures consistency in the treatment of Western and Chinese
-            # punctuation.  Furthermore, avoid adding double-spaces.  This is
-            # also important for punctuation consistency, because Western
-            # punctuation is typically followed by a space whereas the Chinese
-            # equivalents are not.
-            words_need_space = needsspacebeforeappend(words)
-            is_punctuation = ispunctuation(flatten(readingtokens))
-            reading_starts_with_er = len(readingtokens) > 0 and readingtokens[0].iser
-            if words_need_space and not(is_punctuation) and not(reading_starts_with_er):
-                words.append(Word(Text(u' ')))
-            
-            # Add this reading into the token list with nice formatting
-            words.append(Word.spacedwordfromunspacedtokens(readingtokens))
+            words.append(Word(*readingtokens))
         
-        return self.mapparsedtokens(sentence, addword)
+        return formatreadingfordisplay(self.mapparsedtokens(sentence, addword))
 
     """
     Given a string of Hanzi, return the result rendered into a list of characters with tone information and unrecognised tokens (as string).
@@ -178,16 +164,27 @@ class PinyinDictionary(object):
         # Represents the resulting stream of words
         words = []
         
+        # Represents a buffer of pending unrecognised stuff building up.
+        # This is important, because otherwise we got too many spurious Word
+        # boundaries popping up
+        pendingunrecognised = [[]]
+        def flushunrecognised():
+            if len(pendingunrecognised[0]) != 0:
+                words.append(Word(Text("".join(pendingunrecognised[0]))))
+                pendingunrecognised[0] = []
+        
         for readingsmeanings, text in self.parse(sentence):
             if readingsmeanings is None:
                 # A single unrecognised character: it's probably just whitespace or punctuation.
                 # Append it directly to the token list.
-                words.append(Word(Text(text)))
+                pendingunrecognised[0].append(text)
             else:
                 # Got a recognised token sequence! Hooray! Use the user-supplied function to add
                 # the reading of this thing to the output
+                flushunrecognised()
                 addword(words, text, tokenizespaceseperatedtext(readingsmeanings[0][0]))
         
+        flushunrecognised()
         return words
 
     """

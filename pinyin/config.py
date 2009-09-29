@@ -166,6 +166,8 @@ updatecontrolflags = {
     'weblinks'   : "weblinkgeneration"
 }
 
+allfields = updatecontrolflags.keys()
+
 tonedisplayshouldtonify = {
     "numeric" : False,
     "tonified" : True

@@ -495,6 +495,10 @@ class Word(list):
         if item != None:
             list.append(self, item)
     
+    def extend(self, items):
+        for item in items:
+            self.append(item)
+    
     def accept(self, visitor):
         for token in self:
             token.accept(visitor)
@@ -579,6 +583,42 @@ class NeedsSpaceBeforeAppendVisitor(TokenVisitor):
     
     def visitTonedCharacter(self, tonedcharacter):
         # Treat it like normal text
+        self.visitText(tonedcharacter)
+
+"""
+Given words of reading tokens, formats them for display by inserting
+spaces between pinyin while being smart about punctuation.
+"""
+def formatreadingfordisplay(words):
+    visitor = FormatReadingForDisplayVisitor()
+    return [word.concatmap(visitor) for word in words]
+
+maybeSpace = lambda val: val and [Text(" ")] or []
+
+class FormatReadingForDisplayVisitor(TokenVisitor):
+    def __init__(self):
+        self.haveprecedingspace = True
+    
+    def visitText(self, text):
+        firstchar = text[0]
+        firstcharactsasspace = firstchar.isspace() or (utils.ispunctuation(firstchar) and not(utils.isprespacedpunctuation(unicode(text))))
+        needleadingspace = not self.haveprecedingspace and not firstcharactsasspace
+        
+        lastchar = text[-1]
+        lastcharactsasspace = lastchar.isspace() or (utils.ispunctuation(lastchar) and not(utils.ispostspacedpunctuation(unicode(text))))
+        self.haveprecedingspace = lastcharactsasspace
+        
+        return maybeSpace(needleadingspace) + [text]
+    
+    def visitPinyin(self, pinyin):
+        # TODO: bug if er is the first thing in the string
+        needleadingspace = not self.haveprecedingspace and not pinyin.iser
+        self.haveprecedingspace = False
+        
+        return maybeSpace(needleadingspace) + [pinyin]
+    
+    def visitTonedCharacter(self, tonedcharacter):
+        # Treat characters like normal text
         self.visitText(tonedcharacter)
 
 """

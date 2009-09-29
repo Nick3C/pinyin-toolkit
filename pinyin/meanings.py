@@ -87,7 +87,7 @@ class MeaningFormatter(object):
         if rawpinyin != None:
             # There was some pinyin for the character after it - include it
             pinyintokens = tokenizespaceseperatedtext(rawpinyin)
-            return ([Word(*(tonedcharactersfromreading(character, pinyintokens)))], [Word.spacedwordfromunspacedtokens(pinyintokens)])
+            return ([Word(*(tonedcharactersfromreading(character, pinyintokens)))], formatreadingfordisplay([Word(*pinyintokens)]))
         else:
             # Look up the tone for the character so we can display it more nicely, as in the other branch
             return (tonedchars_callback(character), None)

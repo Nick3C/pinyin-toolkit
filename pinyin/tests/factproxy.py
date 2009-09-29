@@ -11,6 +11,9 @@ class FactProxyTest(unittest.TestCase):
 
     def testContainsPresentFields(self):
         self.assertTrue("key" in FactProxy({"key" : ["Foo", "Bar"]}, { "Bar" : "Hi" }))
+    
+    def testIteratePresentFields(self):
+        self.assertEquals(list(FactProxy({"key" : ["Foo", "Bar"], "another-key" : ["Missing"]}, { "Bar" : "Hi", "Baz" : "Meh" })), ["key"])
 
     def testSet(self):
         fact = { "Baz" : "Hi" }
