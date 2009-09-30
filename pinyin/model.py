@@ -560,6 +560,7 @@ maybeSpace = lambda val: val and [Text(" ")] or []
 class FormatReadingForDisplayVisitor(TokenVisitor):
     def __init__(self):
         self.haveprecedingspace = True
+        self.haveprecedingpinyin = False
     
     def visitText(self, text):
         firstchar = text[0]
@@ -569,13 +570,15 @@ class FormatReadingForDisplayVisitor(TokenVisitor):
         lastchar = text[-1]
         lastcharactsasspace = lastchar.isspace() or (utils.ispunctuation(lastchar) and not(utils.ispostspacedpunctuation(unicode(text))))
         self.haveprecedingspace = lastcharactsasspace
+        self.haveprecedingpinyin = False
         
         return maybeSpace(needleadingspace) + [text]
     
     def visitPinyin(self, pinyin):
-        # TODO: bug if er is the first thing in the string
-        needleadingspace = not self.haveprecedingspace and not pinyin.iser
+        # Being an erhua better not be significant for spacing purposes if we directly follow text, rather than pinyin
+        needleadingspace = not self.haveprecedingspace and not (pinyin.iser and self.haveprecedingpinyin)
         self.haveprecedingspace = False
+        self.haveprecedingpinyin = True
         
         return maybeSpace(needleadingspace) + [pinyin]
     
