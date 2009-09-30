@@ -2,8 +2,11 @@
 
 import unittest
 
+import pinyin.dictionary
 from pinyin.model import *
 
+
+englishdict = pinyin.dictionary.PinyinDictionary.loadall()('en')
 
 class ToneInfoTest(unittest.TestCase):
     def testAccessors(self):
@@ -173,18 +176,6 @@ class TextTest(unittest.TestCase):
         self.assertFalse(Text("r5").iser)
 
 class WordTest(unittest.TestCase):
-    def testAppendSingleReading(self):
-        self.assertEquals(flatten([Word.spacedwordfromunspacedtokens([Pinyin.parse(u"hen3")])]), u"hen3")
-
-    def testAppendMultipleReadings(self):
-        self.assertEquals(flatten([Word.spacedwordfromunspacedtokens([Pinyin.parse(u"hen3"), Pinyin.parse(u"ma5")])]), u"hen3 ma")
-    
-    def testAppendSingleReadingErhua(self):
-        self.assertEquals(flatten([Word.spacedwordfromunspacedtokens([Pinyin.parse(u"r5")])]), u"r")
-
-    def testAppendMultipleReadingsErhua(self):
-        self.assertEquals(flatten([Word.spacedwordfromunspacedtokens([Pinyin.parse(u"hen3"), Pinyin.parse(u"ma5"), Pinyin.parse("r5")])]), u"hen3 mar")
-    
     def testEquality(self):
         self.assertEquals(Word(Text(u"hello")), Word(Text(u"hello")))
         self.assertNotEquals(Word(Text(u"hello")), Word(Text(u"hallo")))
@@ -320,7 +311,60 @@ class TokenizeTest(unittest.TestCase):
         # TODO: enable this test and make it pass somehow... SGMLParser doesn't support self-closing tags :-(
         #self.assertEquals([Text(u'<b />')], tokenize(u'<b />'))
         self.assertEquals([Text(u'<span style="mehhhh!">'), Text("</span>")], tokenize(u'<span style="mehhhh!"></span>'))
-        
+
+class FormatReadingForDisplayTest(unittest.TestCase):
+    # Test data:
+    nihao_simp = u'你好，我喜欢学习汉语。我的汉语水平很低。'
+    nihao_trad = u'你好，我喜歡學習漢語。我的漢語水平很低。'
+    nihao_simp_western_punc = u'你好, 我喜欢学习汉语. 我的汉语水平很低.'
+    nihao_reading = u"ni3 hao3, wo3 xi3 huan xue2 xi2 Han4 yu3. wo3 de Han4 yu3 shui3 ping2 hen3 di1."
+
+    def testSimplifiedPinyin(self):
+        self.assertEqual(self.reading(self.nihao_simp), self.nihao_reading)
+
+    def testTraditionalPinyin(self):
+        self.assertEqual(self.reading(self.nihao_trad), self.nihao_reading)
+
+    def testWesternPunctuation(self):
+        self.assertEqual(self.reading(self.nihao_simp_western_punc), self.nihao_reading)
+
+    def testNoSpacesAfterBraces(self):
+        self.assertEquals(self.reading(u"(你)好!"), u"(ni3)hao3!")
+
+    def testEmptyString(self):
+        self.assertEqual(self.reading(u""), u"")
+
+    def testMixedEnglishChinese(self):
+        self.assertEqual(self.reading(u"你 (pr.)"), u"ni3 (pr.)")
+
+    def testNeutralRSuffix(self):
+        self.assertEqual(self.reading(u"一塊兒"), "yi1 kuai4r")
+
+    def testSimpleSingleton(self):
+        self.assertEquals(self.format([Word(Pinyin.parse(u"hen3"))]), u"hen3")
+
+    def testSimpleSpacing(self):
+        self.assertEquals(self.format([Word(Pinyin.parse(u"hen3"), Pinyin.parse(u"ma5"))]), u"hen3 ma")
+
+    def testSimpleErhuaSingleton(self):
+        self.assertEquals(self.format([Word(Pinyin.parse(u"r5"))]), u"r")
+
+    def testSimpleErhua(self):
+        self.assertEquals(self.format([Word(Pinyin.parse(u"hen3"), Pinyin.parse(u"ma5"), Pinyin.parse("r5"))]), u"hen3 mar")
+
+    def testErhuaNextToText(self):
+        self.assertEquals(self.format([Word(Text("not pinyin"), Pinyin.parse(u"r5"))]), u"not pinyin r")
+
+    def testErhuaNextToPinyinInOtherWord(self):
+        self.assertEquals(self.format([Word(Pinyin.parse(u"hen3")), Word(Pinyin.parse(u"r5"))]), u"hen3r")
+
+    # Test helpers
+    def format(self, what):
+        return flatten(formatreadingfordisplay(what))
+    
+    def reading(self, what):
+        return self.format(englishdict.reading(what))
+
 class PinyinTonifierTest(unittest.TestCase):
     def testEasy(self):
         self.assertEquals(PinyinTonifier().tonify(u"Han4zi4 bu4 mie4, Zhong1guo2 bi4 wang2!"),
@@ -349,38 +393,21 @@ class FlattenTest(unittest.TestCase):
     def testUsesWrittenTone(self):
         self.assertEquals(flatten([Word(Pinyin("hen", ToneInfo(written=2,spoken=3)))]), "hen2")
 
-class NeedsSpaceBeforeAppendTest(unittest.TestCase):
-    def testEmptyDoesntNeedSpace(self):
-        self.assertFalse(needsspacebeforeappend([]))
-    
-    def testEndsWithWhitespace(self):
-        self.assertFalse(needsspacebeforeappend([Word(Text("hello "))]))
-        self.assertFalse(needsspacebeforeappend([Word(Text("hello"), Text(" "), Text("World"), Text(" "))]))
-        self.assertFalse(needsspacebeforeappend([Word(Text("hello"), Text(" "), Text("World"), Text("!\t"))]))
-    
-    def testNeedsSpace(self):
-        self.assertTrue(needsspacebeforeappend([Word(Text("hello"))]))
-    
-    def testPunctuation(self):
-        self.assertTrue(needsspacebeforeappend([Word(Text("."))]))
-        self.assertTrue(needsspacebeforeappend([Word(Text(","))]))
-        self.assertFalse(needsspacebeforeappend([Word(Text("("))]))
-        self.assertFalse(needsspacebeforeappend([Word(Text(")"))]))
-        self.assertFalse(needsspacebeforeappend([Word(Text('"'))]))
-
 class TonedCharactersFromReadingTest(unittest.TestCase):
     def testTonedTokens(self):
-        self.assertEquals(tonedcharactersfromreading(u"一个", [Pinyin.parse("yi1"), Pinyin.parse("ge4")]),
-                          [TonedCharacter(u"一", 1), TonedCharacter(u"个", 4)])
+        self.assertEquals(tonedcharactersfromreading(u"一个", [Word(Pinyin.parse("yi1"), Pinyin.parse("ge4"))]),
+                          [Word(TonedCharacter(u"一", 1), TonedCharacter(u"个", 4))])
 
     def testTonedTokensWithoutTone(self):
-        self.assertEquals(tonedcharactersfromreading(u"T恤", [Text("T"), Pinyin.parse("zhi4")]),
-                          [Text(u"T"), TonedCharacter(u"恤", 4)])
+        self.assertEquals(tonedcharactersfromreading(u"T恤", [Word(Text("T"), Pinyin.parse("zhi4"))]),
+                          [Word(Text(u"T"), TonedCharacter(u"恤", 4))])
 
     def testTonedTokenNumbers(self):
-        self.assertEquals(tonedcharactersfromreading(u"1994", [Pinyin.parse("yi1"), Pinyin.parse("jiu3"), Pinyin.parse("jiu3"), Pinyin.parse("si4")]),
-                          [Text(u"1"), Text(u"9"), Text(u"9"), Text(u"4")])
+        self.assertEquals(tonedcharactersfromreading(u"1994", [Word(Pinyin.parse("yi1"), Pinyin.parse("jiu3"), Pinyin.parse("jiu3"), Pinyin.parse("si4"))]),
+                          [Word(Text(u"1"), Text(u"9"), Text(u"9"), Text(u"4"))])
     
     def testTonesDontMatchChars(self):
-        self.assertEquals(tonedcharactersfromreading(u"ABCD", [Pinyin.parse("yi1"), Pinyin.parse("shi2"), Pinyin.parse("jiu3"), Pinyin.parse("jiu3"), Pinyin.parse("shi2"), Pinyin.parse("si4")]),
-                          [Text(u"ABCD")])
+        self.assertEquals(tonedcharactersfromreading(u"ABCD", [Word(Pinyin.parse("yi1"), Pinyin.parse("shi2"), Pinyin.parse("jiu3"), Pinyin.parse("jiu3"), Pinyin.parse("shi2"), Pinyin.parse("si4"))]),
+                          [Word(Text(u"ABCD"))])
+        self.assertEquals(tonedcharactersfromreading(u"ABCD", [Word(Pinyin.parse("yi1"))]),
+                          [Word(Text(u"ABCD"))])

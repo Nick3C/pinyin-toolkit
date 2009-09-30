@@ -360,6 +360,11 @@ def striphtml(what):
 def concat(what):
     return sum(what, [])
 
+def splitat(what, n):
+    if n > len(what):
+        raise ValueError("You cannot splitat at a point later than the end of the string")
+    return what[0:n], what[n:]
+
 def first(f):
     def go(xy):
         x, y = xy

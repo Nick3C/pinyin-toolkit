@@ -66,25 +66,25 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(self.flatmeanings(germandict, u"請"), ["Bitte ! (u.E.) (Int)", "bitten, einladen (u.E.) (V)"])
 
     def testEnglishDictionary(self):
-        self.assertEquals(flatten(englishdict.reading(u"鼓聲")), "gu3 sheng1")
-        self.assertEquals(flatten(englishdict.reading(u"鼓声")), "gu3 sheng1")
+        self.assertEquals(flatten(englishdict.reading(u"鼓聲")), "gu3sheng1")
+        self.assertEquals(flatten(englishdict.reading(u"鼓声")), "gu3sheng1")
         self.assertEquals(self.flatmeanings(englishdict, u"鼓聲"), ["sound of a drum", "drumbeat"])
 
     def testFrenchDictionary(self):
-        self.assertEquals(flatten(frenchdict.reading(u"評論")), "ping2 lun4")
-        self.assertEquals(flatten(frenchdict.reading(u"评论")), "ping2 lun4")
+        self.assertEquals(flatten(frenchdict.reading(u"評論")), "ping2lun4")
+        self.assertEquals(flatten(frenchdict.reading(u"评论")), "ping2lun4")
         self.assertEquals(self.flatmeanings(frenchdict, u"评论"), [u"commentaire (n.v.) (n)"])
 
     def testWordsWhosePrefixIsNotInDictionary(self):
-        self.assertEquals(flatten(germandict.reading(u"生日")), "sheng1 ri4")
+        self.assertEquals(flatten(germandict.reading(u"生日")), "sheng1ri4")
         self.assertEquals(self.flatmeanings(germandict, u"生日"), [u"Geburtstag (u.E.) (S)"])
 
     def testProperName(self):
-        self.assertEquals(flatten(englishdict.reading(u"珍・奥斯汀")), u"Zhen1 · Ao4 si1 ting1")
+        self.assertEquals(flatten(englishdict.reading(u"珍・奥斯汀")), u"Zhen1·Ao4si1ting1")
         self.assertEquals(self.flatmeanings(englishdict, u"珍・奥斯汀"), [u"Jane Austen (1775-1817), English novelist", u"also written 简・奥斯汀 - Jian3 · Ao4 si1 ting1"])
 
     def testShortPinyin(self):
-        self.assertEquals(flatten(englishdict.reading(u"股指")), "gu3 zhi3")
+        self.assertEquals(flatten(englishdict.reading(u"股指")), "gu3zhi3")
         self.assertEquals(self.flatmeanings(englishdict, u"股指"), [u"stock market index", u"share price index", u"abbr. for 股票指数 - gu3 piao4 zhi3 shu4"])
     
     def testPinyinFromUnihan(self):
@@ -92,7 +92,7 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(self.flatmeanings(englishdict, u"諓"), None)
     
     def testFallsBackOnCEDICTForMissingPinyinAndForeignLanguage(self):
-        self.assertEquals(flatten(frenchdict.reading(u"数量积")), "shu4 liang4 ji1")
+        self.assertEquals(flatten(frenchdict.reading(u"数量积")), "shu4liang4ji1")
         self.assertEquals(self.flatmeanings(frenchdict, u"数量积"), None)
     
     # TODO: need to think carefully about how to match up data from different sources.
@@ -112,7 +112,7 @@ class PinyinDictionaryTest(unittest.TestCase):
     #         self.assertEquals(flatten(englishdict.reading(u"教")), "jiao4")
 
     def testErhuaSpacedInReadingForKnownWords(self):
-        self.assertEquals(flatten(englishdict.reading(u"两头儿")), "liang3 tou2r")
+        self.assertEquals(flatten(englishdict.reading(u"两头儿")), "liang3tou2r")
 
     def testSimpMeanings(self):
         self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="simp"), [u"book", u"letter", u"same as 书经 Book of History", u"MW: 本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])
@@ -136,35 +136,3 @@ class PinyinDictionaryTest(unittest.TestCase):
             return [flatten(token) for token in tokens]
         else:
             return None
-
-class PinyinConverterTest(unittest.TestCase):
-    # Test data:
-    nihao_simp = u'你好，我喜欢学习汉语。我的汉语水平很低。'
-    nihao_trad = u'你好，我喜歡學習漢語。我的漢語水平很低。'
-    nihao_simp_western_punc = u'你好, 我喜欢学习汉语. 我的汉语水平很低.'
-    nihao_reading = u"ni3 hao3, wo3 xi3 huan xue2 xi2 Han4 yu3. wo3 de Han4 yu3 shui3 ping2 hen3 di1."
-
-    def testSimplifiedPinyin(self):
-        self.assertEqual(self.reading(self.nihao_simp), self.nihao_reading)
-
-    def testTraditionalPinyin(self):
-        self.assertEqual(self.reading(self.nihao_trad), self.nihao_reading)
-
-    def testWesternPunctuation(self):
-        self.assertEqual(self.reading(self.nihao_simp_western_punc), self.nihao_reading)
-
-    def testNoSpacesAfterBraces(self):
-        self.assertEquals(self.reading(u"(你)好!"), u"(ni3)hao3!")
-
-    def testEmptyString(self):
-        self.assertEqual(self.reading(u""), u"")
-
-    def testMixedEnglishChinese(self):
-        self.assertEqual(self.reading(u"你 (pr.)"), u"ni3 (pr.)")
-
-    def testNeutralRSuffix(self):
-        self.assertEqual(self.reading(u"一塊兒"), "yi1 kuai4r")
-
-    # Test helpers
-    def reading(self, what):
-        return flatten(englishdict.reading(what))

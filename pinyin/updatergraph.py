@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import os
@@ -77,9 +76,10 @@ class GraphBasedUpdater(object):
         
                 ("mergeddictmeaningsmws", self.meaning2mergeddictmeaningsmws, ["meaning"]),
         
+                ("dictmws", lambda x: x[1], ["dictmeaningsmws"]),
+                ("dictmws", self.mw2dictmws, ["mw"]), # TODO: think carefully about this and mergeddictmws for the update story here
                 ("mw", self.mergeddictmws2mw, ["mergeddictmws"]),
-                ("mergeddictmws", self.mw2mergeddictmws, ["mw"]),
-                ("mwaudio", self.mergeddictmwdictreading2mwaudio, ["mergeddictmws", "dictreading"]), # Need dictreading for the noun
+                ("mwaudio", self.mergeddictmwdictreading2mwaudio, ["dictmws", "dictreading"]), # Need dictreading for the noun
         
                 ("dictreading", self.expression2dictreading, ["expression"]),
                 ("reading", self.dictreading2reading, ["dictreading"]),
@@ -146,21 +146,21 @@ class GraphBasedUpdater(object):
                 # Interpret Hanzi as numbers. NB: only consult after CEDICT so that we
                 # handle curious numbers such as 'liang' using the dictionary
                 ("",
-                 lambda: (numbers.meaningfromnumberlike(expression, self.dictionary), []))
+                 lambda: (numbers.meaningfromnumberlike(expression, self.dictionary), None))
             ] + (self.config.shouldusegoogletranslate and [
                 # If the dictionary can't answer our question, ask Google Translate.
                 # If there is a long word followed by another word then this will be treated as a phrase.
                 # Phrases are also queried using googletranslate rather than the local dictionary.
                 # This helps deal with small dictionaries (for example French)
                 ('<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
-                 lambda: (dictionaryonline.gTrans(expression, self.config.dictlanguage), []))
+                 lambda: (dictionaryonline.gTrans(expression, self.config.dictlanguage), None))
             ] or [])
         
         # Find the first source that returns a sensible meaning
         for dictmeaningssource, lookup in dictmeaningssources:
             dictmeanings, dictmws = lookup()
             if dictmeanings != None or dictmws != None:
-                return (dictmeanings, dictmws), dictmeaningssource
+                return (dictmeanings or [], dictmws or []), dictmeaningssource
         
         # No information available
         return None
@@ -205,11 +205,11 @@ class GraphBasedUpdater(object):
         # Concatenate the measure words together with - before we put them into the MW field
         return preparetokens(self.config, dictionary.flattenmeasurewords(mergeddictmws))
 
-    def mw2mergeddictmws(self, mw):
+    def mw2dictmws(self, mw):
         # TODO
         return NotImplementedError("mw2mergeddictmws: need parser")
 
-    def mergeddictmwdictreading2mwaudio(self, mergeddictmws, dictreading):
+    def mergeddictmwdictreading2mwaudio(self, mergeddictmws, noundictreading):
         dictreading = []
         for _, mwpinyinwords in mergeddictmws:
             # The audio field will contain <random number> <mw> <noun> for every possible MW
@@ -246,15 +246,13 @@ class GraphBasedUpdater(object):
     def dictreading2reading(self, dictreading):
         # Put pinyin into lowercase before anything else is done to it
         # TODO: do we really want lower case here? If so, we should do it for colorized pinyin as well.
-        return preparetokens(self.config, dictreading).lower()
+        return preparetokens(self.config, model.formatreadingfordisplay(dictreading)).lower()
 
     def reading2dictreading(self, reading):
         return [model.Word(*model.tokenize(reading))]
 
     def expressiondictreading2color(self, expression, dictreading):
-        print expression, dictreading
-        print model.tonedcharactersfromreading(expression, dictreading)
-        return model.flatten(transformations.colorize(self.config.tonecolors, [model.Word(*(model.tonedcharactersfromreading(expression, dictreading)))]))
+        return model.flatten(transformations.colorize(self.config.tonecolors, model.tonedcharactersfromreading(expression, dictreading)))
 
     def dictreading2audio(self, dictreading):
         return generateaudio(self.notifier, self.mediamanager, self.config, dictreading)

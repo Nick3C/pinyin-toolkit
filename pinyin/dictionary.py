@@ -146,7 +146,7 @@ class PinyinDictionary(object):
         def addword(words, _text, readingtokens):
             words.append(Word(*readingtokens))
         
-        return formatreadingfordisplay(self.mapparsedtokens(sentence, addword))
+        return self.mapparsedtokens(sentence, addword)
 
     """
     Given a string of Hanzi, return the result rendered into a list of characters with tone information and unrecognised tokens (as string).
@@ -156,7 +156,7 @@ class PinyinDictionary(object):
         
         def addword(words, text, readingtokens):
             # Match up the reading data with the characters to produce toned characters
-            words.append(Word(*(tonedcharactersfromreading(text, readingtokens))))
+            words.extend(tonedcharactersfromreading(text, [Word(*readingtokens)]))
         
         return self.mapparsedtokens(sentence, addword)
 

@@ -27,8 +27,8 @@ class PinyinColorizerTest(unittest.TestCase):
     def testColorize(self):
         # Need to call .lower() here because we have a dictionary entry for this character with Ma3
         self.assertEqual(self.colorize(u"妈麻马骂吗").lower(),
-            '<span style="color:#ff0000">ma1</span> <span style="color:#ffaa00">ma2</span> ' +
-            '<span style="color:#00aa00">ma3</span> <span style="color:#0000ff">ma4</span> ' +
+            '<span style="color:#ff0000">ma1</span><span style="color:#ffaa00">ma2</span>' +
+            '<span style="color:#00aa00">ma3</span><span style="color:#0000ff">ma4</span>' +
             '<span style="color:#545454">ma</span>')
 
     def testMixedEnglishChinese(self):
@@ -37,7 +37,7 @@ class PinyinColorizerTest(unittest.TestCase):
     
     def testPunctuation(self):
         self.assertEqual(self.colorize(u'小小!'),
-            '<span style="color:#00aa00">xiao3</span> <span style="color:#00aa00">xiao3</span>!')
+            '<span style="color:#00aa00">xiao3</span><span style="color:#00aa00">xiao3</span>!')
 
     def testUseSpokenToneRatherThanWrittenOne(self):
         self.assertEqual(flatten(colorize(colorlist, [Word(Pinyin("xiao", ToneInfo(written=3, spoken=2)))])),
@@ -218,7 +218,7 @@ class ToneSandhiTest(unittest.TestCase):
                           "jiu2 shui3 yin3 liao4")
         # A test that used to find it, before the dictionary was updated with the
         # compound 饮料 - modified to take the new information into account:
-        self.assertSandhi(*(englishdict.reading(u"酒水饮料") + ["jiu2 shui2 yin3 liao4"]))
+        self.assertSandhi(*(englishdict.reading(u"酒水饮料") + ["jiu2shui2yin3liao4"]))
     
     # TODO: improve tone sandhi such that the following tests pass:
     #

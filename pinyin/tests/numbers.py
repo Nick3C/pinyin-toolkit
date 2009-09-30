@@ -10,30 +10,30 @@ englishdict = dictionary.PinyinDictionary.loadall()('en')
 
 class ReadingFromNumberlikeTest(unittest.TestCase):
     def testIntegerReading(self):
-        self.assertReading("ba1 qian1 jiu3 bai3 er4 shi2 yi1", "8921")
-        self.assertReading("ba1 qian1 jiu3 bai3 er4 shi2 yi1", "8,921")
-        self.assertReading("san1 qian1 wan4 si4 bai3 wan4 san1 shi2 wan4 er4 wan4 si4 qian1 si4 bai3 san1 shi2 er4", "34,324,432")
+        self.assertReading("ba1qian1jiu3bai3er4shi2yi1", "8921")
+        self.assertReading("ba1qian1jiu3bai3er4shi2yi1", "8,921")
+        self.assertReading("san1qian1wan4si4bai3wan4san1shi2wan4er4wan4si4qian1si4bai3san1shi2er4", "34,324,432")
     
     def testDecimalReading(self):
-        self.assertReading("er4 shi2 wu3 dian3 er4 wu3", "25.25")
-        self.assertReading("yi1 qian1 dian3 jiu3", "1,000.9")
+        self.assertReading("er4shi2wu3dian3er4wu3", "25.25")
+        self.assertReading("yi1qian1dian3jiu3", "1,000.9")
         self.assertReading(None, "25.253,2")
     
     def testYearReading(self):
-        self.assertReading("yi1 jiu3 jiu3 ba1 nian2", u"1998年")
+        self.assertReading("yi1jiu3jiu3ba1nian2", u"1998年")
         # This is not a very valid way of writing a year, but it's extra work to disallow it so what the hell
-        self.assertReading("yi1 jiu3 jiu3 ba1 nian2", u"1,998年")
+        self.assertReading("yi1jiu3jiu3ba1nian2", u"1,998年")
     
     def testPercentageReading(self):
-        self.assertReading("bai3 fen1 zhi1 qi1 shi2", u"70%")
-        self.assertReading("bai3 fen1 zhi1 qi1 shi2", u"70％")
-        self.assertReading("bai3 fen1 zhi1 yi1 qian1", u"1000%")
-        self.assertReading("bai3 fen1 zhi1 yi1 qian1", u"1,000%")
+        self.assertReading("bai3fen1zhi1qi1shi2", u"70%")
+        self.assertReading("bai3fen1zhi1qi1shi2", u"70％")
+        self.assertReading("bai3fen1zhi1yi1qian1", u"1000%")
+        self.assertReading("bai3fen1zhi1yi1qian1", u"1,000%")
     
     def testFractionReading(self):
-        self.assertReading("san1 fen1 zhi1 yi1", "1/3")
-        self.assertReading("san1 fen1 zhi1 yi1", "1\\3")
-        self.assertReading("san1 qian1 fen1 zhi1 yi1 qian1", "1,000/3,000")
+        self.assertReading("san1fen1zhi1yi1", "1/3")
+        self.assertReading("san1fen1zhi1yi1", "1\\3")
+        self.assertReading("san1qian1fen1zhi1yi1qian1", "1,000/3,000")
     
     def testNoReadingForPhrase(self):
         self.assertReading(None, u"你好")

@@ -515,20 +515,6 @@ class Word(list):
             for newtoken in token.accept(visitor):
                 word.append(newtoken)
         return word
-    
-    @classmethod
-    def spacedwordfromunspacedtokens(cls, reading_tokens):
-        # Add the tokens to the word, with spaces between the components
-        word = Word()
-        reading_tokens_count = len(reading_tokens)
-        for n, reading_token in enumerate(reading_tokens):
-            # Don't add spaces if this is the first token or if we have an erhua
-            if n != 0 and not(reading_token.iser):
-                word.append(Text(u' '))
-
-            word.append(reading_token)
-        
-        return word
 
 """
 Flattens the supplied tokens down into a single string.
@@ -560,30 +546,6 @@ class FlattenTokensVisitor(TokenVisitor):
             self.output += '</span>'
         else:
             self.output += text
-
-"""
-Report whether the supplied list of words ends with a space
-character. Used for producing pretty formatted output.
-"""
-def needsspacebeforeappend(words):
-    visitor = NeedsSpaceBeforeAppendVisitor()
-    [word.accept(visitor) for word in words]
-    return visitor.needsspacebeforeappend
-
-class NeedsSpaceBeforeAppendVisitor(TokenVisitor):
-    def __init__(self):
-        self.needsspacebeforeappend = False
-    
-    def visitText(self, text):
-        lastchar = text[-1]
-        self.needsspacebeforeappend = (not(lastchar.isspace()) and not(utils.ispunctuation(lastchar))) or utils.ispostspacedpunctuation(unicode(text))
-    
-    def visitPinyin(self, pinyin):
-        self.needsspacebeforeappend = True
-    
-    def visitTonedCharacter(self, tonedcharacter):
-        # Treat it like normal text
-        self.visitText(tonedcharacter)
 
 """
 Given words of reading tokens, formats them for display by inserting
@@ -626,24 +588,56 @@ Makes some tokens that faithfully represent the given characters
 with tone information attached, if it is possible to extract it
 from the corresponding pinyin tokens.
 """
-def tonedcharactersfromreading(characters, reading_tokens):
-    # If we can't associate characters with tokens on a one-to-one basis we had better give up
-    if len(characters) != len(reading_tokens):
-        log.warn("Couldn't produce toned characters for %s because there are a different number of reading tokens than characters", characters)
-        return [Text(characters)]
-
-    # Add characters to the tokens /without/ spaces between them, but with tone info
-    tokens = []
-    for character, reading_token in zip(characters, reading_tokens):
-        # Avoid making the numbers from the supplementary dictionary into toned
-        # things, because it confuses users :-)
-        if hasattr(reading_token, "toneinfo") and not(character.isdecimal()):
-            tokens.append(TonedCharacter(character, reading_token.toneinfo))
+def tonedcharactersfromreading(characters, words):
+    try:
+        visitor = TonedCharactersFromReadingVisitor(characters)
+        words = [word.map(visitor) for word in words]
+        if len(visitor.characters) > 0:
+            raise TonedCharactersFromReadingException("We had some residual characters: " + visitor.characters)
         else:
-            # Sometimes the tokens do not have tones (e.g. in the translation for T-shirt)
-            tokens.append(Text(character))
+            return words
+    except TonedCharactersFromReadingException, e:
+        # Fall back on the untoned characters
+        log.warn("Couldn't produce toned characters for %s because: %s", characters, e)
+        return [Word(Text(characters))]
+
+class TonedCharactersFromReadingException(Exception):
+    def __init__(self, message):
+        Exception.__init__(self, message)
+
+class TonedCharactersFromReadingVisitor(TokenVisitor):
+    def __init__(self, characters):
+        self.characters = characters
     
-    return tokens
+    def checkLength(self, needed):
+        if len(self.characters) < needed:
+            raise TonedCharactersFromReadingException("Length mismatch: %s vs %s" % (self.characters, needed))
+    
+    def checkToken(self, corresponding, token):
+        if corresponding != unicode(token):
+            raise TonedCharactersFromReadingException("Character mismatch: %s vs %s" % (corresponding, unicode(token)))
+        else:
+            return token
+
+    def visitText(self, text):
+        self.checkLength(len(text))
+        corresponding_text, self.characters = utils.splitat(self.characters, len(text))
+        return self.checkToken(corresponding_text, text)
+    
+    def visitPinyin(self, pinyin):
+        self.checkLength(1)
+        character, self.characters = utils.splitat(self.characters, 1)
+        if character.isdecimal():
+            # Avoid making the numbers from the supplementary dictionary into toned
+            # things, because it confuses users :-)
+            return Text(character)
+        else:
+            return TonedCharacter(character, pinyin.toneinfo)
+    
+    def visitTonedCharacter(self, tonedcharacter):
+        self.checkLength(1)
+        character, self.characters = utils.splitat(self.characters, 1)
+        return self.checkToken(character, tonedcharacter)
 
 """
 Parser class to add diacritical marks to numbered pinyin.
