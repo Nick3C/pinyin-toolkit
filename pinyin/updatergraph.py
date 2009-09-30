@@ -304,7 +304,7 @@ class GraphBasedUpdater(object):
     def update(self, fact, **extrafields):
         # 0) Extract temporary mutable graph to memoize needed values
         nongeneratedfields = [field for field in fact if not isgeneratedfield(field, fact[field])]
-        graph = dict([(field, fact[field]) for field in nongeneratedfields] + extrafields.items())
+        graph = dict([(field, unmarkgeneratedfield(fact[field])) for field in nongeneratedfields] + extrafields.items())
     
         # HACK ALERT: can't think of a nicer way to do this though!
         graph["mwfieldinfact"] = "mw" in fact
@@ -324,6 +324,9 @@ class GraphBasedUpdater(object):
 # TODO: proper management of generated fields, rather than this quasi-backwards-compatible hack
 def isgeneratedfield(key, value):
     return len(value.strip()) == 0 or key == "weblinks"
+
+def unmarkgeneratedfield(value):
+    return value
 
 def markgeneratedfield(value):
     return value
