@@ -10,8 +10,6 @@ from pinyin.utils import Thunk
 from pinyin.mocks import *
 
 
-englishdict = dictionary.PinyinDictionary.loadall()('en')
-
 class FieldUpdaterFromAudioTest(unittest.TestCase):
     def testDoesntDoAnythingWhenDisabled(self):
         self.assertEquals(self.updatefact(u"hen3 hao3", { "audio" : "", "expression" : "junk" }, forcepinyininaudiotosoundtags = False),
@@ -153,34 +151,6 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                     "trad" : u"書", "simp" : u"书"
                   })
     
-    def testFullUpdateGerman(self):
-        self.assertEquals(
-            self.updatefact(u"书", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "trad" : "", "simp" : "" },
-                dictlanguage = "de",
-                colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
-                tonedisplay = "tonified", audiogeneration = True, audioextensions = [".ogg"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"],
-                tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False), {
-                    "reading" : u'<span style="color:#ff0000">shū</span>',
-                    "meaning" : u'Buch, Geschriebenes (S)',
-                    "mw" : u'',
-                    "audio" : u"[sound:" + os.path.join("Test", "shu1.ogg") + "]",
-                    "color" : u'<span style="color:#ff0000">书</span>',
-                    "trad" : u"書", "simp" : u"书"
-                  })
-    
-    def testUpdatePreservesWhitespace(self):
-        self.assertEquals(
-            self.updatefact(u"\t书", { "reading" : "", "color" : "", "trad" : "", "simp" : "" },
-                dictlanguage = "en",
-                colorizedpinyingeneration = False, colorizedcharactergeneration = True, meaninggeneration = False,
-                tonedisplay = "tonified", audiogeneration = False, tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False), {
-                    "reading" : u'\tshū',
-                    "color" : u'\t<span style="color:#ff0000">书</span>',
-                    # TODO: make the simp and trad fields preserve whitespace more reliably by moving away
-                    # from Google Translate as the translator
-                    "trad" : u"\t書", "simp" : u"\t书"
-                  })
-    
     def testDontOverwriteFields(self):
         self.assertEquals(
             self.updatefact(u"书", { "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" },
@@ -197,37 +167,6 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                 colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False,
                 detectmeasurewords = False, audiogeneration = False, weblinkgeneration = False), { "expression" : u"啤酒" })
     
-    def testUpdateMeaningAndMWWithoutMWField(self):
-        self.assertEquals(
-            self.updatefact(u"啤酒", { "expression" : "", "meaning" : "" },
-                colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True, emphasisemainmeaning = False,
-                meaningnumbering = "circledChinese", colormeaningnumbers = False, detectmeasurewords = True, audiogeneration = False, weblinkgeneration = False,
-                forceexpressiontobesimptrad = False), {
-                    "expression" : u"啤酒", "meaning" : u"㊀ beer<br />㊁ MW: 杯 - b\u0113i, 瓶 - p\xedng, 罐 - gu\xe0n, 桶 - t\u01d2ng, 缸 - g\u0101ng"
-                  })
-
-    def testMeaningHanziMasking(self):
-        self.assertEquals(
-            self.updatefact(u"书", { "meaning" : "" },
-                colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False, emphasisemainmeaning = False,
-                tonedisplay = "tonified", meaningnumbering = "circledArabic", colormeaningnumbers = True, meaningnumberingcolor="#123456", meaningseperator = "custom", custommeaningseperator = " | ", prefersimptrad = "simp",
-                audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = True, hanzimaskingcharacter = "MASKED"), {
-                    "meaning" : u'<span style="color:#123456">①</span> book | <span style="color:#123456">②</span> letter | <span style="color:#123456">③</span> same as <span style="color:#123456">MASKED</span><span style="color:#ff0000">\u7ecf</span> Book of History | <span style="color:#123456">④</span> MW: <span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
-                  })
-
-    def testMeaningSurnameMasking(self):
-        self.assertEquals(
-            self.updatefact(u"汪", { "meaning" : "" },
-                meaninggeneration = True, meaningnumbering = "arabicParens", colormeaningnumbers = False, meaningseperator = "lines", emphasisemainmeaning = False), {
-                    "meaning" : u'(1) expanse of water<br />(2) ooze<br />(3) (a surname)',
-                  })
-
-    def testMeaningChineseNumbers(self):
-        self.assertEquals(self.updatefact(u"九千零二十五", { "meaning" : "" }, meaninggeneration = True), { "meaning" : u'9025' })
-
-    def testMeaningWesternNumbersYear(self):
-        self.assertEquals(self.updatefact(u"2001年", { "meaning" : "" }, meaninggeneration = True), { "meaning" : u'2001AD' })
-
     def testUpdateReadingOnly(self):
         self.assertEquals(
             self.updatefact(u"啤酒", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
