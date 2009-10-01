@@ -6,6 +6,7 @@ import config
 from db import database
 import dictionary
 import dictionaryonline
+import factproxy
 import media
 import meanings
 import numbers
@@ -303,8 +304,9 @@ class GraphBasedUpdater(object):
     
     def update(self, fact, **extrafields):
         # 0) Extract temporary mutable graph to memoize needed values
-        nongeneratedfields = [field for field in fact if not isgeneratedfield(field, fact[field])]
-        graph = dict([(field, unmarkgeneratedfield(fact[field])) for field in nongeneratedfields] + extrafields.items())
+        nongeneratedfields = [field for field in fact if not factproxy.isgeneratedfield(field, fact[field])]
+        # TODO: what should happen if some of extrafields are marked as generated?
+        graph = dict([(field, fact[field]) for field in nongeneratedfields] + extrafields.items())
     
         # HACK ALERT: can't think of a nicer way to do this though!
         graph["mwfieldinfact"] = "mw" in fact
@@ -319,14 +321,4 @@ class GraphBasedUpdater(object):
                 if field in nongeneratedfields or field in extrafields:
                     fact[field] = graph[field]
                 else:
-                    fact[field] = markgeneratedfield(graph[field])
-
-# TODO: proper management of generated fields, rather than this quasi-backwards-compatible hack
-def isgeneratedfield(key, value):
-    return len(value.strip()) == 0 or key == "weblinks"
-
-def unmarkgeneratedfield(value):
-    return value
-
-def markgeneratedfield(value):
-    return value
+                    fact[field] = factproxy.markgeneratedfield(graph[field])
