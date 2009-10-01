@@ -6,6 +6,7 @@ import config
 from db import database
 import dictionary
 import dictionaryonline
+import factproxy
 import media
 import meanings
 import numbers
@@ -149,5 +150,21 @@ class FieldUpdaterFromExpression(object):
             # delay, but I'm not sure where the delay originates from, which worries me:
             return
         
-        # Use the new framework to fill out the fact for now
-        self.graphbasedupdater.update(fact, expression=expression)
+        # Use the new framework to fill out the fact for now:
+        known, needed = partitionfact(fact, expression=expression)
+        unpreservedneeded = filter(shouldupdatefield(self.graphbasedupdater.config), needed)
+        for key, value in self.graphbasedupdater.fillneeded(utils.updated(known, { "mwfieldinfact" : "mw" in fact }), unpreservedneeded).items(): # HACK ALERT: can't think of a nicer way to do mwfieldinfact
+            fact[key] = factproxy.markgeneratedfield(value)
+
+def shouldupdatefield(theconfig):
+    return lambda field: config.updatecontrolflags[field] is None or theconfig.settings[config.updatecontrolflags[field]]
+
+def partitionfact(fact, **extraknowns):
+    known, needed = {}, set()
+    for field, value in utils.updated(dict([(key, fact[key]) for key in fact]), extraknowns).items():
+        if factproxy.isgeneratedfield(field, value):
+            needed.add(field)
+        else:
+            known[field] = value
+
+    return (known, needed)

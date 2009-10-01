@@ -6,7 +6,6 @@ import config
 from db import database
 import dictionary
 import dictionaryonline
-import factproxy
 import media
 import meanings
 import numbers
@@ -302,23 +301,12 @@ class GraphBasedUpdater(object):
     
         return fillcore([], field)
     
-    def update(self, fact, **extrafields):
-        # 0) Extract temporary mutable graph to memoize needed values
-        nongeneratedfields = [field for field in fact if not factproxy.isgeneratedfield(field, fact[field])]
-        # TODO: what should happen if some of extrafields are marked as generated?
-        graph = dict([(field, fact[field]) for field in nongeneratedfields] + extrafields.items())
-    
-        # HACK ALERT: can't think of a nicer way to do this though!
-        graph["mwfieldinfact"] = "mw" in fact
+    def fillneeded(self, known, needed):
+        # 0) We are going to memoize stuff within the graph, so copy it
+        graph = known.copy()
     
         # 1) Apply reformattings to the incoming fact
         self.reformat(graph)
     
-        # 2) Fill all fields we actually have on the original fact
-        for field in fact:
-            # ... but only if the user has turned filling on for that field
-            if (config.updatecontrolflags[field] is None or self.config.settings[config.updatecontrolflags[field]]) and self.fill(graph, field):
-                if field in nongeneratedfields or field in extrafields:
-                    fact[field] = graph[field]
-                else:
-                    fact[field] = factproxy.markgeneratedfield(graph[field])
+        # 2) Expand the needed array to a dictionary
+        return dict([(field, graph[field]) for field in needed if self.fill(graph, field)])

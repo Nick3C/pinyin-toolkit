@@ -15,7 +15,7 @@ class FactProxy(object):
         for key, candidateFieldNames in candidateFieldNamesByKey.items():
             # Don't add a key into the dictionary if we can't find a field, or we end
             # up reporting that we the contain the field but die during access
-            fieldname = chooseField(candidateFieldNames, fact)
+            fieldname = chooseField(candidateFieldNames, fact.keys())
             if fieldname is not None:
                 self.fieldnames[key] = fieldname
 
@@ -31,10 +31,10 @@ class FactProxy(object):
     def __setitem__(self, key, value):
         self.fact[self.fieldnames[key]] = value
 
-def chooseField(candidateFieldNames, fact):
+def chooseField(candidateFieldNames, targetkeys):
     # Find the first field that is present in the fact
     for candidateField in candidateFieldNames:
-        for factfieldname in [factfieldname for factfieldname in fact.keys() if factfieldname.lower() == candidateField.lower()]:
+        for factfieldname in [factfieldname for factfieldname in targetkeys if factfieldname.lower() == candidateField.lower()]:
             log.info("Choose %s as a field name from the fact for %s", factfieldname, candidateField)
             return factfieldname
     
