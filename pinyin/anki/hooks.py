@@ -4,6 +4,7 @@
 from PyQt4 import QtGui, QtCore
 
 import anki.utils
+import sqlalchemy
 
 import weakref
 
@@ -37,6 +38,19 @@ class FocusHook(Hook):
         # gotFocus signal :-(. Use weak references to refer to fact edits to prevent memory leak.
         self.knownfactedits = []
     
+    def sessionExistsFor(self, field):
+        # If there is no current deck, DO NOT ask about the field name or
+        # value. This is because the session may be dead, so asking will
+        # generate a sqlalchemy.exc.UnboundExecutionError
+        if self.mw.deck is None or self.mw.deck.s is None:
+            return False
+        
+        try:
+            field.name
+            return True
+        except sqlalchemy.exc.UnboundExecutionError, e:
+            return False
+    
     def makeField(self, factedit, field):
         # Anki lets us hook lostFocus, but we need to go via QT for gotFocus
         self.knownfactedits.append((weakref.ref(factedit), field))
@@ -57,12 +71,18 @@ class FocusHook(Hook):
         self.knownfactedits = trimmedknownfactedits
     
     def onFocusGot(self, field):
+        if not self.sessionExistsFor(field):
+            return
+        
         log.info("User put focus on the field %s", field.name)
         
         # Remember old field contents
         self.knownfieldcontents[field.name] = field.value
     
     def onFocusLost(self, fact, field):
+        if not self.sessionExistsFor(field):
+            return
+        
         log.info("User moved focus from the field %s", field.name)
         
         # Check old field contents against remembered value to determine changed status..
