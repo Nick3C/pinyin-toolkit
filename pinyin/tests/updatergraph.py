@@ -201,16 +201,11 @@ class UpdaterGraphTest(unittest.TestCase):
         
         notifier = MockNotifier()
         gbu = GraphBasedUpdater(notifier, MockMediaManager(mediapacks), pinyin.config.Config(pinyin.utils.updated({ "dictlanguage" : "en" }, configdict)))
-        actual = gbu.fillneeded(known, expected.keys())
+        graph = gbu.filledgraph(known)
+        actual = dict([(key, graph[key]()) for key in expected.keys()])
         
         # Broken down assertion checks here for ease of debugging when they go wrong
-        self.assertEquals(sorted(actual.keys()), sorted([key for key, value in expected.items() if value is not None]))
         for key, expectedval in expected.items():
-            if key not in actual:
-                # Failure to generate the corresponding field is indicated by None in the expected results
-                self.assertEquals(expectedval, None)
-                continue
-            
             actualvalue = actual[key]
             if hasattr(expectedval, "__call__"):
                 # Treat functions on the expected side as custom assertions

@@ -5,6 +5,7 @@ import unittest
 
 import pinyin.config
 from pinyin.db import database
+from pinyin.factproxy import markgeneratedfield
 from pinyin.updater import *
 from pinyin.utils import Thunk
 from pinyin.mocks import *
@@ -129,85 +130,62 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
 
 class FieldUpdaterFromExpressionTest(unittest.TestCase):
     def testAutoBlanking(self):
-        self.assertEquals(self.updatefact(u"", { "reading" : "blather", "meaning" : "junk", "color" : "yes!", "trad" : "meh", "simp" : "yay" }),
-                          { "reading" : "", "meaning" : "", "color" : "", "trad" : "", "simp" : "" })
+        self.assertUpdatesTo(u"", {},
+            { "reading" : "blather", "meaning" : "junk", "color" : "yes!", "trad" : "meh", "simp" : "yay" },
+            { "reading" : "", "meaning" : "", "color" : "", "trad" : "", "simp" : "" })
     
     def testAutoBlankingAudioMeasureWord(self):
         # TODO: test behaviour for audio and measure word, once we know what it should be
         pass
     
-    def testFullUpdate(self):
-        self.assertEquals(
-            self.updatefact(u"书", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "trad" : "", "simp" : "" },
-                colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True, emphasisemainmeaning = False,
-                tonedisplay = "tonified", meaningnumbering = "circledChinese", colormeaningnumbers = False, meaningseperator = "lines", prefersimptrad = "simp",
-                audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False,
-                tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False), {
-                    "reading" : u'<span style="color:#ff0000">shū</span>',
-                    "meaning" : u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History',
-                    "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
-                    "audio" : u"[sound:" + os.path.join("Test", "shu1.mp3") + "]",
-                    "color" : u'<span style="color:#ff0000">书</span>',
-                    "trad" : u"書", "simp" : u"书"
-                  })
+    def testGenerateAllFieldsWhenEmptyOrGenerated(self):
+        config = dict(colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True, emphasisemainmeaning = False,
+                      tonedisplay = "tonified", meaningnumbering = "circledChinese", colormeaningnumbers = False, meaningseperator = "lines", prefersimptrad = "simp",
+                      audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False,
+                      tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False)
+        
+        for default in ["", markgeneratedfield("Generated")]:
+            expected = {
+                "reading" : markgeneratedfield(u'<span style="color:#ff0000">shū</span>'),
+                "meaning" : markgeneratedfield(u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History'),
+                "mw" : markgeneratedfield(u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>'),
+                "audio" : markgeneratedfield(u"[sound:" + os.path.join("Test", "shu1.mp3") + "]"),
+                "color" : markgeneratedfield(u'<span style="color:#ff0000">书</span>'),
+                "trad" : markgeneratedfield(u"書"),
+                "simp" : markgeneratedfield(u"书")
+              }
+            yield (self.assertUpdatesTo, u"书", config, { "reading" : default, "meaning" : default, "mw" : default, "audio" : default, "color" : default, "trad" : default, "simp" : default }, expected)
     
-    def testDontOverwriteFields(self):
-        self.assertEquals(
-            self.updatefact(u"书", { "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" },
-                colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
-                tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
-                audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = True,
-                tradgeneration = True, simpgeneration = True), {
-                    "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g"
-                  })
+    def testDontOverwriteNonGeneratedFields(self):
+        config = dict(colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
+                      tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
+                      audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = True,
+                      tradgeneration = True, simpgeneration = True)
+        self.assertUpdatesTo(u"书", config,
+            { "expression" : "", "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" },
+            { "expression" : u"书", "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" })
     
     def testUpdateExpressionItself(self):
-        self.assertEquals(self.updatefact(u"啤酒", { "expression" : "" }), { "expression" : u"啤酒" })
+        self.assertUpdatesTo(u"啤酒", {}, { "expression" : "" }, { "expression" : u"啤酒" })
+        self.assertUpdatesTo(u"啤酒", {}, { "expression" : "Filled" }, { "expression" : u"啤酒" })
 
     def testWebLinkFieldCanBeMissingAndStaysMissing(self):
-        self.assertEquals(self.updatefact(u"一概", { }, weblinkgeneration = True), { })
+        config = dict(weblinkgeneration = True)
+        self.assertUpdatesTo(u"一概", config, { "expression" : "" }, { "expression" : u"一概" })
     
     def testWebLinksNotBlankedIfDisabled(self):
-        self.assertEquals(self.updatefact(u"一概", { "weblinks": "Nope!" }, weblinkgeneration = False), { "weblinks" : "Nope!" })
+        config = dict(weblinkgeneration = False)
+        self.assertUpdatesTo(u"一概", config, { "expression" : "", "weblinks": "Nope!" }, { "expression" : u"一概", "weblinks" : "Nope!" })
     
-    def testOverwriteExpressionWithSimpTrad(self):
-        self.assertEquals(self.updatefact(u"个個", { "expression" : "" }, forceexpressiontobesimptrad = True, prefersimptrad = "trad"),
-                                                 { "expression"  : u"個個" })
-
-        self.assertEquals(self.updatefact(u"个個", { "expression" : "" }, forceexpressiontobesimptrad = True, prefersimptrad = "simp"),
-                                                 { "expression"  : u"个个" })
-
-    def testOverwriteExpressionWithSimpTradEvenWorksIfFieldFilled(self):
-        self.assertEquals(self.updatefact(u"个個", { "expression" : "I'm Filled!" }, forceexpressiontobesimptrad = True, prefersimptrad = "trad"),
-                                                 { "expression"  : u"個個" })
-
-    def testOverwriteExpressionWithSimpTradCausesColoredCharsToUpdateEvenIfFilled(self):
-        self.assertEquals(
-            self.updatefact(u"个個", { "expression" : "I'm Filled!", "color" : "dummy" },
-                            forceexpressiontobesimptrad = True, prefersimptrad = "trad", tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
-                            { "expression"  : u"個個", "color" : u'<span style="color:#444444">個</span><span style="color:#444444">個</span>' })
-
-    def testDontOverwriteFilledColoredCharactersIfSimpTradDoesntChange(self):
-        self.assertEquals(
-            self.updatefact(u"個個", { "expression" : "I'm Filled!", "color" : "dummy" },
-                            forceexpressiontobesimptrad = True, prefersimptrad = "trad", tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
-                            { "expression"  : u"個個", "color" : "dummy" })
+    def testRefomatExpressionAsSimpTrad(self):
+        self.assertUpdatesTo(u"个個", dict(forceexpressiontobesimptrad = True, prefersimptrad = "trad"), { "expression" : u"个個" }, { "expression"  : u"個個" })
+        self.assertUpdatesTo(u"个個", dict(forceexpressiontobesimptrad = True, prefersimptrad = "simp"), { "expression" : u"个個" }, { "expression"  : u"个个" })
 
     # Test helpers
-    def updatefact(self, *args, **kwargs):
-        infos, fact = self.updatefactwithinfos(*args, **kwargs)
-        return fact
-    
-    def updatefactwithinfos(self, expression, fact, mediapacks = None, **kwargs):
-        notifier = MockNotifier()
-        
-        if mediapacks == None:
-            mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
-                                                    "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
-                                                    "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
-        mediamanager = MockMediaManager(mediapacks)
-        
-        factclone = copy.deepcopy(fact)
-        FieldUpdaterFromExpression(notifier, mediamanager, config.Config(utils.updated({ "dictlanguage" : "en" }, kwargs))).updatefact(factclone, expression)
-        
-        return notifier.infos, factclone
+    def assertUpdatesTo(self, expression, theconfig, incomingfact, expectedfact):
+        mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
+                                                "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
+                                                "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
+        actualfact = copy.deepcopy(incomingfact)
+        FieldUpdaterFromExpression(MockNotifier(), MockMediaManager(mediapacks), config.Config(utils.updated({ "dictlanguage" : "en" }, theconfig))).updatefact(actualfact, expression)
+        self.assertEquals(actualfact, expectedfact)

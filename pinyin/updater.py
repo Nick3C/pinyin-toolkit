@@ -151,17 +151,33 @@ class FieldUpdaterFromExpression(object):
             return
         
         # Use the new framework to fill out the fact for now:
-        known, needed = partitionfact(fact, expression=expression)
+        # fact["expression"] = expression
+        known, needed = partitionfact(fact)
         unpreservedneeded = filter(shouldupdatefield(self.graphbasedupdater.config), needed)
-        for key, value in self.graphbasedupdater.fillneeded(utils.updated(known, { "mwfieldinfact" : "mw" in fact }), unpreservedneeded).items(): # HACK ALERT: can't think of a nicer way to do mwfieldinfact
-            fact[key] = factproxy.markgeneratedfield(value)
+        
+        # Initial graph
+        graph = self.graphbasedupdater.filledgraph(utils.updated(known, { "expression" : expression, "mwfieldinfact" : "mw" in fact })) # HACK ALERT: can't think of a nicer way to do mwfieldinfact
+        
+        # EAGERLY reformat to produce the new expression, which we plop back into the graph again so
+        # other computations can see it. Note that this is potentially unsafe because we might now actually
+        # need to recompute other thunks in the graph that depended on this one. Thankfully, right now
+        # we only have updaters that guarantee not to change the value of an expression which will change
+        # the value of anything *they* force to FIND that new value, so it works out.
+        fact["expression"] = updatergraph.Reformatter(self.graphbasedupdater.config).reformatfield("expression", graph)
+        graph["expression"] = utils.Thunk(lambda: fact["expression"])
+        
+        for field in unpreservedneeded:
+            # TODO: we really shouldn't need this test here!
+            if field != "expression":
+                fact[field] = factproxy.markgeneratedfield(graph[field]())
 
 def shouldupdatefield(theconfig):
     return lambda field: config.updatecontrolflags[field] is None or theconfig.settings[config.updatecontrolflags[field]]
 
-def partitionfact(fact, **extraknowns):
+def partitionfact(fact):
     known, needed = {}, set()
-    for field, value in utils.updated(dict([(key, fact[key]) for key in fact]), extraknowns).items():
+    for field in fact:
+        value = fact[field]
         if factproxy.isgeneratedfield(field, value):
             needed.add(field)
         else:

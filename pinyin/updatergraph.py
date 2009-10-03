@@ -45,19 +45,63 @@ def generateaudio(notifier, mediamanager, config, dictreading):
     
     return output_tags
 
-class GraphBasedUpdater(object):
-    def __init__(self, notifier, mediamanager, config):
-        self.notifier = notifier
-        self.mediamanager = mediamanager
+class Reformatter(object):
+    def __init__(self, config):
         self.config = config
-        self.dictionaries = dictionary.PinyinDictionary.loadall()
-        
         self.reformatters = [
                 ("audio", lambda: self.config.forcepinyininaudiotosoundtags, self.reformataudio, []),
                 ("meaning", lambda: self.config.forcemeaningnumberstobeformatted, self.reformatmeaning, []),
                 ("reading" , lambda: self.config.forcereadingtobeformatted, self.reformatreading, []),
                 ("expression", lambda: self.config.forceexpressiontobesimptrad, self.reformatexpression, ["simptrad"])
             ]
+    
+    def reformataudio(self, audio):
+        output = u""
+        for recognised, match in regexparse(re.compile(ur"\[sound:([^\]]*)\]"), audio):
+            if recognised:
+                # Must be a sound tag - leave it well alone
+                output += match.group(0)
+            else:
+                # Process as if this non-sound tag were a reading, in order to turn it into some tags
+                output += generateaudio(self.notifier, self.mediamanager, self.config, [model.Word(*model.tokenize(match))])
+
+        return output
+
+    def reformatmeaning(self, meaning):
+        output = u""
+        for recognised, match in regexparse(re.compile(ur"\(([0-9]+)\)"), meaning):
+            if recognised:
+                # Should reformat the number
+                output += self.config.meaningnumber(int(match.group(1)))
+            else:
+                # Output is just unicode, append it directly
+                output += match
+
+        return output
+
+    def reformatreading(self, reading):
+        return preparetokens(self.config, [model.Word(*model.tokenize(reading))])
+
+    def reformatexpression(self, expression, simptrad):
+        return simptrad[self.config.prefersimptrad] or expression
+
+    def reformatfield(self, field, graph):
+        for reformatwhat, shouldreformat, reformatter, reformatusings in self.reformatters:
+            if reformatwhat != field:
+                continue
+        
+            print reformatwhat, reformatusings
+            if all([(it in graph) and (graph[it]() is not None) for it in [reformatwhat] + reformatusings]) and shouldreformat():
+                return reformatter(graph[field](), *[graph[reformatusing]() for reformatusing in reformatusings])
+        
+        return graph[field]()
+
+class GraphBasedUpdater(object):
+    def __init__(self, notifier, mediamanager, config):
+        self.notifier = notifier
+        self.mediamanager = mediamanager
+        self.config = config
+        self.dictionaries = dictionary.PinyinDictionary.loadall()
         
         self.updaters = [
                 ("simptrad", self.expression2simptrad, ["expression"]),
@@ -91,36 +135,6 @@ class GraphBasedUpdater(object):
             ]
 
     dictionary = property(lambda self: self.dictionaries(self.config.dictlanguage))
-
-    def reformataudio(self, audio):
-        output = u""
-        for recognised, match in regexparse(re.compile(ur"\[sound:([^\]]*)\]"), audio):
-            if recognised:
-                # Must be a sound tag - leave it well alone
-                output += match.group(0)
-            else:
-                # Process as if this non-sound tag were a reading, in order to turn it into some tags
-                output += generateaudio(self.notifier, self.mediamanager, self.config, [model.Word(*model.tokenize(match))])
-
-        return output
-
-    def reformatmeaning(self, meaning):
-        output = u""
-        for recognised, match in regexparse(re.compile(ur"\(([0-9]+)\)"), meaning):
-            if recognised:
-                # Should reformat the number
-                output += self.config.meaningnumber(int(match.group(1)))
-            else:
-                # Output is just unicode, append it directly
-                output += match
-
-        return output
-
-    def reformatreading(self, reading):
-        return preparetokens(self.config, [model.Word(*model.tokenize(reading))])
-
-    def reformatexpression(self, expression, simptrad):
-        return simptrad[self.config.prefersimptrad] or expression
 
     def expression2simptrad(self, expression):
         result = {}
@@ -262,51 +276,34 @@ class GraphBasedUpdater(object):
         return " ".join(['[<a href="' + urltemplate.replace("{searchTerms}", urlescape(expression)) + '" title="' + tooltip + '">' + text + '</a>]' for text, tooltip, urltemplate in self.config.weblinks])
 
 
-    def reformat(self, graph):
-        for reformatwhat, shouldreformat, reformatter, reformatusings in self.reformatters:
-            # NB: filling during a reformat is a bit dangerous because the reformat might alter the value
-            # of the field such that some of the filled things are now invalid. At the moment I'm just
-            # careful that this is not the case - the only reformatting is for expression, where it requires only
-            # simptrad - and the reformatting it does not mean that simptrad has to change! So we get away with it.
-            if reformatwhat in graph and shouldreformat() and all([self.fill(graph, reformatusing) for reformatusing in reformatusings]):
-                graph[reformatwhat] = reformatter(graph[reformatwhat], *[graph[reformatusing] for reformatusing in reformatusings])
-
     def fill(self, graph, field):
-        def fillcore(wantstack, want):
-            # If we're already trying to fill this field, we can't do it this way
-            # because we are in a cycle. Better backtrack.
-            if want in wantstack:
-                return False
+        # Bbetter try and compute the field contents from dependent fields.
+        # NB: there may be more than one way to fill out a field. We take the view
+        # that any valid way to fill out a field is acceptable, and don't try
+        # and prioritise any particular path right now.
+        for updatewhat, updatefunction, updateusings in self.updaters:
+            if updatewhat != field:
+                continue
     
-            # If the field is already full, we are done!
-            if want in graph and graph[want] is not None:
-                return True
-    
-            # Otherwise, better try and compute the field contents from dependent fields.
-            # NB: there may be more than one way to fill out a field. We take the view
-            # that any valid way to fill out a field is acceptable, and don't try
-            # and prioritise any particular path right now.
-            for updatewhat, updatefunction, updateusings in self.updaters:
-                if updatewhat != want:
-                    continue
+            # Satisfy dependencies of the update function recursively (via the thunks in the graph)
+            if all([(updateusing in graph) and (graph[updateusing]() is not None) for updateusing in updateusings]):
+                value = updatefunction(*[graph[updateusing]() for updateusing in updateusings])
+                if value is not None:
+                    return value
+
+        # All else failed. We're just going to have to give up!
+        return None
+
+    def filledgraph(self, known):
+        graph = {}
         
-                # Satisfy dependencies of the update function recursively
-                if all([fillcore(wantstack + [want], updateusing) for updateusing in updateusings]):
-                    graph[want] = updatefunction(*[graph[updateusing] for updateusing in updateusings])
-                    if graph[want] is not None:
-                        return True
-    
-            # All else failed. We're just going to have to give up!
-            return False
-    
-        return fillcore([], field)
-    
-    def fillneeded(self, known, needed):
-        # 0) We are going to memoize stuff within the graph, so copy it
-        graph = known.copy()
-    
-        # 1) Apply reformattings to the incoming fact
-        self.reformat(graph)
-    
-        # 2) Expand the needed array to a dictionary
-        return dict([(field, graph[field]) for field in needed if self.fill(graph, field)])
+        # Fill with known facts to begin with - wrap in thunks so that we know everything in
+        # the graph is certainly a thunk
+        for field in known:
+            graph[field] = Thunk(lambda field=field: known[field])
+        
+        # Fill all things we know how to reach which are not known facts with that computation
+        for field in set([field for field, _, _ in self.updaters if field not in known]):
+            graph[field] = Thunk(lambda field=field: self.fill(graph, field))
+        
+        return graph
