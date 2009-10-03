@@ -162,69 +162,7 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                   })
     
     def testUpdateExpressionItself(self):
-        self.assertEquals(
-            self.updatefact(u"啤酒", { "expression" : "" },
-                colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False,
-                detectmeasurewords = False, audiogeneration = False, weblinkgeneration = False), { "expression" : u"啤酒" })
-    
-    def testUpdateReadingOnly(self):
-        self.assertEquals(
-            self.updatefact(u"啤酒", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
-                colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False,
-                detectmeasurewords = False, audiogeneration = False, tonedisplay = "numeric", weblinkgeneration = False), {
-                    "reading" : u'pi2 jiu3', "meaning" : "", "mw" : "", "audio" : "", "color" : ""
-                  })
-    
-    def testUpdateReadingAndMeaning(self):
-        self.assertEquals(
-            self.updatefact(u"㝵", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : "" },
-                colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False, tonedisplay = "numeric", emphasisemainmeaning = False,
-                meaningnumbering = "arabicParens", colormeaningnumbers = True, meaningnumberingcolor = "#123456", meaningseperator = "commas", prefersimptrad = "trad",
-                audiogeneration = False, tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False), {
-                    "reading" : u'<span style="color:#ffaa00">de2</span>',
-                    "meaning" : u'<span style="color:#123456">(1)</span> to obtain, <span style="color:#123456">(2)</span> archaic variant of <span style="color:#ffaa00">得</span> - <span style="color:#ffaa00">de2</span>, <span style="color:#123456">(3)</span> component in <span style="color:#0000ff">礙</span> - <span style="color:#0000ff">ai4</span> and <span style="color:#ffaa00">鍀</span> - <span style="color:#ffaa00">de2</span>',
-                    "mw" : "", "audio" : "", "color" : "", "weblinks" : ""
-                  })
-    
-    def testUpdateReadingAndMeasureWord(self):
-        self.assertEquals(
-            self.updatefact(u"丈夫", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : "" },
-                colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = True,
-                tonedisplay = "numeric", prefersimptrad = "trad", audiogeneration = False, weblinkgeneration = False), {
-                    "reading" : u'zhang4 fu', "meaning" : u'',
-                    "mw" : u"個 - ge4", "audio" : "", "color" : "", "weblinks" : ""
-                  })
-    
-    def testUpdateReadingAndAudio(self):
-        self.assertEquals(
-            self.updatefact(u"三七開", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : "" },
-                colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = False,
-                tonedisplay = "tonified", audiogeneration = True, audioextensions = [".mp3", ".ogg"], weblinkgeneration = False), {
-                    "reading" : u'sān qī kāi', "meaning" : u'', "mw" : "",
-                    "audio" : u"[sound:" + os.path.join("Test", "san1.mp3") + "]" +
-                              u"[sound:" + os.path.join("Test", "qi1.ogg") + "]" +
-                              u"[sound:" + os.path.join("Test", "location/Kai1.mp3") + "]",
-                    "color" : "", "weblinks" : ""
-                  })
-    
-    def testUpdateReadingAndColoredHanzi(self):
-        self.assertEquals(
-            self.updatefact(u"三峽水库", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : u"" },
-                dictlanguage = "pinyin", colorizedpinyingeneration = False, colorizedcharactergeneration = True, meaninggeneration = False, detectmeasurewords = False,
-                tonedisplay = "numeric", audiogeneration = False, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"], weblinkgeneration = False), {
-                    "reading" : u'san1 xia2 shui3 ku4', "meaning" : u'', "mw" : "", "audio" : "",
-                    "color" : u'<span style="color:#111111">三</span><span style="color:#222222">峽</span><span style="color:#333333">水</span><span style="color:#444444">库</span>', "weblinks" : ""
-                  })
-    
-    def testUpdateReadingAndLinks(self):
-        self.assertEquals(
-            self.updatefact(u"一概", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "", "weblinks" : "Yes, I get overwritten!" },
-                colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = False,
-                tonedisplay = "numeric", audiogeneration = False, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"],
-                weblinkgeneration = True, weblinks = [("YEAH!", "mytitle", "silly{searchTerms}url"), ("NAY!", "myothertitle", "verysilly{searchTerms}url")]), {
-                    "reading" : u'yi1 gai4', "meaning" : u'', "mw" : "", "audio" : "", "color" : u'',
-                    "weblinks" : u'[<a href="silly%E4%B8%80%E6%A6%82url" title="mytitle">YEAH!</a>] [<a href="verysilly%E4%B8%80%E6%A6%82url" title="myothertitle">NAY!</a>]'
-                  })
+        self.assertEquals(self.updatefact(u"啤酒", { "expression" : "" }), { "expression" : u"啤酒" })
 
     def testWebLinkFieldCanBeMissingAndStaysMissing(self):
         self.assertEquals(self.updatefact(u"一概", { }, weblinkgeneration = True), { })
@@ -232,63 +170,6 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
     def testWebLinksNotBlankedIfDisabled(self):
         self.assertEquals(self.updatefact(u"一概", { "weblinks": "Nope!" }, weblinkgeneration = False), { "weblinks" : "Nope!" })
     
-    def testReadingFromWesternNumbers(self):
-        self.assertEquals(self.updatefact(u"111", { "reading" : "" }, colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
-                                                  { "reading" : u'<span style="color:#333333">b\u01cei</span> <span style="color:#111111">y\u012b</span> <span style="color:#222222">sh\xed</span> <span style="color:#111111">y\u012b</span>' })
-    
-    def testNotifiedUponAudioGenerationWithNoPacks(self):
-        infos, fact = self.updatefactwithinfos(u"三月", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
-                            mediapacks = [],
-                            colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = False,
-                            tonedisplay = "numeric", audiogeneration = True)
-        
-        self.assertEquals(fact, { "reading" : u'san1 yue4', "meaning" : u'', "mw" : "", "audio" : "", "color" : "" })
-        self.assertEquals(len(infos), 1)
-        self.assertTrue("cannot" in infos[0])
-    
-    def testUpdateMeasureWordAudio(self):
-        quantitydigitpinyin = ["yi1", "liang3", "liang2", "san1", "si4", "wu3", "wu2", "liu4", "qi1", "ba1", "jiu3", "jiu2", "ji3", "ji2"]
-        allpinyin = quantitydigitpinyin + ["pi2", "bei1", "ping2", "guan4", "tong3", "tong2", "gang1"]
-        
-        pack = media.MediaPack("MWAudio", dict([(pinyin + ".mp3", pinyin + ".mp3") for pinyin in allpinyin]))
-        
-        # NB: turning off meaninggeneration here triggers a bug that happened in 0.6 where
-        # we wouldn't set up the dictmeasurewords for the mwaudio
-        mwaudio = self.updatefact(u"啤酒", { "mwaudio" : "" }, meaninggeneration = False, detectmeasurewords = False, mwaudiogeneration = True, audioextensions = [".mp3", ".ogg"], mediapacks = [pack])["mwaudio"]
-        for quantitydigit in quantitydigitpinyin:
-            mwaudio = mwaudio.replace(quantitydigit, "X")
-        
-        # jiu3 in the numbers aliases with jiu3 in the characters :(
-        sounds = ["X", "bei1", "pi2", "X",
-                  "X", "ping2", "pi2", "X",
-                  "X", "guan4", "pi2", "X",
-                  "X", "tong3", "pi2", "X",
-                  "X", "gang1", "pi2", "X"]
-        self.assertEquals(mwaudio, "".join([u"[sound:" + os.path.join("MWAudio", sound + ".mp3") + "]" for sound in sounds]))
-
-    def testFallBackOnGoogleForPhrase(self):
-        self.assertEquals(
-            self.updatefact(u"你好，你是我的朋友吗", { "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "color" : "" },
-                fallbackongoogletranslate = True,
-                colorizedpinyingeneration = False, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False,
-                tonedisplay = "numeric", audiogeneration = False, hanzimasking = False), {
-                    "reading" : u'ni3 hao3, ni3 shi4 wo3 de peng2 you ma',
-                    "meaning" : u'Hello, you are my friend do<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
-                    "mw" : "", "audio" : "", "color" : ""
-                  })
-
-    def testUpdateSimplifiedTraditional(self):
-        self.assertEquals(
-            self.updatefact(u"个個", { "simp" : "", "trad" : "" },
-                simpgeneration = True, tradgeneration = True), {
-                    "simp"  : u"个个",
-                    "trad" : u"個個"
-                  })
-
-    def testUpdateSimplifiedTraditionalDoesNothingIfSimpTradIdentical(self):
-        self.assertEquals(
-            self.updatefact(u"鼠", { "simp" : "", "trad" : "" }, simpgeneration = True, tradgeneration = True), { "simp"  : u"", "trad" : u"" })
-
     def testOverwriteExpressionWithSimpTrad(self):
         self.assertEquals(self.updatefact(u"个個", { "expression" : "" }, forceexpressiontobesimptrad = True, prefersimptrad = "trad"),
                                                  { "expression"  : u"個個" })
@@ -312,18 +193,6 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                             forceexpressiontobesimptrad = True, prefersimptrad = "trad", tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
                             { "expression"  : u"個個", "color" : "dummy" })
 
-    def testUpdateReadingAndColoredHanziAndAudioWithSandhi(self):
-        self.assertEquals(
-            self.updatefact(u"很好", { "reading" : "", "color" : "", "audio" : "" },
-                colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = False,
-                detectmeasurewords = False, audiogeneration = True, audioextensions = [".mp3"], tonedisplay = "numeric",
-                tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False), {
-                    "reading" : u'<span style="color:#66cc66">hen3</span> <span style="color:#00aa00">hao3</span>',
-                    "color" : u'<span style="color:#66cc66">很</span><span style="color:#00aa00">好</span>',
-                    "audio" : u"[sound:" + os.path.join("Test", "hen2.mp3") + "]" +
-                              u"[sound:" + os.path.join("Test", "hao3.mp3") + "]"
-                  })
-    
     # Test helpers
     def updatefact(self, *args, **kwargs):
         infos, fact = self.updatefactwithinfos(*args, **kwargs)
