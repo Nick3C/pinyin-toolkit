@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import copy
+from functools import partial
 import unittest
 from testutils import *
 
@@ -12,9 +13,9 @@ from pinyin.utils import Thunk
 from pinyin.mocks import *
 
 
-def assertUpdatesTo(updater, expression, theconfig, incomingfact, expectedfact, mediapacks=[]):
+def assertUpdatesTo(updater, expression, theconfig, incomingfact, expectedfact, mediapacks=[], **kwargs):
     actualfact = copy.deepcopy(incomingfact)
-    updater(MockNotifier(), MockMediaManager(mediapacks), config.Config(utils.updated({ "dictlanguage" : "en" }, theconfig))).updatefact(actualfact, expression)
+    updater(MockNotifier(), MockMediaManager(mediapacks), config.Config(utils.updated({ "dictlanguage" : "en" }, theconfig))).updatefact(actualfact, expression, **kwargs)
     assert_dict_equal(actualfact, expectedfact, values_as_assertions=True)
 
 class FieldUpdaterFromAudioTest(unittest.TestCase):
@@ -40,7 +41,7 @@ class FieldUpdaterFromAudioTest(unittest.TestCase):
         mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
                                                 "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
                                                 "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
-        assertUpdatesTo(FieldUpdaterFromAudio, *args, mediapacks=mediapacks)
+        assertUpdatesTo(partial(FieldUpdater, "audio"), *args, mediapacks=mediapacks)
 
 class FieldUpdaterFromMeaningTest(unittest.TestCase):
     def testDoesntReformatWhenDisabled(self):
@@ -57,7 +58,7 @@ class FieldUpdaterFromMeaningTest(unittest.TestCase):
     
     # Test helpers
     def assertUpdatesTo(self, *args):
-        assertUpdatesTo(FieldUpdaterFromMeaning, *args)
+        assertUpdatesTo(partial(FieldUpdater, "meaning"), *args)
 
 class FieldUpdaterFromReadingTest(unittest.TestCase):
     def testDoesntReformatWhenDisabled(self):
@@ -65,9 +66,9 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
         self.assertUpdatesTo(u"hen3 hǎo", config, { "reading" : "", "expression" : "junk" }, { "reading" : u"hen3 hǎo", "expression" : "junk" })
     
     def testDoesSomethingWhenDisabledIfAlways(self):
-        fact = { "reading" : "", "expression" : "junk" }
-        FieldUpdaterFromReading(MockNotifier(), MockMediaManager([]), config.Config({ "forcereadingtobeformatted" : False })).updatefactalways(fact, u"also junk")
-        self.assertEquals(fact, { "reading" : "also junk", "expression" : "junk" })
+        self.assertUpdatesTo(u"also junk", { "forcereadingtobeformatted" : False },
+            { "reading" : "", "expression" : "junk" },
+            { "reading" : lambda reading: len(reading) > 0 and reading != "also junk", "expression" : "junk" }, alwaysreformat=True)
     
     def testLeavesOtherFieldsAlone(self):
         config = dict(forcereadingtobeformatted = True)
@@ -90,8 +91,8 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
             { "reading" : u'<span style=\"\"><span style="color: red">hen3</span></span> <span style="color:#333333">hao3</span>' })
 
     # Test helpers
-    def assertUpdatesTo(self, *args):
-        assertUpdatesTo(FieldUpdaterFromReading, *args)
+    def assertUpdatesTo(self, *args, **kwargs):
+        assertUpdatesTo(partial(FieldUpdater, "reading"), *args, **kwargs)
 
 class TestFieldUpdaterFromExpression(object):
     def testAutoBlankingGenerated(self):

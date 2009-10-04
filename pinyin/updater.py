@@ -31,7 +31,7 @@ class FieldUpdater(object):
         self.graphbasedupdater = updatergraph.GraphBasedUpdater(*args)
         self.reformatter = updatergraph.Reformatter(*args)
 
-    def updatefact(self, fact, value):
+    def updatefact(self, fact, value, alwaysreformat=False):
         # Use the new framework to fill out the fact for now:
         known, needed = partitionfact(fact)
         unpreservedneeded = filter(shouldupdatefield(self.graphbasedupdater.config), needed)
@@ -44,7 +44,7 @@ class FieldUpdater(object):
         # need to recompute other thunks in the graph that depended on this one. Thankfully, right now
         # we only have updaters that guarantee not to change the value of an expression which will change
         # the value of anything *they* force to FIND that new value, so it works out.
-        fact[self.field] = self.reformatter.reformatfield(self.field, graph)
+        fact[self.field] = self.reformatter.reformatfield(self.field, graph, alwaysreformat=alwaysreformat)
         graph[self.field] = utils.Thunk(lambda: fact[self.field])
 
         for field in unpreservedneeded:

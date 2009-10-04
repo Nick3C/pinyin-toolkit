@@ -41,7 +41,7 @@ def generateaudio(notifier, mediamanager, config, dictreading):
     output_tags = u""
     for outputfile in output:
         # Install required media in the deck as we go, getting the canonical string to insert into the sound field upon installation
-        output_tags += "[sound:%s]" % mediamanager.importtocurrentdeck(os.path.join(mediapack.packpath, outputfile))
+        output_tags += u"[sound:%s]" % mediamanager.importtocurrentdeck(os.path.join(mediapack.packpath, outputfile))
     
     return output_tags
 
@@ -87,12 +87,12 @@ class Reformatter(object):
     def reformatexpression(self, expression, simptrad):
         return simptrad[self.config.prefersimptrad] or expression
 
-    def reformatfield(self, field, graph):
+    def reformatfield(self, field, graph, alwaysreformat=False):
         for reformatwhat, shouldreformat, reformatter, reformatusings in self.reformatters:
             if reformatwhat != field:
                 continue
         
-            if all([(it in graph) and (graph[it]() is not None) for it in [reformatwhat] + reformatusings]) and shouldreformat():
+            if all([(it in graph) and (graph[it]() is not None) for it in [reformatwhat] + reformatusings]) and (alwaysreformat or shouldreformat()):
                 return reformatter(graph[field](), *[graph[reformatusing]() for reformatusing in reformatusings])
         
         return graph[field]()
@@ -157,18 +157,18 @@ class GraphBasedUpdater(object):
     def expression2dictmeaningsmwssource(self, expression):
         dictmeaningssources = [
                 # Use CEDICT to get meanings
-                ("",
+                (u"",
                  lambda: self.dictionary.meanings(expression, self.config.prefersimptrad)),
                 # Interpret Hanzi as numbers. NB: only consult after CEDICT so that we
                 # handle curious numbers such as 'liang' using the dictionary
-                ("",
+                (u"",
                  lambda: (numbers.meaningfromnumberlike(expression, self.dictionary), None))
             ] + (self.config.shouldusegoogletranslate and [
                 # If the dictionary can't answer our question, ask Google Translate.
                 # If there is a long word followed by another word then this will be treated as a phrase.
                 # Phrases are also queried using googletranslate rather than the local dictionary.
                 # This helps deal with small dictionaries (for example French)
-                ('<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
+                (u'<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
                  lambda: (dictionaryonline.gTrans(expression, self.config.dictlanguage), None))
             ] or [])
         
@@ -203,8 +203,8 @@ class GraphBasedUpdater(object):
         meanings = [meaning for meaning in [preparetokens(self.config, dictmeaning) for dictmeaning in dictmeanings] if meaning.strip != '']
         
         # Scan through the meanings and replace instances of 'surname Foo' with a masked version
-        lookslikesurname = lambda what: what.lower().startswith("surname ") and " " not in what[len("surname ")]
-        meanings = [lookslikesurname(meaning) and "(a surname)" or meaning for meaning in meanings]
+        lookslikesurname = lambda what: what.lower().startswith(u"surname ") and u" " not in what[len("surname ")]
+        meanings = [lookslikesurname(meaning) and u"(a surname)" or meaning for meaning in meanings]
         
         if len(meanings) == 0:
             # After flattening and stripping, we didn't get any meanings: don't update the field
@@ -275,7 +275,7 @@ class GraphBasedUpdater(object):
 
     def expression2weblinks(self, expression):
         # Generate a list of links to online dictionaries, etc to query the expression
-        return " ".join(['[<a href="' + urltemplate.replace("{searchTerms}", urlescape(expression)) + '" title="' + tooltip + '">' + text + '</a>]' for text, tooltip, urltemplate in self.config.weblinks])
+        return u" ".join([u'[<a href="' + urltemplate.replace(u"{searchTerms}", urlescape(expression)) + u'" title="' + tooltip + u'">' + text + u'</a>]' for text, tooltip, urltemplate in self.config.weblinks])
 
 
     def fill(self, graph, field):
