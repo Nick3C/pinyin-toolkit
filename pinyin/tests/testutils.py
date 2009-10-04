@@ -29,3 +29,16 @@ def assert_dict_equal(actual, expected, values_as_assertions=False):
     
     if len(differences) > 0:
         raise AssertionError("\n".join(["Differences at:"] + [u"%r: %r != %r" % item for item in differences]))
+
+
+identitymediadict = lambda pinyins: dict([(pinyin + ".mp3", pinyin + ".mp3") for pinyin in pinyins])
+
+quantitydigitpinyin = ["yi1", "liang3", "liang2", "san1", "si4", "wu3", "wu2", "liu4", "qi1", "ba1", "jiu3", "jiu2", "ji3", "ji2"]
+quantitydigitmediadict = identitymediadict(quantitydigitpinyin)
+
+def sanitizequantitydigits(mwaudio):
+    for quantitydigit in quantitydigitpinyin:
+        mwaudio = mwaudio.replace(quantitydigit, "X")
+    return mwaudio
+
+

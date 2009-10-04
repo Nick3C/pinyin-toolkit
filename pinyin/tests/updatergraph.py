@@ -142,22 +142,16 @@ class UpdaterGraphTest(unittest.TestCase):
     def testUpdateMeasureWordAudio(self):
         config = dict(audioextensions = [".mp3", ".ogg"])
         
-        quantitydigitpinyin = ["yi1", "liang3", "liang2", "san1", "si4", "wu3", "wu2", "liu4", "qi1", "ba1", "jiu3", "jiu2", "ji3", "ji2"]
-        allpinyin = quantitydigitpinyin + ["pi2", "bei1", "ping2", "guan4", "tong3", "tong2", "gang1"]
-
-        pack = media.MediaPack("MWAudio", dict([(pinyin + ".mp3", pinyin + ".mp3") for pinyin in allpinyin]))
+        pack = media.MediaPack("MWAudio", updated(identitymediadict(["pi2", "bei1", "ping2", "guan4", "tong3", "tong2", "gang1"]), quantitydigitmediadict))
 
         def mwaudioassert(mwaudio):
-            for quantitydigit in quantitydigitpinyin:
-                mwaudio = mwaudio.replace(quantitydigit, "X")
-            
             # jiu3 in the numbers aliases with jiu3 in the characters :(
             sounds = ["X", "bei1", "pi2", "X",
                       "X", "ping2", "pi2", "X",
                       "X", "guan4", "pi2", "X",
                       "X", "tong3", "pi2", "X",
                       "X", "gang1", "pi2", "X"]
-            self.assertEquals(mwaudio, "".join([u"[sound:" + os.path.join("MWAudio", sound + ".mp3") + "]" for sound in sounds]))
+            self.assertEquals(sanitizequantitydigits(mwaudio), "".join([u"[sound:" + os.path.join("MWAudio", sound + ".mp3") + "]" for sound in sounds]))
 
         # NB: turning off meaninggeneration here triggers a bug that happened in 0.6 where
         # we wouldn't set up the dictmeasurewords for the mwaudio

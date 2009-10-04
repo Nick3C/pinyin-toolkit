@@ -129,20 +129,16 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
         FieldUpdaterFromReading(config.Config(kwargs)).updatefact(factclone, reading)
         return factclone
 
-class FieldUpdaterFromExpressionTest(object):
+class TestFieldUpdaterFromExpression(object):
     def testAutoBlanking(self):
         self.assertUpdatesTo(u"", {},
             { "reading" : "blather", "meaning" : "junk", "color" : "yes!", "trad" : "meh", "simp" : "yay" },
             { "reading" : "", "meaning" : "", "color" : "", "trad" : "", "simp" : "" })
     
-    def testAutoBlankingAudioMeasureWord(self):
-        # TODO: test behaviour for audio and measure word, once we know what it should be
-        pass
-    
     def testGenerateAllFieldsWhenEmptyOrGenerated(self):
         config = dict(colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True, emphasisemainmeaning = False,
                       tonedisplay = "tonified", meaningnumbering = "circledChinese", colormeaningnumbers = False, meaningseperator = "lines", prefersimptrad = "simp",
-                      audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False,
+                      audiogeneration = True, mwaudiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False,
                       tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False)
         
         for default in ["", markgeneratedfield("Generated")]:
@@ -152,20 +148,21 @@ class FieldUpdaterFromExpressionTest(object):
                 "meaning" : markgeneratedfield(u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History'),
                 "mw" : markgeneratedfield(u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>'),
                 "audio" : markgeneratedfield(u"[sound:" + os.path.join("Test", "shu1.mp3") + "]"),
+                "mwaudio" : lambda mwaudio: assert_equal(sanitizequantitydigits(mwaudio), markgeneratedfield((u"[sound:" + os.path.join("Test", "X.mp3") + u"][sound:" + os.path.join("Test", "shu1.mp3") + "]") * 4)),
                 "color" : markgeneratedfield(u'<span style="color:#ff0000">书</span>'),
                 "trad" : markgeneratedfield(u"書"),
                 "simp" : markgeneratedfield(u"书")
               }
-            yield (self.assertUpdatesTo, u"书", config, { "reading" : default, "meaning" : default, "mw" : default, "audio" : default, "color" : default, "trad" : default, "simp" : default }, expected)
+            yield self.assertUpdatesTo, u"书", config, { "reading" : default, "meaning" : default, "mw" : default, "audio" : default, "mwaudio" : default, "color" : default, "trad" : default, "simp" : default }, expected
     
     def testDontOverwriteNonGeneratedFields(self):
         config = dict(colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
                       tonedisplay = "tonified", meaningnumbering = "circledChinese", meaningseperator = "lines", prefersimptrad = "simp",
-                      audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = True,
+                      audiogeneration = True, mwaudiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = True,
                       tradgeneration = True, simpgeneration = True)
         self.assertUpdatesTo(u"书", config,
-            { "expression" : "", "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" },
-            { "expression" : u"书", "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" })
+            { "expression" : "", "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "mwaudio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" },
+            { "expression" : u"书", "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "mwaudio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" })
     
     def testUpdateControlFlags(self):
         baseconfig = dict(readinggeneration = False, colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = False,
@@ -195,10 +192,10 @@ class FieldUpdaterFromExpressionTest(object):
         self.assertUpdatesTo(u"个個", dict(forceexpressiontobesimptrad = True, prefersimptrad = "simp"), { "expression" : u"个個" }, { "expression"  : u"个个" })
 
     # Test helpers
-    def assertUpdatesTo(self, expression, theconfig, incomingfact, expectedfact):
-        mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
-                                                "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
-                                                "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
+    def assertUpdatesTo(self, expression, theconfig, incomingfact, expectedfact, extraaudio=None):
+        mediapacks = [media.MediaPack("Test", utils.updated(
+                        { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg", "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg",
+                          "Kai1.mp3" : "location/Kai1.mp3", "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" }, quantitydigitmediadict))]
         actualfact = copy.deepcopy(incomingfact)
         FieldUpdaterFromExpression(MockNotifier(), MockMediaManager(mediapacks), config.Config(utils.updated({ "dictlanguage" : "en" }, theconfig))).updatefact(actualfact, expression)
         assert_dict_equal(actualfact, expectedfact, values_as_assertions=True)
