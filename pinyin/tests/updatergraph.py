@@ -196,7 +196,7 @@ class UpdaterGraphTest(unittest.TestCase):
         
         notifier = MockNotifier()
         gbu = GraphBasedUpdater(notifier, MockMediaManager(mediapacks), pinyin.config.Config(pinyin.utils.updated({ "dictlanguage" : "en" }, configdict)))
-        graph = gbu.filledgraph(known)
+        graph = gbu.filledgraph({}, known)
         
-        assert_dict_equal(dict([(key, graph[key]()) for key in expected.keys()]), expected, values_as_assertions=True)
+        assert_dict_equal(dict([(key, graph[key][1]()) for key in expected.keys()]), expected, values_as_assertions=True)
         notifierassertion(notifier)

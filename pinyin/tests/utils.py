@@ -39,6 +39,11 @@ class CumulativeTest(unittest.TestCase):
         self.assertEquals(list(cumulative([1, 2, 3, 2, 1])), [1, 3, 6, 8, 9])
 
 class SortingTest(unittest.TestCase):
+    def testSortedUsing(self):
+        items = { "hello" : 1, "wide" : 2, "world" : 4 }
+        self.assertEquals(sorted(["wide", "hello", "world"], using(items.get, inReverse())), ["world", "wide", "hello"])
+        self.assertEquals(sorted(["wide", "hello", "world"], using(items.get)), ["hello", "wide", "world"])
+    
     def testSortedByFirst(self):
         self.assertEquals(sorted([(5, "1"), (2, "4"), (3, "2"), (1, "5"), (4, "3")], byFirst), [(1, "5"), (2, "4"), (3, "2"), (4, "3"), (5, "1")])
     

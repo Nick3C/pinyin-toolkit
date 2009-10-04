@@ -32,12 +32,8 @@ class FieldUpdater(object):
         self.reformatter = updatergraph.Reformatter(*args)
 
     def updatefact(self, fact, value, alwaysreformat=False):
-        # Use the new framework to fill out the fact for now:
-        known, needed = partitionfact(fact)
-        unpreservedneeded = filter(shouldupdatefield(self.graphbasedupdater.config), needed)
-
         # Initial graph
-        graph = self.graphbasedupdater.filledgraph(utils.updated(known, { self.field : value, "mwfieldinfact" : "mw" in fact })) # HACK ALERT: can't think of a nicer way to do mwfieldinfact
+        graph = self.graphbasedupdater.filledgraph(fact, { self.field : value, "mwfieldinfact" : "mw" in fact }) # HACK ALERT: can't think of a nicer way to do mwfieldinfact
 
         # EAGERLY reformat to produce the new value, which we plop back into the graph again so
         # other computations can see it. Note that this is potentially unsafe because we might now actually
@@ -45,12 +41,11 @@ class FieldUpdater(object):
         # we only have updaters that guarantee not to change the value of an expression which will change
         # the value of anything *they* force to FIND that new value, so it works out.
         fact[self.field] = self.reformatter.reformatfield(self.field, graph, alwaysreformat=alwaysreformat)
-        graph[self.field] = utils.Thunk(lambda: fact[self.field])
+        graph[self.field] = (False, utils.Thunk(lambda: fact[self.field]))
 
-        for field in unpreservedneeded:
-            # TODO: we really shouldn't need this test here!
-            if field != self.field:
-                fact[field] = factproxy.markgeneratedfield(graph[field]())
+        for field in fact:
+            if shouldupdatefield(self.graphbasedupdater.config)(field):
+                fact[field] = (graph[field][0] and factproxy.markgeneratedfield or (lambda x: x))(graph[field][1]())
 
 class FieldUpdaterFromExpression(FieldUpdater):
     def __init__(self, *args):

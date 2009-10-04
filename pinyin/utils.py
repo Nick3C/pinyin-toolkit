@@ -299,6 +299,12 @@ def parseHtmlColor(color):
     return int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
 
 """
+Sorting combinator: sort using a projected quantity.
+"""
+def using(proj, how=cmp):
+    return lambda x, y: how(proj(x), proj(y))
+
+"""
 Sorting combinator: sort by first element
 """
 def byFirst(x, y):
@@ -365,6 +371,9 @@ def splitat(what, n):
         raise ValueError("You cannot splitat at a point later than the end of the string")
     return what[0:n], what[n:]
 
+def seq(x, y):
+    return y()
+
 def first(f):
     def go(xy):
         x, y = xy
@@ -378,6 +387,12 @@ def second(f):
         return (x, f(y))
     
     return go
+
+def cond(test, tb, fb):
+    if test:
+        return tb()
+    else:
+        return fb()
 
 def intersperse(what, things):
     first = True

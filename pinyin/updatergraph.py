@@ -6,6 +6,7 @@ import config
 from db import database
 import dictionary
 import dictionaryonline
+from factproxy import isgeneratedfield, unmarkgeneratedfield
 import media
 import meanings
 import numbers
@@ -92,10 +93,10 @@ class Reformatter(object):
             if reformatwhat != field:
                 continue
         
-            if all([(it in graph) and (graph[it]() is not None) for it in [reformatwhat] + reformatusings]) and (alwaysreformat or shouldreformat()):
-                return reformatter(graph[field](), *[graph[reformatusing]() for reformatusing in reformatusings])
+            if all([(it in graph) and (graph[it][1]() is not None) for it in [reformatwhat] + reformatusings]) and (alwaysreformat or shouldreformat()):
+                return reformatter(graph[field][1](), *[graph[reformatusing][1]() for reformatusing in reformatusings])
         
-        return graph[field]()
+        return graph[field][1]()
 
 class GraphBasedUpdater(object):
     def __init__(self, notifier, mediamanager, config):
@@ -278,35 +279,59 @@ class GraphBasedUpdater(object):
         return u" ".join([u'[<a href="' + urltemplate.replace(u"{searchTerms}", urlescape(expression)) + u'" title="' + tooltip + u'">' + text + u'</a>]' for text, tooltip, urltemplate in self.config.weblinks])
 
 
-    def fill(self, graph, field):
-        # Bbetter try and compute the field contents from dependent fields.
-        # NB: there may be more than one way to fill out a field. We take the view
-        # that any valid way to fill out a field is acceptable, and don't try
-        # and prioritise any particular path right now.
-        for updatewhat, updatefunction, updateusings in self.updaters:
-            if updatewhat != field:
-                continue
-    
-            # Satisfy dependencies of the update function recursively (via the thunks in the graph)
-            if all([(updateusing in graph) and (graph[updateusing]() is not None) for updateusing in updateusings]):
-                value = updatefunction(*[graph[updateusing]() for updateusing in updateusings])
-                if value is not None:
-                    return value
-
-        # All else failed. We're just going to have to give up!
-        return None
-
-    def filledgraph(self, known):
+    def filledgraph(self, fact, delta):
         graph = {}
+        dirty = {}
         
-        # Fill with known facts to begin with - wrap in thunks so that we know everything in
-        # the graph is certainly a thunk
-        for field in known:
-            graph[field] = Thunk(lambda field=field: known[field])
+        anyusingsdirty = lambda usings: any([dirty[using] for using in usings])
         
-        # Fill all things we know how to reach which are not known facts with that computation
-        for field in self.updateablefields:
-            if field not in known:
-                graph[field] = Thunk(lambda field=field: self.fill(graph, field))
+        def shell(alreadyfilled):
+            # Gather all the fields we are newly able to fill given the most recent changes
+            # to the list of already filled things
+            cannowfill = FactoryDict(lambda _: [])
+            for updatewhat, updatefunction, updateusings in self.updaters:
+                if updatewhat not in alreadyfilled and all([updateusing in alreadyfilled for updateusing in updateusings]):
+                    # We have to delay the computation of whether something is dirty or not until we are inside
+                    # the actual thunk for this particular field, hence all the thunking and lambdas here
+                    inputs = Thunk(lambda updateusings=updateusings: [graph[updateusing][1]() for updateusing in updateusings])
+                    cannowfill[updatewhat].append((lambda inputs=inputs, updatefunction=updatefunction: updatefunction(*(inputs())),
+                                                   lambda inputs=inputs, updateusings=updateusings: seq(inputs(), lambda: anyusingsdirty(updateusings))))
+            
+            # Check for quiescence
+            if len(cannowfill) == 0:
+                # NB: could do something with the unfilled set (self.updateablefields.difference(alreadyfilled)) here
+                return
+            
+            # Set up each fillable graph field with a thunk computing the value
+            for field, possiblefillers in cannowfill.items():
+                def fillme(field=field, possiblefillers=possiblefillers):
+                    # For preference, use a filler that will certainly return clean information
+                    for fillerfunction, inputsdirty in sorted([(x, y()) for x, y in possiblefillers], bySecond):
+                        if field not in fact or inputsdirty:
+                            # Don't know what the last value was or it may have changed: recompute
+                            result = fillerfunction()
+                            if result is None:
+                                continue
+                            
+                            dirty[field] = cond(field in fact, lambda: result != unmarkgeneratedfield(fact[field]), lambda: inputsdirty)
+                            return result
+                        else:
+                            # Last value must not have changed: retain it
+                            assert (field in fact and not inputsdirty)
+                            dirty[field] = False
+                            return unmarkgeneratedfield(fact[field])
+                
+                graph[field] = (True, Thunk(fillme))
+            
+            shell(alreadyfilled.union(set(cannowfill.keys())))
+        
+        # The initial shell contains just the stuff that is non-generated or being set in this round.
+        # Everything else will be generated based off of these values
+        initiallyfilledfields = set([field for field in fact if not isgeneratedfield(field, fact[field])]).union(set(delta.keys()))
+        for field in initiallyfilledfields:
+            dirty[field] = field in delta
+            graph[field] = (False, Thunk(lambda field=field: cond(field in delta, lambda: delta[field], lambda: fact[field])))
+        
+        shell(initiallyfilledfields)
         
         return graph
