@@ -2,6 +2,7 @@
 
 import copy
 import unittest
+from testutils import *
 
 import pinyin.config
 from pinyin.db import database
@@ -202,15 +203,6 @@ class UpdaterGraphTest(unittest.TestCase):
         notifier = MockNotifier()
         gbu = GraphBasedUpdater(notifier, MockMediaManager(mediapacks), pinyin.config.Config(pinyin.utils.updated({ "dictlanguage" : "en" }, configdict)))
         graph = gbu.filledgraph(known)
-        actual = dict([(key, graph[key]()) for key in expected.keys()])
         
-        # Broken down assertion checks here for ease of debugging when they go wrong
-        for key, expectedval in expected.items():
-            actualvalue = actual[key]
-            if hasattr(expectedval, "__call__"):
-                # Treat functions on the expected side as custom assertions
-                expectedval(actualvalue)
-            else:
-                self.assertEquals(actualvalue, expectedval)
-
+        assert_dict_equal(dict([(key, graph[key]()) for key in expected.keys()]), expected, values_as_assertions=True)
         notifierassertion(notifier)

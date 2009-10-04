@@ -2,10 +2,11 @@
 
 import copy
 import unittest
+from testutils import *
 
 import pinyin.config
 from pinyin.db import database
-from pinyin.factproxy import markgeneratedfield
+from pinyin.factproxy import markgeneratedfield, isgeneratedfield
 from pinyin.updater import *
 from pinyin.utils import Thunk
 from pinyin.mocks import *
@@ -128,7 +129,7 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
         FieldUpdaterFromReading(config.Config(kwargs)).updatefact(factclone, reading)
         return factclone
 
-class FieldUpdaterFromExpressionTest(unittest.TestCase):
+class FieldUpdaterFromExpressionTest(object):
     def testAutoBlanking(self):
         self.assertUpdatesTo(u"", {},
             { "reading" : "blather", "meaning" : "junk", "color" : "yes!", "trad" : "meh", "simp" : "yay" },
@@ -146,6 +147,7 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
         
         for default in ["", markgeneratedfield("Generated")]:
             expected = {
+                "expression" : u"书",
                 "reading" : markgeneratedfield(u'<span style="color:#ff0000">shū</span>'),
                 "meaning" : markgeneratedfield(u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History'),
                 "mw" : markgeneratedfield(u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>'),
@@ -164,6 +166,17 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
         self.assertUpdatesTo(u"书", config,
             { "expression" : "", "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" },
             { "expression" : u"书", "reading" : "a", "meaning" : "b", "mw" : "c", "audio" : "[sound:foo.mp3]", "color" : "e", "trad" : "f", "simp" : "g" })
+    
+    def testUpdateControlFlags(self):
+        baseconfig = dict(readinggeneration = False, colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = False, detectmeasurewords = False,
+                          audiogeneration = False, mwaudiogeneration = False, weblinkgeneration = False, tradgeneration = False, simpgeneration = False, forceexpressiontobesimptrad = False)
+        blank = { "expression" : u"书", "reading" : "", "meaning" : "", "mw" : "", "audio" : "", "mwaudio" : "", "color" : "", "trad" : "", "simp" : "" }
+        for field, flag in config.updatecontrolflags.items():
+            if flag is None or field == 'weblinks':
+                continue
+            
+            expected = utils.updated(dict(**blank), { field : lambda s, field=field: assert_true(isgeneratedfield(field, s) and len(s) > 0) })
+            yield self.assertUpdatesTo, u"书", utils.updated(dict(**baseconfig), { flag : True }), blank, expected
     
     def testUpdateExpressionItself(self):
         self.assertUpdatesTo(u"啤酒", {}, { "expression" : "" }, { "expression" : u"啤酒" })
@@ -188,4 +201,4 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                                                 "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
         actualfact = copy.deepcopy(incomingfact)
         FieldUpdaterFromExpression(MockNotifier(), MockMediaManager(mediapacks), config.Config(utils.updated({ "dictlanguage" : "en" }, theconfig))).updatefact(actualfact, expression)
-        self.assertEquals(actualfact, expectedfact)
+        assert_dict_equal(actualfact, expectedfact, values_as_assertions=True)

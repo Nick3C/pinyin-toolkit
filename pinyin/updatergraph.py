@@ -90,7 +90,6 @@ class Reformatter(object):
             if reformatwhat != field:
                 continue
         
-            print reformatwhat, reformatusings
             if all([(it in graph) and (graph[it]() is not None) for it in [reformatwhat] + reformatusings]) and shouldreformat():
                 return reformatter(graph[field](), *[graph[reformatusing]() for reformatusing in reformatusings])
         
