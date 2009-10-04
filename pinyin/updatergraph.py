@@ -133,6 +133,7 @@ class GraphBasedUpdater(object):
                 ("weblinks", self.expression2weblinks, ["expression"])
             ]
 
+    updateablefields = property(lambda self: set([field for field, _, _ in self.updaters]))
     dictionary = property(lambda self: self.dictionaries(self.config.dictlanguage))
 
     def expression2simptrad(self, expression):
@@ -302,7 +303,8 @@ class GraphBasedUpdater(object):
             graph[field] = Thunk(lambda field=field: known[field])
         
         # Fill all things we know how to reach which are not known facts with that computation
-        for field in set([field for field, _, _ in self.updaters if field not in known]):
-            graph[field] = Thunk(lambda field=field: self.fill(graph, field))
+        for field in self.updateablefields:
+            if field not in known:
+                graph[field] = Thunk(lambda field=field: self.fill(graph, field))
         
         return graph

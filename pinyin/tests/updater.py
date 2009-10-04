@@ -130,10 +130,22 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
         return factclone
 
 class TestFieldUpdaterFromExpression(object):
-    def testAutoBlanking(self):
-        self.assertUpdatesTo(u"", {},
-            { "reading" : "blather", "meaning" : "junk", "color" : "yes!", "trad" : "meh", "simp" : "yay" },
-            { "reading" : "", "meaning" : "", "color" : "", "trad" : "", "simp" : "" })
+    def testAutoBlankingGenerated(self):
+        self.assertUpdatesTo(u"", {}, {
+              "reading" : markgeneratedfield("blather"),
+              "meaning" : markgeneratedfield("junk"), 
+              "color" : markgeneratedfield("yes!"), 
+              "trad" : markgeneratedfield("meh"), 
+              "simp" : markgeneratedfield("yay"), 
+              "audio" : markgeneratedfield("moo"), 
+              "mwaudio" : markgeneratedfield("mehh"), 
+              "mw" : markgeneratedfield("a mw")
+            },
+            { "reading" : "", "meaning" : "", "color" : "", "trad" : "", "simp" : "", "audio" : "", "mwaudio" : "", "mw" : "" })
+    
+    def testDosentAutoBlankNonGenerated(self):
+        nonempty = { "reading" : "a", "meaning" : "b", "color" : "c", "trad" : "d", "simp" : "e", "audio" : "f", "mwaudio" : "g", "mw" : "h" }
+        self.assertUpdatesTo(u"", {}, nonempty, nonempty)
     
     def testGenerateAllFieldsWhenEmptyOrGenerated(self):
         config = dict(colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True, emphasisemainmeaning = False,

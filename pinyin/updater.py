@@ -125,26 +125,10 @@ class FieldUpdaterFromExpression(object):
     
     def updatefact(self, fact, expression):
         # AutoBlanking Feature - If there is no expression, zeros relevant fields
-        # DEBUG - add feature to store the text when a lookup is performed. When new text is entered then allow auto-blank any field that has not been edited
         if expression == None or expression.strip() == u"":
-            for key in ["reading", "meaning", "color", "trad", "simp", "weblinks"]:
-                if key in fact:
-                    fact[key] = u""
-            
-            # DEBUG Me - Auto generated pinyin should be at least "[sound:" + ".xxx]" (12 characters) plus pinyin (max 6). i.e. 18
-            # DEBUG - Split string around "][" to get the audio of each sound in an array. Blank the field unless any one string is longer than 20 characters
-            # Exploit the fact that pinyin text-to-speech pinyin should be no longer than 18 characters to guess that anything longer is user generated
-            # MaxB comment: I don't think that will work, because we import the Chinese-Lessons.com Mandarin Sounds into anki and it gives them /long/ names.
-            # Instead, how about we check if all of the audio files referenced are files in the format pinyin<tone>.mp3?
-            if 'audio' in fact and len(fact['audio']) < 40:
-                fact['audio'] = u""
-            
-            # For now this is a compromise in safety and function.
-            # longest MW should be: "? - zhangì (9 char)
-            # shortest possible is "? - ge" 6 char so we will autoblank if less than 12 letters
-            # this means blanking will occur if one measure word is there but not if two (so if user added any they are safe)
-            if 'mw' in fact and len(fact['mw']) < 12: 
-                fact['mw'] = u""
+            for field in self.graphbasedupdater.updateablefields:
+                if field in fact and factproxy.isgeneratedfield(field, fact[field]):
+                    fact[field] = u""
             
             # TODO: Nick added this to give up after auto-blanking. He claims it removes a minor
             # delay, but I'm not sure where the delay originates from, which worries me:
