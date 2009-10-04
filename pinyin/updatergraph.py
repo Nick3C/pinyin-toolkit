@@ -46,7 +46,9 @@ def generateaudio(notifier, mediamanager, config, dictreading):
     return output_tags
 
 class Reformatter(object):
-    def __init__(self, config):
+    def __init__(self, notifier, mediamanager, config):
+        self.notifier = notifier
+        self.mediamanager = mediamanager
         self.config = config
         self.reformatters = [
                 ("audio", lambda: self.config.forcepinyininaudiotosoundtags, self.reformataudio, []),

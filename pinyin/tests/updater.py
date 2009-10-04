@@ -12,122 +12,86 @@ from pinyin.utils import Thunk
 from pinyin.mocks import *
 
 
-class FieldUpdaterFromAudioTest(unittest.TestCase):
-    def testDoesntDoAnythingWhenDisabled(self):
-        self.assertEquals(self.updatefact(u"hen3 hao3", { "audio" : "", "expression" : "junk" }, forcepinyininaudiotosoundtags = False),
-                          { "audio" : "", "expression" : "junk" })
-    
-    def testWorksIfFieldMissing(self):
-        self.assertEquals(self.updatefact(u"hen3 hao3", { "expression" : "junk" }, forcepinyininaudiotosoundtags = True),
-                          { "expression" : "junk" })
+def assertUpdatesTo(updater, expression, theconfig, incomingfact, expectedfact, mediapacks=[]):
+    actualfact = copy.deepcopy(incomingfact)
+    updater(MockNotifier(), MockMediaManager(mediapacks), config.Config(utils.updated({ "dictlanguage" : "en" }, theconfig))).updatefact(actualfact, expression)
+    assert_dict_equal(actualfact, expectedfact, values_as_assertions=True)
 
+class FieldUpdaterFromAudioTest(unittest.TestCase):
+    def testDoesntReformatWhenDisabled(self):
+        self.assertUpdatesTo(u"hen3 hao3", dict(forcepinyininaudiotosoundtags = False), { "audio" : "", "expression" : "junk" }, { "audio" : "hen3 hao3", "expression" : "junk" })
+    
     def testLeavesOtherFieldsAlone(self):
-        self.assertEquals(self.updatefact(u"", { "audio" : "junk", "expression" : "junk" }, forcepinyininaudiotosoundtags = True),
-                          { "audio" : u"", "expression" : "junk" })
+        self.assertUpdatesTo(u"", dict(forcepinyininaudiotosoundtags = True), { "audio" : "junk", "expression" : "junk" }, { "audio" : u"", "expression" : "junk" })
 
     def testReformatsAccordingToConfig(self):
         henhaoaudio = u"[sound:" + os.path.join("Test", "hen3.mp3") + "][sound:" + os.path.join("Test", "hao3.mp3") + "]"
 
-        self.assertEquals(
-            self.updatefact(u"hen3 hao3", { "audio" : "junky" }, forcepinyininaudiotosoundtags = True),
-            { "audio" : henhaoaudio })
-        self.assertEquals(
-            self.updatefact(u"hen3,hǎo", { "audio" : "junky" }, forcepinyininaudiotosoundtags = True),
-            { "audio" : henhaoaudio })
+        self.assertUpdatesTo(u"hen3 hao3", dict(forcepinyininaudiotosoundtags = True), { "audio" : "junky" }, { "audio" : henhaoaudio })
+        self.assertUpdatesTo(u"hen3,hǎo", dict(forcepinyininaudiotosoundtags = True), { "audio" : "junky" }, { "audio" : henhaoaudio })
     
     def testDoesntModifySoundTags(self):
-        self.assertEquals(
-            self.updatefact(u"[sound:aeuth34t0914bnu.mp3][sound:ae390n32uh2ub.mp3]", { "audio" : "" }, forcepinyininaudiotosoundtags = True),
-            { "audio" : u"[sound:aeuth34t0914bnu.mp3][sound:ae390n32uh2ub.mp3]" })
-        self.assertEquals(
-            self.updatefact(u"[sound:hen3.mp3][sound:hao3.mp3]", { "audio" : "" }, forcepinyininaudiotosoundtags = True),
-            { "audio" : u"[sound:hen3.mp3][sound:hao3.mp3]" })
+        config = dict(forcepinyininaudiotosoundtags = True)
+        self.assertUpdatesTo(u"[sound:aeuth34t0914bnu.mp3][sound:ae390n32uh2ub.mp3]", config, { "audio" : "" }, { "audio" : u"[sound:aeuth34t0914bnu.mp3][sound:ae390n32uh2ub.mp3]" })
+        self.assertUpdatesTo(u"[sound:hen3.mp3][sound:hao3.mp3]", config, { "audio" : "" }, { "audio" : u"[sound:hen3.mp3][sound:hao3.mp3]" })
     
     # Test helpers
-    def updatefact(self, *args, **kwargs):
-        infos, fact = self.updatefactwithinfos(*args, **kwargs)
-        return fact
-
-    def updatefactwithinfos(self, audio, fact, mediapacks = None, **kwargs):
-        notifier = MockNotifier()
-
-        if mediapacks == None:
-            mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
-                                                    "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
-                                                    "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
-        mediamanager = MockMediaManager(mediapacks)
-
-        factclone = copy.deepcopy(fact)
-        FieldUpdaterFromAudio(notifier, mediamanager, config.Config(kwargs)).updatefact(factclone, audio)
-
-        return notifier.infos, factclone
+    def assertUpdatesTo(self, *args):
+        mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
+                                                "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
+                                                "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
+        assertUpdatesTo(FieldUpdaterFromAudio, *args, mediapacks=mediapacks)
 
 class FieldUpdaterFromMeaningTest(unittest.TestCase):
-    def testDoesntDoAnythingWhenDisabled(self):
-        self.assertEquals(self.updatefact(u"(1) yes (2) no", { "meaning" : "", "expression" : "junk" }, forcemeaningnumberstobeformatted = False),
-                          { "meaning" : "", "expression" : "junk" })
+    def testDoesntReformatWhenDisabled(self):
+        config = dict(forcemeaningnumberstobeformatted = False)
+        self.assertUpdatesTo(u"(1) yes (2) no", config, { "meaning" : "", "expression" : "junk" }, { "meaning" : "(1) yes (2) no", "expression" : "junk" })
     
-    def testWorksIfFieldMissing(self):
-        self.assertEquals(self.updatefact(u"(1) yes (2) no", { "expression" : "junk" }, forcemeaningnumberstobeformatted = True),
-                          { "expression" : "junk" })
-
     def testLeavesOtherFieldsAlone(self):
-        self.assertEquals(self.updatefact(u"", { "meaning" : "junk", "expression" : "junk" }, forcemeaningnumberstobeformatted = True),
-                          { "meaning" : u"", "expression" : "junk" })
+        config = dict(forcemeaningnumberstobeformatted = True)
+        self.assertUpdatesTo(u"", config, { "meaning" : "junk", "expression" : "junk" }, { "meaning" : u"", "expression" : "junk" })
 
     def testReformatsAccordingToConfig(self):
-        self.assertEquals(
-            self.updatefact(u"(1) yes (2) no", { "meaning" : "junky" },
-                forcemeaningnumberstobeformatted = True, meaningnumbering = "circledArabic", colormeaningnumbers = False),
-                { "meaning" : u"① yes ② no" })
-        self.assertEquals(
-            self.updatefact(u"(10) yes 2 no", { "meaning" : "junky" },
-                forcemeaningnumberstobeformatted = True, meaningnumbering = "none", colormeaningnumbers = False),
-                { "meaning" : u" yes 2 no" })
+        self.assertUpdatesTo(u"(1) yes (2) no", dict(forcemeaningnumberstobeformatted = True, meaningnumbering = "circledArabic", colormeaningnumbers = False), { "meaning" : "junky" }, { "meaning" : u"① yes ② no" })
+        self.assertUpdatesTo(u"(10) yes 2 no", dict(forcemeaningnumberstobeformatted = True, meaningnumbering = "none", colormeaningnumbers = False), { "meaning" : "junky" }, { "meaning" : u" yes 2 no" })
     
     # Test helpers
-    def updatefact(self, reading, fact, **kwargs):
-        factclone = copy.deepcopy(fact)
-        FieldUpdaterFromMeaning(config.Config(kwargs)).updatefact(factclone, reading)
-        return factclone
+    def assertUpdatesTo(self, *args):
+        assertUpdatesTo(FieldUpdaterFromMeaning, *args)
 
 class FieldUpdaterFromReadingTest(unittest.TestCase):
-    def testDoesntDoAnythingWhenDisabled(self):
-        self.assertEquals(self.updatefact(u"hen3 hǎo", { "reading" : "", "expression" : "junk" }, forcereadingtobeformatted = False),
-                          { "reading" : "", "expression" : "junk" })
+    def testDoesntReformatWhenDisabled(self):
+        config = dict(forcereadingtobeformatted = False)
+        self.assertUpdatesTo(u"hen3 hǎo", config, { "reading" : "", "expression" : "junk" }, { "reading" : u"hen3 hǎo", "expression" : "junk" })
     
     def testDoesSomethingWhenDisabledIfAlways(self):
         fact = { "reading" : "", "expression" : "junk" }
-        FieldUpdaterFromReading(config.Config({ "forcereadingtobeformatted" : False })).updatefactalways(fact, u"also junk")
+        FieldUpdaterFromReading(MockNotifier(), MockMediaManager([]), config.Config({ "forcereadingtobeformatted" : False })).updatefactalways(fact, u"also junk")
         self.assertEquals(fact, { "reading" : "also junk", "expression" : "junk" })
     
-    def testWorksIfFieldMissing(self):
-        self.assertEquals(self.updatefact(u"hen3 hǎo", { "expression" : "junk" }, forcereadingtobeformatted = True),
-                          { "expression" : "junk" })
-
     def testLeavesOtherFieldsAlone(self):
-        self.assertEquals(self.updatefact(u"", { "reading" : "junk", "expression" : "junk" }, forcereadingtobeformatted = True),
-                          { "reading" : u"", "expression" : "junk" })
+        config = dict(forcereadingtobeformatted = True)
+        self.assertUpdatesTo(u"", config,
+            { "reading" : "junk", "expression" : "junk" },
+            { "reading" : u"", "expression" : "junk" })
 
     def testReformatsAccordingToConfig(self):
-        self.assertEquals(
-            self.updatefact(u"hen3 hǎo", { "reading" : "junky" },
-                forcereadingtobeformatted = True, tonedisplay = "tonified",
-                colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
-                { "reading" : u'<span style="color:#333333">hěn</span> <span style="color:#333333">hǎo</span>' })
+        config = dict(forcereadingtobeformatted = True, tonedisplay = "tonified",
+                      colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"])
+        self.assertUpdatesTo(u"hen3 hǎo", config,
+            { "reading" : "junky" },
+            { "reading" : u'<span style="color:#333333">hěn</span> <span style="color:#333333">hǎo</span>' })
     
     def testReformattingRespectsExistingColorization(self):
-        self.assertEquals(
-            self.updatefact(u"<span style='color: red'>hen3</span> hǎo", { "reading" : "junky" },
-                forcereadingtobeformatted = True, tonedisplay = "numeric",
-                colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"]),
-                { "reading" : u'<span style=\"\"><span style="color: red">hen3</span></span> <span style="color:#333333">hao3</span>' })
+        config = dict(forcereadingtobeformatted = True, tonedisplay = "numeric",
+                      colorizedpinyingeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"])
+        self.assertUpdatesTo(u"<span style='color: red'>hen3</span> hǎo", config,
+            { "reading" : "junky" },
+            { "reading" : u'<span style=\"\"><span style="color: red">hen3</span></span> <span style="color:#333333">hao3</span>' })
 
     # Test helpers
-    def updatefact(self, reading, fact, **kwargs):
-        factclone = copy.deepcopy(fact)
-        FieldUpdaterFromReading(config.Config(kwargs)).updatefact(factclone, reading)
-        return factclone
+    def assertUpdatesTo(self, *args):
+        assertUpdatesTo(FieldUpdaterFromReading, *args)
 
 class TestFieldUpdaterFromExpression(object):
     def testAutoBlankingGenerated(self):
@@ -204,10 +168,8 @@ class TestFieldUpdaterFromExpression(object):
         self.assertUpdatesTo(u"个個", dict(forceexpressiontobesimptrad = True, prefersimptrad = "simp"), { "expression" : u"个個" }, { "expression"  : u"个个" })
 
     # Test helpers
-    def assertUpdatesTo(self, expression, theconfig, incomingfact, expectedfact, extraaudio=None):
+    def assertUpdatesTo(self, *args):
         mediapacks = [media.MediaPack("Test", utils.updated(
                         { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg", "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg",
                           "Kai1.mp3" : "location/Kai1.mp3", "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" }, quantitydigitmediadict))]
-        actualfact = copy.deepcopy(incomingfact)
-        FieldUpdaterFromExpression(MockNotifier(), MockMediaManager(mediapacks), config.Config(utils.updated({ "dictlanguage" : "en" }, theconfig))).updatefact(actualfact, expression)
-        assert_dict_equal(actualfact, expectedfact, values_as_assertions=True)
+        assertUpdatesTo(FieldUpdaterFromExpression, *args, mediapacks=mediapacks)
