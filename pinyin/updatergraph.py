@@ -120,10 +120,10 @@ class GraphBasedUpdater(object):
                 ("mergeddictmws", lambda x: x[1], ["mergeddictmeaningsmws"]),
                 ("meaning", self.dictmeaningsmws2meaning, ["expression", "mergeddictmeanings", "dictmeaningssource"]), # Need expression for Hanzi masking
         
-                ("mergeddictmeaningsmws", self.meaning2mergeddictmeaningsmws, ["meaning"]),
+                #("mergeddictmeaningsmws", self.meaning2mergeddictmeaningsmws, ["meaning"]),
         
                 ("dictmws", lambda x: x[1], ["dictmeaningsmws"]),
-                ("dictmws", self.mw2dictmws, ["mw"]), # TODO: think carefully about this and mergeddictmws for the update story here
+                #("dictmws", self.mw2dictmws, ["mw"]), # TODO: think carefully about this and mergeddictmws for the update story here
                 ("mw", self.mergeddictmws2mw, ["mergeddictmws"]),
                 ("mwaudio", self.mergeddictmwdictreading2mwaudio, ["dictmws", "dictreading"]), # Need dictreading for the noun
         
