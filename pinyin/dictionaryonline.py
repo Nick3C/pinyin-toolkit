@@ -37,7 +37,7 @@ def gTrans(query, destlanguage='en', prompterror=True):
             return None
     except ValueError, e:
         # Not an internet problem
-        log.exception("Error while parsing Google response: %s" % repr(literal))
+        log.exception("Error while interpreting translation response from Google")
         if prompterror:
             return [[Word(Text('<span style="color:gray">[Error In Google Translate Response]</span>'))]]
         else:
@@ -72,11 +72,11 @@ def lookup(query, destlanguage):
         
     # Parse the response:
     try:
-        log.info("Parsing response %s from Google", literal)
+        log.info("Parsing response %r from Google", literal)
         result = parsegoogleresponse(literal)
     except ValueError, e:
         # Give the exception a more precise error message for debugging
-        raise ValueError("Error while parsing translation response from Google")
+        raise ValueError("Error while parsing translation response from Google: %s" % str(e))
     
     # What sort of result did we get?
     if isinstance(result, basestring):
@@ -99,10 +99,37 @@ def lookup(query, destlanguage):
         try:
             return [[Word(Text(result[0]))]] + [[Word(Text(definition[0].capitalize() + ": " + ", ".join(definition[1:])))] for definition in result[1]]
         except IndexError:
-            raise ValueError("Result %s from Google Translate looked like a definition but was not in the expected format" % result)
+            raise ValueError("Result %s from Google Translate looked like a definition but was not in the expected list format" % str(result))
+    elif isinstance(result, dict):
+        # Oh dear, they have devised another method of returning results. This time, it looks like this:
+        # {"sentences":[{"trans":"Hello, you are my friend?",
+        #                "orig":"你好，你是我的朋友吗？",
+        #                "translit":""}],
+        #              "src":"zh-CN"}
+        # {"sentences":[{"trans":"Well",
+        #                "orig":"好",
+        #                "translit":""}],
+        #  "dict":[{"pos":"verb",
+        #           "terms":["like","love"]},
+        #          {"pos":"adjective",
+        #           "terms":["good"]},
+        #          {"pos":"adverb",
+        #           "terms":["fine","OK","okay","okey","okey dokey","well"]},
+        #          {"pos":"interjection",
+        #           "terms":["OK!","okay!","okey!"]}],
+        #  "src":"en"}
+        try:
+            sentences = " ".join([sentence["trans"] for sentence in result["sentences"]])
+            if sentences == query:
+                # The result was, unhelpfully, what we queried. Give up:
+                return None
+            else:
+                return [[Word(Text(sentences))]] + [[Word(Text(definition["pos"].capitalize() + ": " + ", ".join(definition["terms"])))] for definition in result.get("dict", [])]
+        except KeyError:
+            raise ValueError("Result %s from Google Translate looked like a definition but was not in the expected dict format" % str(result))
     else:
         # Haven't seen any other case in the wild
-        raise ValueError("Couldn't deal with the correctly-parsed response %s from Google" % result)
+        raise ValueError("Couldn't deal with the correctly-parsed response %s from Google" % str(result))
 
 def parsegoogleresponse(response):
     # This code is basically a hand-rolled (and rather specialised) LL parser
@@ -110,17 +137,15 @@ def parsegoogleresponse(response):
     #  * String literals (with escaping) of the form "foo\tbar", possibly containing Unicode
     #  * Numeric literals (returned as longs)
     #  * List literals
+    #  * Dictionary literals
     
     itemseperatorregex = re.compile('\\s*,')
     listendregex = re.compile('\\s*\\]')
+    kvpseperatorregex = re.compile('\\s*:')
+    dictendregex = re.compile('\\s*\\}')
     
-    # Utility to consume from the string using the regex and return the new string if successful
-    def munch(regex, what):
-        match = regex.match(what)
-        if match:
-            return what[match.end():]
-        else:
-            return None
+    def literaltoken(match, what):
+        return match, what
     
     def stringtoken(match, what):
         # Remove escape characters from the captured string with eval - nasty!
@@ -131,53 +156,90 @@ def parsegoogleresponse(response):
         return long(match.group(0)), what
     
     def listtoken(match, what):
-        list = []
+        thelist = []
         while True:
             # Process this list item
-            item, what = parse(what)
-            list.append(item)
+            item, what = expraction(what)
+            thelist.append(item)
             
             # End of item - must be followed by a comma or closing bracket
-            whataftercomma = munch(itemseperatorregex, what)
+            whataftercomma = makemunchaction(itemseperatorregex)(what)
             if whataftercomma is None:
-                # No comma - must be list end
-                what = munch(listendregex, what)
-                if what is None:
-                    # No list end - very confusing!
-                    raise ValueError("Unexpected end of list with no closing bracket")
-                else:
-                    # End of list: continue after the closing bracket
-                    return list, what
+                # End of list: continue after the closing bracket
+                return thelist, unfailing("the end of a list", makemunchaction(listendregex))(what)
             else:
                 # Comma: expect another item, so continue after the comma
                 what = whataftercomma
     
-    def whitespacetoken(match, what):
-        return parse(what)
+    def dicttoken(match, what):
+        thedict = {}
+        while True:
+            # Process this dict key/value pair
+            key, what = expraction(what)
+            _, what = unfailing("a dictionary key-value pair seperator", makeparseaction(kvpseperatorregex, literaltoken))(what)
+            value, what = expraction(what)
+            thedict[key] = value
+            
+            # End of item - must be followed by a comma or closing bracket
+            whataftercomma = makemunchaction(itemseperatorregex)(what)
+            if whataftercomma is None:
+                # End of dict: continue after the closing brace
+                return thedict, unfailing("the end of a dictionary", makemunchaction(dictendregex))(what)
+            else:
+                # Comma: expect another item, so continue after the comma
+                what = whataftercomma
     
+    # Utility to consume from the string using the regex and return the new string if successful
+    makemunchaction = lambda regex: makeparseaction(regex, lambda match, what: what)
+
+    def makeparseaction(regex, processor):
+        def inner(what):
+            match = regex.match(what)
+        
+            # Run processor if the regular expression matches
+            if match:
+                return processor(match, what[match.end():])
+            else:
+                return None
+        
+        return inner
+    
+    def makechoiceaction(actions):
+        def inner(what):
+            # Match processors from top to bottom
+            for action in actions:
+                result = action(what)
+                if result:
+                    return result
+
+            return None
+        
+        return inner
+
+    def unfailing(text, action):
+        def inner(what):
+            result = action(what)
+            if result is None:
+                raise ValueError("Couldn't parse %s when expecting %s" % (repr(what), text))
+            else:
+                return result
+            
+        return inner
+
     # Action table keyed off regular expressions.  Matched top to bottom against
     # the current string, with the corresponding token handler fired if the regex
     # can deal with it.
-    actions = [
-        (re.compile('"((?:[^\\\\"]|\\\\.)*)"'), stringtoken),
-        (re.compile('-?[0-9]+'), numbertoken),
-        (re.compile('\\['), listtoken),
-        (re.compile('\\s+'), whitespacetoken)
-      ]
+    stringaction = makeparseaction(re.compile('"((?:[^\\\\"]|\\\\.)*)"'), stringtoken)
+    intaction = makeparseaction(re.compile('-?[0-9]+'), numbertoken)
+    listaction = makeparseaction(re.compile('\\['), listtoken)
+    dictaction = makeparseaction(re.compile('\\{'), dicttoken)
     
     # Parse loop using the action table
-    def parse(what):
-        # Match processors from top to bottom
-        for regex, processor in actions:
-            # Run processor if the regular expression matches
-            match = regex.match(what)
-            if match:
-                return processor(match, what[match.end():])
-        
-        raise ValueError("Couldn't parse %s" % repr(what))
+    whitespacetoken = lambda match, what: expraction(what)
+    expraction = unfailing("an expression", makechoiceaction([stringaction, intaction, listaction, dictaction, makeparseaction(re.compile('\\s+'), whitespacetoken)]))
     
     # Use the constructed action table to parse the supplied string
-    value, rest = parse(response)
+    value, rest = expraction(response)
     if len(rest) != 0:
         raise ValueError("Unexpected trailing characters %s" % repr(rest))
     else:

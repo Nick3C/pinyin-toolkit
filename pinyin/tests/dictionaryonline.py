@@ -28,8 +28,15 @@ class ParseGoogleResponseTest(unittest.TestCase):
     def testParseListOfLists(self):
         self.assertEquals(parsegoogleresponse('[1, [2, [3, 4]], [5, 6]]'), [1, [2, [3, 4]], [5, 6]])
     
+    def testParseDict(self):
+        self.assertEquals(parsegoogleresponse('{"fruit" : "orange", 1 : 2, "buy" : 1337}'), {"fruit" : "orange", 1 : 2, "buy" : 1337})
+    
+    def testParseDictOfDicts(self):
+        self.assertEquals(parsegoogleresponse('{"fruits" : {"orange" : 1, "banana" : 2}, "numbers" : {1337 : ["cool"], 13 : ["bad", "unlucky"]}}'),
+                                              {"fruits" : {"orange" : 1, "banana" : 2}, "numbers" : {1337 : ["cool"], 13 : ["bad", "unlucky"]}})
+    
     def testParseWhitespace(self):
-        self.assertEquals(parsegoogleresponse('[ 1    ,"hello",[10, "barr rr"],   "world"   , 1337 ]'), [1, "hello", [10, "barr rr"], "world", 1337])
+        self.assertEquals(parsegoogleresponse('[ 1    ,"hello",[10, "barr rr"],   "world"   , 1337, {     "a" :   "dict"} ]'), [1, "hello", [10, "barr rr"], "world", 1337, { "a": "dict" }])
     
     def testParseErrorIfTrailingStuff(self):
         self.assertRaises(ValueError, lambda: parsegoogleresponse('1 1'))
@@ -37,10 +44,17 @@ class ParseGoogleResponseTest(unittest.TestCase):
         self.assertRaises(ValueError, lambda: parsegoogleresponse('[1] 1'))
     
     def testParseErrorIfUnknownCharacters(self):
-        self.assertRaises(ValueError, lambda: parsegoogleresponse('{ "hello" }'))
+        self.assertRaises(ValueError, lambda: parsegoogleresponse('! "hello" !'))
     
     def testParseErrorIfListNotClosed(self):
         self.assertRaises(ValueError, lambda: parsegoogleresponse('[ "hello"'))
+    
+    def testParseErrorIfDictMissingValueNotClosed(self):
+        self.assertRaises(ValueError, lambda: parsegoogleresponse('{ "hello" }'))
+        self.assertRaises(ValueError, lambda: parsegoogleresponse('{ "hello" : }'))
+    
+    def testParseErrorIfDictNotClosed(self):
+        self.assertRaises(ValueError, lambda: parsegoogleresponse('{ "hello" : "world"'))
     
     def testParseErrorIfEmpty(self):
         self.assertRaises(ValueError, lambda: parsegoogleresponse(''))
