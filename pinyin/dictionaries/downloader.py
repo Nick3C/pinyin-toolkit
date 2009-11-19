@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
 import re
 import urllib
 import urlparse
+import zipfile
 
 import pinyin.utils as utils
 
@@ -12,15 +14,21 @@ def cedictParser(page):
     m_page = re.search('<a href="([^"]*cedict_[^"]+_ts_utf-8_mdbg\\.zip)">', page)
     return utils.bind_none(m_page, lambda m_page: utils.bind_none(m_date, lambda m_date: (m_page.group(1), (int(m_date.group(1)), int(m_date.group(2)), int(m_date.group(3))))))
 
+cedictUseful = lambda _: True # The zip contains a single file - the UTF8 dictionary. Perfect.
+
 def handedictParser(page):
     return utils.bind_none(re.search('<a href="([^"]*handedict-([0-9]{8})\\.zip)">', page), lambda m: (m.group(1), splitRunOnDate(m.group(2))))
+
+handedictUseful = lambda name: name.endswith("handedict_nb.u8")
 
 def cfdictParser(page):
     return utils.bind_none(re.search('<a href="([^"]*cfdict-([0-9]{8})\\.zip)">', page), lambda m: (m.group(1), splitRunOnDate(m.group(2))))
 
-dictionaries = [("CEDICT", "http://usa.mdbg.net/chindict/chindict.php?page=cc-cedict", cedictParser),
-                ("HanDeDict", "http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl&w=8", handedictParser),
-                ("CFDICT", "http://www.chinaboard.de/fr/cfdict.php?mode=dl&w=8", cfdictParser)]
+cfdictUseful = lambda name: name.endswith("cfdict_nb.u8")
+
+dictionaries = [("CEDICT", "http://usa.mdbg.net/chindict/chindict.php?page=cc-cedict", cedictParser, cedictUseful),
+                ("HanDeDict", "http://www.chinaboard.de/chinesisch_deutsch.php?mode=dl&w=8", handedictParser, handedictUseful),
+                ("CFDICT", "http://www.chinaboard.de/fr/cfdict.php?mode=dl&w=8", cfdictParser, cfdictUseful)]
 
 
 def splitRunOnDate(date):
@@ -31,7 +39,7 @@ def runOnDate(date_tuple):
 
 
 if __name__ == '__main__':
-    for name, url, parser in dictionaries:
+    for name, url, parser, useful in dictionaries:
         print "Querying download page for", name
     
         # Download the contents of the download page itself
@@ -51,5 +59,27 @@ if __name__ == '__main__':
     
         # Great - download the dictionary to the well-known location
         zip_path = utils.toolkitdir("pinyin", "dictionaries", name.lower() + "-" + runOnDate(date) + ".zip")
-        urllib.urlretrieve(urlparse.urljoin(url, zip_relative_url), zip_path)
-        print "> Downloaded to", zip_path
+        if os.path.exists(zip_path):
+            print "> Skipping download because it already exists"
+        else:
+            urllib.urlretrieve(urlparse.urljoin(url, zip_relative_url), zip_path)
+            print "> Downloaded to", zip_path
+        
+        # Trim the zip files down to size by removing useless dictionaries:
+        
+        # a) Gather the information we actually want to keep
+        sourcezip = zipfile.ZipFile(zip_path, "r")
+        target = {}
+        for name in sourcezip.namelist():
+            if not useful(name):
+                print "> Removing", name, "from file"
+                continue
+            
+            target[name] = sourcezip.read(name)
+        sourcezip.close()
+        
+        # b) Truncate the zip file and write back just that information
+        targetzip = zipfile.ZipFile(zip_path, "w")
+        for name, contents in target.items():
+            targetzip.writestr(name, contents)
+        targetzip.close()
