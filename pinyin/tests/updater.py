@@ -146,8 +146,8 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                 audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = False,
                 tradgeneration = True, simpgeneration = True, forceexpressiontobesimptrad = False), {
                     "reading" : u'<span style="color:#ff0000">shū</span>',
-                    "meaning" : u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History',
-                    "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
+                    "meaning" : u'㊀ book<br />㊁ letter<br />㊂ see also <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History',
+                    "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>',
                     "audio" : u"[sound:" + os.path.join("Test", "shu1.mp3") + "]",
                     "color" : u'<span style="color:#ff0000">书</span>',
                     "trad" : u"書", "simp" : u"书"
@@ -177,8 +177,9 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                     "reading" : u'\tshū',
                     "color" : u'\t<span style="color:#ff0000">书</span>',
                     # TODO: make the simp and trad fields preserve whitespace more reliably by moving away
-                    # from Google Translate as the translator
-                    "trad" : u"\t書", "simp" : u"\t书"
+                    # from Google Translate as the translator. Currently this flips between preserving and
+                    # not preserving seemingly nondeterministically!
+                    "trad" : u"書", "simp" : u"书"
                   })
     
     def testDontOverwriteFields(self):
@@ -212,7 +213,7 @@ class FieldUpdaterFromExpressionTest(unittest.TestCase):
                 colorizedpinyingeneration = True, colorizedcharactergeneration = False, meaninggeneration = True, detectmeasurewords = False, emphasisemainmeaning = False,
                 tonedisplay = "tonified", meaningnumbering = "circledArabic", colormeaningnumbers = True, meaningnumberingcolor="#123456", meaningseperator = "custom", custommeaningseperator = " | ", prefersimptrad = "simp",
                 audiogeneration = True, audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"], weblinkgeneration = False, hanzimasking = True, hanzimaskingcharacter = "MASKED"), {
-                    "meaning" : u'<span style="color:#123456">①</span> book | <span style="color:#123456">②</span> letter | <span style="color:#123456">③</span> same as <span style="color:#123456">MASKED</span><span style="color:#ff0000">\u7ecf</span> Book of History | <span style="color:#123456">④</span> MW: <span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>',
+                    "meaning" : u'<span style="color:#123456">①</span> book | <span style="color:#123456">②</span> letter | <span style="color:#123456">③</span> see also <span style="color:#123456">MASKED</span><span style="color:#ff0000">\u7ecf</span> Book of History | <span style="color:#123456">④</span> MW: <span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>',
                   })
 
     def testMeaningSurnameMasking(self):

@@ -115,16 +115,16 @@ class PinyinDictionaryTest(unittest.TestCase):
         self.assertEquals(flatten(englishdict.reading(u"两头儿")), "liang3 tou2r")
 
     def testSimpMeanings(self):
-        self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="simp"), [u"book", u"letter", u"same as 书经 Book of History", u"MW: 本 - ben3, 册 - ce4, 部 - bu4, 丛 - cong2"])
+        self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="simp"), [u"book", u"letter", u"see also 书经 Book of History", u"MW: 本 - ben3, 册 - ce4, 部 - bu4"])
     
     def testTradMeanings(self):
-        self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="trad"), [u"book", u"letter", u"same as 書經 Book of History", u"MW: 本 - ben3, 冊 - ce4, 部 - bu4, 叢 - cong2"])
+        self.assertEquals(self.flatmeanings(englishdict, u"书", prefersimptrad="trad"), [u"book", u"letter", u"see also 書經 Book of History", u"MW: 本 - ben3, 冊 - ce4, 部 - bu4"])
     
     def testNonFlatMeanings(self):
         dictmeanings, dictmeasurewords = englishdict.meanings(u"书", prefersimptrad="simp")
-        self.assertEquals(self.flattenall(dictmeanings), [u"book", u"letter", u"same as 书经 Book of History"])
+        self.assertEquals(self.flattenall(dictmeanings), [u"book", u"letter", u"see also 书经 Book of History"])
         self.assertEquals([(self.flattenall(dictmwcharacters)[0], self.flattenall(dictmwpinyin)[0]) for dictmwcharacters, dictmwpinyin in dictmeasurewords],
-                          [(u"本", u"ben3"), (u"册", u"ce4"), (u"部", u"bu4"), (u"丛", u"cong2")])
+                          [(u"本", u"ben3"), (u"册", u"ce4"), (u"部", u"bu4")])
     
     # Test helper 
     def flatmeanings(self, dictionary, what, prefersimptrad="simp"):
