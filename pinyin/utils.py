@@ -154,7 +154,7 @@ def md5(what):
     # Try hashlib first, as it's the newer library (Python 2.5 or later)
     try:
         import hashlib
-        hashlib.md5(what).hexdigest()
+        return hashlib.md5(what).hexdigest()
     except ImportError:
         pass
     
