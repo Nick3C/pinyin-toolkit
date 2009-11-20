@@ -135,11 +135,17 @@ def build_release(credentials, release_info, temp_dir):
     
     # 2) Build a ZIP of that fresh checkout, excluding the .git directory
     # and using maximal compression (-9) since the file is pretty big
+    # TODO: also drop the .git history from cjklib
     zip_file = os.path.join(temp_dir, "pinyin-toolkit.zip")
     repo_contents = [f for f in os.listdir(temp_repo_dir) if f[0] != '.']
     subprocess.check_call(["zip", "-9", "-r", zip_file] + repo_contents, cwd=temp_repo_dir)
     
-    # 3) Upload to Anki
+    # 3) Get confirmation
+    print "The zipfile has been prepared at:"
+    print zip_file
+    raw_input("Press enter to upload it to Anki Online")
+    
+    # 4) Upload to Anki
     upload_to_anki_online(credentials, release_info, zip_file)
 
 def upload_to_anki_online(credentials, release_info, zip_file):
