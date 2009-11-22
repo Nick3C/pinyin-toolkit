@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 
+import pinyin
 import pinyin.utils
 
 
@@ -105,7 +106,7 @@ def parse_releases(text):
         m = re.match("Version ([^ ]+) \(([^\)]+)\)", raw_release)
         yield m.group(1), m.group(2), raw_release
 
-def preflight_checks(repo_dir):
+def preflight_checks(release_info, repo_dir):
     errors = []
     
     def visit(_arg, dirname, names):
@@ -116,6 +117,9 @@ def preflight_checks(repo_dir):
                 errors.append(full_path + " is 0 bytes long - a bug found in Anki 0.9.9.8.5 means that such files are not extracted")
     
     os.path.walk(repo_dir, visit, None)
+    
+    if pinyin.__version__ != release_info["version"]:
+        errors.append("You haven't updated pinyin.__version_info__: saw %s when it should be %s" % (pinyin.__version__, release_info["version"]))
     
     return errors
 
@@ -133,7 +137,7 @@ def build_release(credentials, release_info, temp_dir):
     subprocess.check_call(["git", "submodule", "update"], cwd=temp_repo_dir)
     
     # 1.5) Sanity check directory
-    errors = preflight_checks(temp_repo_dir)
+    errors = preflight_checks(release_info, temp_repo_dir)
     if len(errors) > 0:
         print "\n".join(errors)
         sys.exit(1)
@@ -218,7 +222,8 @@ Changes in the most recent version:
         "id" : "14",
         "title" : "Pinyin Toolkit (" + version + ") - Advanced Mandarin Chinese Support",
         "tags" : "pinyin Mandarin Chinese English dictionary hanzi graph graphs",
-        "description" : description
+        "description" : description,
+        "version" : version
     }
     
     #upload_to_anki_online(config["credentials"], release_info, home_path("Junk", "test-plugin", "test-plugin.zip"))
