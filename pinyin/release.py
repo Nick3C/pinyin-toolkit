@@ -112,12 +112,15 @@ def preflight_checks(repo_dir):
         for name in names:
             full_path = os.path.join(dirname, name)
             # See http://code.google.com/p/anki/issues/detail?id=1342&colspec=ID%20Type%20Status%20Priority%20Stars%20Summary
-            if os.path.isfile(full_path) and os.path.getsize(full_path) == 0L:
+            if os.path.isfile(full_path) and os.path.getsize(full_path) == 0L and "vendor" not in full_path:
                 errors.append(full_path + " is 0 bytes long - a bug found in Anki 0.9.9.8.5 means that such files are not extracted")
     
     os.path.walk(repo_dir, visit, None)
     
     return errors
+
+non_hidden = lambda item: item[0] != '.'
+list_non_hidden_files = lambda rootdir: pinyin.utils.concat([pinyin.utils.let(pinyin.utils.inplacefilter(non_hidden, folders), lambda _: [os.path.join(root, file) for file in files if non_hidden(file)]) for root, folders, files in os.walk(rootdir, topdown=True)])
 
 def build_release(credentials, release_info, temp_dir):
     # 1) Clone the whole repository to a fresh location -
@@ -126,6 +129,8 @@ def build_release(credentials, release_info, temp_dir):
     repo_dir = pinyin.utils.toolkitdir()
     print "Cloning current repo state to", temp_repo_dir
     subprocess.check_call(["git", "clone", repo_dir, temp_repo_dir])
+    subprocess.check_call(["git", "submodule", "init"], cwd=temp_repo_dir)
+    subprocess.check_call(["git", "submodule", "update"], cwd=temp_repo_dir)
     
     # 1.5) Sanity check directory
     errors = preflight_checks(temp_repo_dir)
@@ -134,16 +139,17 @@ def build_release(credentials, release_info, temp_dir):
         sys.exit(1)
     
     # 2) Build a ZIP of that fresh checkout, excluding the .git directory
-    # and using maximal compression (-9) since the file is pretty big
-    # TODO: also drop the .git history from cjklib
+    # and using maximal compression (-9) since the file is pretty big.
+    # It's important that we exclude hidden files because otherwise the .git
+    # repo lives in the ZIP file as well...
     zip_file = os.path.join(temp_dir, "pinyin-toolkit.zip")
-    repo_contents = [f for f in os.listdir(temp_repo_dir) if f[0] != '.']
+    repo_contents = [pinyin.utils.lstripexactly(os.path.join(temp_repo_dir, ""), file) for file in list_non_hidden_files(temp_repo_dir)]
     subprocess.check_call(["zip", "-9", "-r", zip_file] + repo_contents, cwd=temp_repo_dir)
     
     # 3) Get confirmation
     print "The zipfile has been prepared at:"
     print zip_file
-    raw_input("Press enter to upload it to Anki Online")
+    raw_input("Press enter to upload to Anki Online ...")
     
     # 4) Upload to Anki
     upload_to_anki_online(credentials, release_info, zip_file)
@@ -194,7 +200,7 @@ if __name__ == "__main__":
     
     try:
         print changelog
-        raw_input("Press enter to upload version %s (%s) ..." % (version, date))
+        raw_input("Press enter to prepare version %s (%s) ..." % (version, date))
     except KeyboardInterrupt, e:
         sys.exit(1)
     

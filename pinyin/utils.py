@@ -341,6 +341,12 @@ def cumulative(sequence):
         sofar = sofar + n
         yield sofar
 
+def lstripexactly(what, fromwhat):
+    if fromwhat[0:len(what)] == what:
+        return fromwhat[len(what):]
+    else:
+        raise ValueError("Couldn't strip %r from %r" % (what, fromwhat))
+
 def urlescape(what):
     import urllib
     return urllib.quote(what.encode('utf-8'))
@@ -350,6 +356,11 @@ def striphtml(what):
 
 def concat(what):
     return sum(what, [])
+
+def inplacefilter(pred, list):
+    for i in range(len(list), 0, -1):
+        if not pred(list[i - 1]):
+            del list[i - 1]
 
 def first(f):
     def go(xy):
