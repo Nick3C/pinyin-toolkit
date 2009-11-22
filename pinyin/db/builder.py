@@ -125,14 +125,32 @@ def getSatisfiers():
         
         return inner
     
+    def findtimestampedfile(pathpattern):
+        path, timestamp = None, None
+        for file in os.listdir(dictionarydir()):
+            # We want to find the file with the maximal timestamp.  Luckily, I have carefully
+            # constructed the filenames so that this is just the ordering on the strings
+            match = re.match(pathpattern % "(.+)", file)
+            if match and match.group(1) > timestamp:
+                path, timestamp = match.group(0), match.group(1)
+        
+        return path, timestamp
+    
+    def timestampedFileSource(pathpattern):
+        def inner():
+            path, _timestamp = findtimestampedfile(pathpattern)
+            
+            if path is None:
+                log.info("Missing file matching the timestamped pattern %s", pathpattern)
+                return None
+            
+            return fileSource(path)()
+        
+        return inner
+    
     def timestampedArchiveSource(pathpattern, pathinzippattern):
         def inner():
-            path, timestamp = None, None
-            for file in os.listdir(dictionarydir()):
-                match = re.match(pathpattern % "(.+)", file)
-                if match:
-                    path, timestamp = match.group(0), match.group(1)
-                    break
+            path, timestamp = findtimestampedfile(pathpattern)
             
             if path is None:
                 log.info("Missing archive matching the timestamped pattern %s", pathpattern)
@@ -142,15 +160,23 @@ def getSatisfiers():
         
         return inner
     
+    # NB: because we currently use the first matching source, I've put the timestamped .txt files that
+    # come with the Toolkit at the end of the list. This ensures that if we ever implement dictionary
+    # download, the resulting .zip files will be used in preference to the .txt files.
     requirements = {
-        "cedict_ts.u8" : [fileSource("cedict_ts.u8"), plainArchiveSource("cedict_1_0_ts_utf-8_mdbg.zip", ["cedict_ts.u8"]),
-                          timestampedArchiveSource("cedict-%s.zip", ["cedict_ts.u8"]), plainArchiveSource("shipped.zip", ["cedict_ts.u8"])],
-        "handedict.u8" : [fileSource("handedict_nb.u8"), timestampedArchiveSource("handedict-%s.zip", ["handedict-%s", "handedict_nb.u8"]),
-                          plainArchiveSource("shipped.zip", ["handedict_nb.u8"])],
-        "cfdict.u8"    : [fileSource("cfdict_nb.u8"), timestampedArchiveSource("cfdict-%s.zip", ["cfdict-%s", "cfdict_nb.u8"]),
-                          plainArchiveSource("shipped.zip", ["cfdict_nb.u8"])],
-        "Unihan.txt"   : [fileSource("Unihan.txt"), plainArchiveSource("Unihan.zip", ["Unihan.txt"]),
-                          plainArchiveSource("shipped.zip", ["Unihan.txt"])]
+        "cedict_ts.u8" : [fileSource("cedict_ts.u8"),
+                          plainArchiveSource("cedict_1_0_ts_utf-8_mdbg.zip", ["cedict_ts.u8"]),
+                          timestampedArchiveSource("cedict-%s.zip", ["cedict_ts.u8"]),
+                          timestampedFileSource("cedict-%s.txt")],
+        "handedict.u8" : [fileSource("handedict_nb.u8"),
+                          timestampedArchiveSource("handedict-%s.zip", ["handedict-%s", "handedict_nb.u8"]),
+                          timestampedFileSource("handedict-%s.txt")],
+        "cfdict.u8"    : [fileSource("cfdict_nb.u8"),
+                          timestampedArchiveSource("cfdict-%s.zip", ["cfdict-%s", "cfdict_nb.u8"]),
+                          plainArchiveSource("shipped.zip", ["cfdict_nb.u8"]),
+                          timestampedFileSource("cfdict-%s.txt")],
+        "Unihan.txt"   : [fileSource("Unihan.txt"),
+                          plainArchiveSource("Unihan.zip", ["Unihan.txt"])]
       }
     
     maxtimestamp = 0
