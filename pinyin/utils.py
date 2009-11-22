@@ -18,6 +18,10 @@ def debugmode():
     # Uncomment to force debug mode off:
     #return False
     
+    # A simple way that ordinary users can get extra logging:
+    if os.path.exists(toolkitdir("enable-pinyin-toolkit-log.txt")):
+        return True
+    
     # Username as reported on Windows by typing into cmd:
     #   echo %USERNAME%
     #
