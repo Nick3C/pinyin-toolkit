@@ -18,6 +18,10 @@ def debugmode():
     # Uncomment to force debug mode off:
     #return False
     
+    # A simple way that ordinary users can get extra logging:
+    if os.path.exists(toolkitdir("enable-pinyin-toolkit-log.txt")):
+        return True
+    
     # Username as reported on Windows by typing into cmd:
     #   echo %USERNAME%
     #
@@ -356,6 +360,12 @@ def cumulative(sequence):
         sofar = sofar + n
         yield sofar
 
+def lstripexactly(what, fromwhat):
+    if fromwhat[0:len(what)] == what:
+        return fromwhat[len(what):]
+    else:
+        raise ValueError("Couldn't strip %r from %r" % (what, fromwhat))
+
 def urlescape(what):
     import urllib
     return urllib.quote(what.encode('utf-8'))
@@ -373,6 +383,11 @@ def splitat(what, n):
 
 def seq(x, y):
     return y()
+
+def inplacefilter(pred, list):
+    for i in range(len(list), 0, -1):
+        if not pred(list[i - 1]):
+            del list[i - 1]
 
 def first(f):
     def go(xy):

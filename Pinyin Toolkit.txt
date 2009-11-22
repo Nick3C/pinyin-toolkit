@@ -14,6 +14,33 @@ http://github.com/batterseapower/pinyin-toolkit/issues
 
 h1. Changelog
 
+h2. Version 0.6.3 (22/11/2009)
+
+| Max Bolingbroke | "Email":mailto:batterseapower@hotmail.com | "Website":http://blog.omega-prime.co.uk |
+| Nick Cook       | "Email":mailto:nick@n-line.co.uk          | "Website":http://www.n-line.co.uk       |
+
+* The Toolkit should now work on the latest Anki snapshot (fixes the 'sgmllib' error)
+
+
+h2. Version 0.6.2 (20/11/2009)
+
+| Max Bolingbroke | "Email":mailto:batterseapower@hotmail.com | "Website":http://blog.omega-prime.co.uk |
+| Nick Cook       | "Email":mailto:nick@n-line.co.uk          | "Website":http://www.n-line.co.uk       |
+
+* Fix packaging error in the 0.6.1 release (cjklib was not included). Version 0.6.1 contained the following fixes:
+** Improvements to the parser for Google Translate. This should fix the crashes people are seeing
+** Make field detection case-insensitive
+
+
+h2. Version 0.6.1 (19/11/2009)
+
+| Max Bolingbroke | "Email":mailto:batterseapower@hotmail.com | "Website":http://blog.omega-prime.co.uk |
+| Nick Cook       | "Email":mailto:nick@n-line.co.uk          | "Website":http://www.n-line.co.uk       |
+
+* Improvements to the parser for Google Translate. This should fix the crashes people are seeing
+* Make field detection case-insensitive
+
+
 h2. Version 0.6 (13/09/2009)
 
 | Max Bolingbroke | "Email":mailto:batterseapower@hotmail.com | "Website":http://blog.omega-prime.co.uk |

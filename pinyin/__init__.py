@@ -10,6 +10,13 @@ import utils
 if sys.version_info[0:2] < (2, 5):
     sys.path.append(utils.toolkitdir("pinyin", "vendor", "python25"))
 
+# Anki excludes some standard Python modules from its new 2.6 distribution. Why God, why?
+try:
+    import ConfigParser
+except ImportError:
+    sys.path.append(utils.toolkitdir("pinyin", "vendor", "perverseness"))
+
+# Sanity prevails from this point:
 for vendor_package in ["cjklib"]:
     sys.path.append(utils.toolkitdir("pinyin", "vendor", vendor_package))
 
@@ -32,5 +39,5 @@ import transformations
 
 # Expose package metadata via the quasi-standard __version__
 # attribute: http://www.python.org/dev/peps/pep-0008/
-__version_info__ = ('0', '6')
+__version_info__ = ('0', '6', '3')
 __version__ = '.'.join(__version_info__)

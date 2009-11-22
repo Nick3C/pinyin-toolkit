@@ -94,7 +94,7 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
     def assertUpdatesTo(self, *args, **kwargs):
         assertUpdatesTo(partial(FieldUpdater, "reading"), *args, **kwargs)
 
-class TestFieldUpdaterFromExpression(object):
+class FieldUpdaterFromExpressionTest(object):
     def testAutoBlankingGenerated(self):
         self.assertUpdatesTo(u"", {}, {
               "reading" : markgeneratedfield("blather"),
@@ -122,8 +122,8 @@ class TestFieldUpdaterFromExpression(object):
             expected = {
                 "expression" : u"书",
                 "reading" : markgeneratedfield(u'<span style="color:#ff0000">shū</span>'),
-                "meaning" : markgeneratedfield(u'㊀ book<br />㊁ letter<br />㊂ same as <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History'),
-                "mw" : markgeneratedfield(u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>, <span style="color:#ffaa00">丛</span> - <span style="color:#ffaa00">cóng</span>'),
+                "meaning" : markgeneratedfield(u'㊀ book<br />㊁ letter<br />㊂ see also <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History'),
+                "mw" : markgeneratedfield(u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>'),
                 "audio" : markgeneratedfield(u"[sound:" + os.path.join("Test", "shu1.mp3") + "]"),
                 "mwaudio" : lambda mwaudio: assert_equal(sanitizequantitydigits(mwaudio), markgeneratedfield((u"[sound:" + os.path.join("Test", "X.mp3") + u"][sound:" + os.path.join("Test", "shu1.mp3") + "]") * 4)),
                 "color" : markgeneratedfield(u'<span style="color:#ff0000">书</span>'),

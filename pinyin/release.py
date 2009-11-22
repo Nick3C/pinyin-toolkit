@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 
+import pinyin
 import pinyin.utils
 
 
@@ -13,53 +14,84 @@ import pinyin.utils
 # Code from ActiveState recipe (http://code.activestate.com/recipes/146306/)
 #
 
-import httplib, mimetypes, mimetools, urllib2, cookielib
+import urllib
+import urllib2
+import mimetools, mimetypes
+import os, stat
 
-cj = cookielib.CookieJar()
-opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-urllib2.install_opener(opener)
+class Callable:
+    def __init__(self, anycallable):
+        self.__call__ = anycallable
 
-def post_multipart(host, selector, fields, files):
-    """
-    Post fields and files to an http host as multipart/form-data.
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return the server's response page.
-    """
-    content_type, body = encode_multipart_formdata(fields, files)
-    headers = {'Content-Type': content_type,
-               'Content-Length': str(len(body))}
-    r = urllib2.Request("http://%s%s" % (host, selector), body, headers)
-    return urllib2.urlopen(r).read()
+# Controls how sequences are uncoded. If true, elements may be given multiple values by
+#  assigning a sequence.
+doseq = 1
 
-def encode_multipart_formdata(fields, files):
-    """
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return (content_type, body) ready for httplib.HTTP instance
-    """
-    BOUNDARY = mimetools.choose_boundary()
-    CRLF = '\r\n'
-    L = []
-    for (key, value) in fields:
-        L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"' % key)
-        L.append('')
-        L.append(value)
-    for (key, filename, value) in files:
-        L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
-        L.append('Content-Type: %s' % get_content_type(filename))
-        L.append('')
-        L.append(value)
-    L.append('--' + BOUNDARY + '--')
-    L.append('')
-    body = CRLF.join(L)
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-    return content_type, body
+class MultipartPostHandler(urllib2.BaseHandler):
+    handler_order = urllib2.HTTPHandler.handler_order - 10 # needs to run first
 
-def get_content_type(filename):
-    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+    def http_request(self, request):
+        data = request.get_data()
+        if data is not None and type(data) != str:
+            v_files = []
+            v_vars = []
+            try:
+                 for(key, value) in data.items():
+                     if type(value) == file:
+                         v_files.append((key, value))
+                     else:
+                         v_vars.append((key, value))
+            except TypeError:
+                systype, value, traceback = sys.exc_info()
+                raise TypeError, "not a valid non-string sequence or mapping object", traceback
+
+            if len(v_files) == 0:
+                data = urllib.urlencode(v_vars, doseq)
+            else:
+                boundary, data = self.multipart_encode(v_vars, v_files)
+                contenttype = 'multipart/form-data; boundary=%s' % boundary
+                if(request.has_header('Content-Type')
+                   and request.get_header('Content-Type').find('multipart/form-data') != 0):
+                    print "Replacing %s with %s" % (request.get_header('content-type'), 'multipart/form-data')
+                request.add_unredirected_header('Content-Type', contenttype)
+
+            request.add_data(data)
+        return request
+
+    def multipart_encode(vars, files, boundary = None, buffer = None):
+        if boundary is None:
+            boundary = mimetools.choose_boundary()
+        if buffer is None:
+            buffer = ''
+        for(key, value) in vars:
+            buffer += '--%s\r\n' % boundary
+            buffer += 'Content-Disposition: form-data; name="%s"' % key
+            buffer += '\r\n\r\n' + value + '\r\n'
+        for(key, fd) in files:
+            file_size = os.fstat(fd.fileno())[stat.ST_SIZE]
+            filename = os.path.basename(fd.name)
+            contenttype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+            buffer += '--%s\r\n' % boundary
+            buffer += 'Content-Disposition: form-data; name="%s"; filename="%s"\r\n' % (key, filename)
+            buffer += 'Content-Type: %s\r\n' % contenttype
+            # buffer += 'Content-Length: %s\r\n' % file_size
+            fd.seek(0)
+            buffer += '\r\n' + fd.read() + '\r\n'
+        buffer += '--%s--\r\n\r\n' % boundary
+        return boundary, buffer
+    multipart_encode = Callable(multipart_encode)
+
+    https_request = http_request
+
+import cookielib
+cookies = cookielib.CookieJar()
+
+def post_multipart(url, fields, file_fields):
+    # This extra handler is useful for debugging with Charles:
+    # urllib2.ProxyHandler({ "http" : "127.0.0.1:8888" })
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookies), MultipartPostHandler)
+    params = dict(fields + [(name, open(filename, "rb")) for name, filename in file_fields])
+    return opener.open(url, params).read()
 
 #
 # End code from ActiveState recipe
@@ -74,19 +106,25 @@ def parse_releases(text):
         m = re.match("Version ([^ ]+) \(([^\)]+)\)", raw_release)
         yield m.group(1), m.group(2), raw_release
 
-def preflight_checks(repo_dir):
+def preflight_checks(release_info, repo_dir):
     errors = []
     
     def visit(_arg, dirname, names):
         for name in names:
             full_path = os.path.join(dirname, name)
             # See http://code.google.com/p/anki/issues/detail?id=1342&colspec=ID%20Type%20Status%20Priority%20Stars%20Summary
-            if os.path.isfile(full_path) and os.path.getsize(full_path) == 0L:
+            if os.path.isfile(full_path) and os.path.getsize(full_path) == 0L and "vendor" not in full_path:
                 errors.append(full_path + " is 0 bytes long - a bug found in Anki 0.9.9.8.5 means that such files are not extracted")
     
     os.path.walk(repo_dir, visit, None)
     
+    if pinyin.__version__ != release_info["version"]:
+        errors.append("You haven't updated pinyin.__version_info__: saw %s when it should be %s" % (pinyin.__version__, release_info["version"]))
+    
     return errors
+
+non_hidden = lambda item: item[0] != '.'
+list_non_hidden_files = lambda rootdir: pinyin.utils.concat([pinyin.utils.let(pinyin.utils.inplacefilter(non_hidden, folders), lambda _: [os.path.join(root, file) for file in files if non_hidden(file)]) for root, folders, files in os.walk(rootdir, topdown=True)])
 
 def build_release(credentials, release_info, temp_dir):
     # 1) Clone the whole repository to a fresh location -
@@ -95,20 +133,29 @@ def build_release(credentials, release_info, temp_dir):
     repo_dir = pinyin.utils.toolkitdir()
     print "Cloning current repo state to", temp_repo_dir
     subprocess.check_call(["git", "clone", repo_dir, temp_repo_dir])
+    subprocess.check_call(["git", "submodule", "init"], cwd=temp_repo_dir)
+    subprocess.check_call(["git", "submodule", "update"], cwd=temp_repo_dir)
     
     # 1.5) Sanity check directory
-    errors = preflight_checks(temp_repo_dir)
+    errors = preflight_checks(release_info, temp_repo_dir)
     if len(errors) > 0:
         print "\n".join(errors)
         sys.exit(1)
     
     # 2) Build a ZIP of that fresh checkout, excluding the .git directory
-    # and using maximal compression (-9) since the file is pretty big
+    # and using maximal compression (-9) since the file is pretty big.
+    # It's important that we exclude hidden files because otherwise the .git
+    # repo lives in the ZIP file as well...
     zip_file = os.path.join(temp_dir, "pinyin-toolkit.zip")
-    repo_contents = [f for f in os.listdir(temp_repo_dir) if f[0] != '.']
+    repo_contents = [pinyin.utils.lstripexactly(os.path.join(temp_repo_dir, ""), file) for file in list_non_hidden_files(temp_repo_dir)]
     subprocess.check_call(["zip", "-9", "-r", zip_file] + repo_contents, cwd=temp_repo_dir)
     
-    # 3) Upload to Anki
+    # 3) Get confirmation
+    print "The zipfile has been prepared at:"
+    print zip_file
+    raw_input("Press enter to upload to Anki Online ...")
+    
+    # 4) Upload to Anki
     upload_to_anki_online(credentials, release_info, zip_file)
 
 def upload_to_anki_online(credentials, release_info, zip_file):
@@ -121,7 +168,7 @@ def upload_to_anki_online(credentials, release_info, zip_file):
     #  <input type="submit" value="Sign Up" />
     # </form>
     print "Logging in to the Anki website as", credentials["username"]
-    post_multipart("anki.ichi2.net", "/account/login",
+    post_multipart("http://anki.ichi2.net/account/login",
         [("username", credentials["username"]), ("password", credentials["password"]), ("submitted", "1")],
         [])
     
@@ -136,10 +183,9 @@ def upload_to_anki_online(credentials, release_info, zip_file):
     #   <input name="submit" type="submit" value="Update" />
     # </form>
     print "Uploading a new version of the plugin"
-    zip_file_contents = file_contents(zip_file, "rb")
-    post_multipart("anki.ichi2.net", "/file/upload",
+    post_multipart("http://anki.ichi2.net/file/upload",
         [("type", "plugin"), ("title", release_info["title"]), ("tags", release_info["tags"]), ("description", release_info["description"]), ("id", release_info["id"]), ("submit", "Update")],
-        [("file", os.path.basename(zip_file), zip_file_contents)])
+        [("file", zip_file)])
 
 def home_path(*components):
     return os.path.join(os.path.expanduser("~"), *components)
@@ -153,32 +199,33 @@ def file_contents(path, mode="r"):
 
 if __name__ == "__main__":
     config = eval(file_contents(home_path(".pinyin-toolkit-release")))
+    
     version, date, changelog = list(parse_releases(file_contents(pinyin.utils.toolkitdir("Pinyin Toolkit.txt"))))[0]
     
-    print changelog
-    print "Press enter to upload version", version, "(" + date + ") ... ",
-    
     try:
-        sys.stdin.read()
+        print changelog
+        raw_input("Press enter to prepare version %s (%s) ..." % (version, date))
     except KeyboardInterrupt, e:
         sys.exit(1)
     
-    description = ["The Pinyin Toolkit adds many useful features to Anki to assist the study of Mandarin. The aim of " +
-                   "the project is to greatly enhance the user-experience for students studying the Chinese language.",
-                   "",
-                   "Homepage: http://batterseapower.github.com/pinyin-toolkit/",
-                   "Full feature list: http://wiki.github.com/batterseapower/pinyin-toolkit/features",
-                   "Installation instructions: http://wiki.github.com/batterseapower/pinyin-toolkit/installation",
-                   "",
-                   "Changes in the most recent version:",
-                   ""] + changelog
+    description = """The Pinyin Toolkit adds many useful features to Anki to assist the study of Mandarin. The aim of 
+the project is to greatly enhance the user-experience for students studying the Chinese language.
+
+Homepage: http://batterseapower.github.com/pinyin-toolkit/
+Full feature list: http://wiki.github.com/batterseapower/pinyin-toolkit/features
+Installation instructions: http://wiki.github.com/batterseapower/pinyin-toolkit/installation
+
+Changes in the most recent version:
+""" + changelog
     
     release_info = {
         "id" : "14",
         "title" : "Pinyin Toolkit (" + version + ") - Advanced Mandarin Chinese Support",
         "tags" : "pinyin Mandarin Chinese English dictionary hanzi graph graphs",
-        "description" : "\r\n".join(description)
+        "description" : description,
+        "version" : version
     }
     
     #upload_to_anki_online(config["credentials"], release_info, home_path("Junk", "test-plugin", "test-plugin.zip"))
     pinyin.utils.withtempdir(lambda tempdir: build_release(config["credentials"], release_info, tempdir))
+    print "Everything seems to have worked!"
