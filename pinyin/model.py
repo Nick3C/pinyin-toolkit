@@ -3,7 +3,7 @@
 
 import htmlentitydefs
 import re
-from sgmllib import SGMLParser
+from BeautifulSoup import BeautifulSoup, Tag
 import sqlalchemy
 import unicodedata
 
@@ -330,135 +330,109 @@ def tokenizetext(text, forcenumeric):
 Turns an arbitrary string containing pinyin and HTML into a sequence of tokens. Does its best
 to seperate pinyin out from normal text, but no guarantees!
 """
+
 def tokenize(html, forcenumeric=False):
-    tokenizer = HTMLAwareTokenizer(forcenumeric)
-    tokenizer.feed(html)
-    tokenizer.close()
-    
-    return tokenizer.tokens
+    def extract_attr_maybe(attrs, attr, into, extractor):
+        if attr not in attrs:
+            return {}
 
-class HTMLAwareTokenizer(SGMLParser):
-    def __init__(self, forcenumeric):
-        self.forcenumeric = forcenumeric
-        SGMLParser.__init__(self)
-    
-    def reset(self):
-        self.tokens = []
-        self.attributesstack = []
-        SGMLParser.reset(self)
-    
-    def unknown_starttag(self, tag, attrs):
-        strattrs = "".join([' %s="%s"' % (key, value) for key, value in attrs])
-        self.tokens.append(Text("<%s%s>" % (tag, strattrs)))
+        res = extractor(attrs[attr])
+        if res is None:
+            return {}
 
-    def unknown_endtag(self, tag):
-        self.tokens.append(Text("</%s>" % tag))
+        (extracted, newattrval) = res
+        if newattrval is not None:
+            attrs[attr] = newattrval
+        else:
+            del attrs[attr]
 
-    def start_span(self, attrs):
-        def extract_attr_maybe(attr, into, extractor):
-            if attr not in attrs:
-                return {}
-            
-            res = extractor(attrs[attr])
-            if res is None:
-                return {}
-            
-            (extracted, newattrval) = res
-            if newattrval is not None:
-                attrs[attr] = newattrval
+        return { into : extracted }
+
+    def take_dict_elem(dict, key):
+        if key in dict:
+            val = dict[key]
+            del dict[key]
+            return (val, dict)
+        else:
+            return None
+
+    # Quick, dirty and wrong:
+    def parse_style(style):
+        intelligible = {}
+        unintelligible = []
+        for pair in style.split(";"):
+            split = pair.split(":")
+            if len(split) == 2:
+                k, v = split
+                intelligible[k.strip().lower()] = v
             else:
-                del attrs[attr]
-            
-            return { into : extracted }
+                unintelligible.append(pair)
 
-        def take_dict_elem(dict, key):
-            if key in dict:
-                val = dict[key]
-                del dict[key]
-                return (val, dict)
+        return (intelligible, unintelligible)
+
+        return dict([(pair.split(":")[0].strip(), pair.split(":")[1].strip()) for pair in style.split(";")])
+
+    def unparse_style(parsed_style):
+        intelligible, unintelligible = parsed_style
+        return "; ".join([k + " : " + v for k, v in intelligible] + unintelligible)
+
+    # For now, we only worry about the color attribute in the span tag's style
+    def take_style_val(key):
+        def go(style):
+            intelligible, unintelligible = parse_style(style)
+
+            taken = take_dict_elem(intelligible, key)
+            if taken is not None:
+                value, intelligible = taken
             else:
-                return None
+                value = None
 
-        # Quick, dirty and wrong:
-        def parse_style(style):
-            intelligible = {}
-            unintelligible = []
-            for pair in style.split(";"):
-                split = pair.split(":")
-                if len(split) == 2:
-                    k, v = split
-                    intelligible[k.strip().lower()] = v
-                else:
-                    unintelligible.append(pair)
-            
-            return (intelligible, unintelligible)
-            
-            return dict([(pair.split(":")[0].strip(), pair.split(":")[1].strip()) for pair in style.split(";")])
+            return (value, unparse_style((intelligible, unintelligible)))
 
-        def unparse_style(parsed_style):
-            intelligible, unintelligible = parsed_style
-            return "; ".join([k + " : " + v for k, v in intelligible] + unintelligible)
-
-        # It's more convenient if we can see the attributes as a dictionary,
-        # although we might e.g. drop duplicates
-        attrs = dict([(k.lower(), v) for k, v in attrs])
+        return go
         
-        # For now, we only worry about the color attribute in the span tag's style
-        def take_style_val(key):
-            def go(style):
-                intelligible, unintelligible = parse_style(style)
-            
-                taken = take_dict_elem(intelligible, key)
-                if taken is not None:
-                    value, intelligible = taken
-                else:
-                    value = None
-            
-                return (value, unparse_style((intelligible, unintelligible)))
-            
-            return go
-            
-        self.attributesstack.append(extract_attr_maybe("style", "color", take_style_val("color")))
-        
-        # We are still interested in writing out the remainder of the <span> tag, in
-        # case it had other information in it (apart from the "style" attribute)
-        self.unknown_starttag("span", attrs.items())
-    
-    def end_span(self):
-        self.unknown_endtag("span")
-        self.attributesstack.pop()
-
-    def handle_charref(self, ref):
-        self.tokens.append(Text("&#%s;" % ref))
-
-    def handle_entityref(self, ref):
-        self.tokens.append(Text("&%s" % ref))
-        # standard HTML entities are closed with a semicolon; other entities are not
-        if htmlentitydefs.entitydefs.has_key(ref):
-            self.tokens.append(Text(";"))
-
-    def handle_comment(self, text):
-        self.tokens.append(Text("<!--%s-->" % text))
-    
-    def handle_data(self, text):
-        self.tokens.extend([self.contextify(token) for token in tokenizetext(text, self.forcenumeric)])
-
-    def handle_pi(self, text):
-        self.tokens.append(Text("<?%s>" % text))
-
-    def handle_decl(self, text):
-        self.tokens.append(Text("<!%s>" % text))
-    
-    def contextify(self, what):
+    def contextify(attributesstack, what):
         # Get the most recent attributes to apply at this point in time
         current_attrs = {}
-        for attrs in self.attributesstack:
+        for attrs in attributesstack:
             current_attrs.update(attrs)
         
         for k, v in current_attrs.items():
             what.htmlattrs[k] = v
         
         return what
+    
+    # Stateful recursive algorithm for consuming the parse tree: tokens accumulate in the 'tokens' list
+    tokens = []
+    def recurse(attributesstack, parent):
+        for child in parent.contents:
+            if not isinstance(child, Tag):
+                tokens.extend([contextify(attributesstack, token) for token in tokenizetext(unicode(child), forcenumeric)])
+            elif child.isSelfClosing:
+                tokens.append(Text("<%s />" % child.name))
+            else:
+                if child.name.lower() == "span":
+                    # It's more convenient if we can see the attributes as a dictionary,
+                    # although we might e.g. drop duplicates
+                    attrsdict = dict([(k.lower(), v) for k, v in child.attrs])
+    
+                    # This is why we're even at this party: we want to grab the style stuff out
+                    thisattributesstack = attributesstack + [extract_attr_maybe(attrsdict, "style", "color", take_style_val("color"))]
+        
+                    # We are still interested in writing out the remainder of the <span> tag, in
+                    # case it had other information in it (apart from the "style" attribute)
+                    thisattrs = attrsdict.items()
+                else:
+                    thisattributesstack = attributesstack
+                    thisattrs = child.attrs
+            
+                tokens.append(Text("<%s%s>" % (child.name, "".join([' %s="%s"' % (key, value) for key, value in thisattrs]))))
+                recurse(thisattributesstack, child)
+                tokens.append(Text("</%s>" % child.name))
+    
+    # This is it, chaps: let's munge that HTML!
+    recurse([], BeautifulSoup(html))
+    return tokens
 
 """
 Represents a word boundary in the system, where the tokens inside represent a complete Chinese word.
