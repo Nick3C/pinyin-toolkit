@@ -44,8 +44,9 @@ class UpdaterGraphTest(unittest.TestCase):
             "reading" : u'\tshū',
             "color" : u'\t<span style="color:#ff0000">书</span>',
             # TODO: make the simp and trad fields preserve whitespace more reliably by moving away
-            # from Google Translate as the translator
-            "trad" : u"\t書", "simp" : u"\t书"
+            # from Google Translate as the translator. Currently this flips between preserving and
+            # not preserving seemingly nondeterministically!
+            "trad" : u"書", "simp" : u"书"
           })
 
     def testUpdateMeaningAndMWWithoutMWField(self):
