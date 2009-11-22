@@ -312,6 +312,9 @@ class TokenizeTest(unittest.TestCase):
         #self.assertEquals([Text(u'<b />')], tokenize(u'<b />'))
         self.assertEquals([Text(u'<span style="mehhhh!">'), Text("</span>")], tokenize(u'<span style="mehhhh!"></span>'))
 
+    def testTokenizeWeirdyRomanCharacters(self):
+        self.assertEquals([Text(u'Ｕ')], tokenize(u'Ｕ'))
+
 class FormatReadingForDisplayTest(unittest.TestCase):
     # Test data:
     nihao_simp = u'你好，我喜欢学习汉语。我的汉语水平很低。'

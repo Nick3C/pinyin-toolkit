@@ -591,10 +591,19 @@ class TonedCharactersFromReadingVisitor(TokenVisitor):
             raise TonedCharactersFromReadingException("Length mismatch: %s vs %s" % (self.characters, needed))
     
     def checkToken(self, corresponding, token):
-        if corresponding != unicode(token):
+        # NFKC: apply the compatability decomposition, followed by the canonical composition.
+        # The reason we do this is that some CEDICT characters are stored with double-width
+        # Roman letters in the character columns, but normal ones in the reading, like so:
+        # Ｕ盤 Ｕ盘 [U pan2] /USB flash drive/see also 閃存盤|闪存盘[shan3 cun2 pan2]/
+        #
+        # By putting the token into NFKC those crazy letters get turned into the normal ones
+        # that we can see in the reading column, and this assertion passes.
+        if corresponding != unicode(token) and unicodedata.normalize("NFKC", corresponding) != unicode(token):
             raise TonedCharactersFromReadingException("Character mismatch: %s vs %s" % (corresponding, unicode(token)))
         else:
-            return token
+            # NB: because the reading token may be one without the craziness, we need to make sure
+            # we use the possibly-crazy form to produce a text token here:
+            return Text(corresponding)
 
     def visitText(self, text):
         self.checkLength(len(text))
