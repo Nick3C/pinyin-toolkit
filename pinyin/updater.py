@@ -43,6 +43,8 @@ class FieldUpdater(object):
         fact[self.field] = self.reformatter.reformatfield(self.field, graph, alwaysreformat=alwaysreformat)
         graph[self.field] = (False, utils.Thunk(lambda: fact[self.field]))
 
+        log.info("Keys in the graph after update: %r", graph.keys())
+        
         for field in fact:
             if shouldupdatefield(self.graphbasedupdater.config)(field):
                 fact[field] = (graph[field][0] and factproxy.markgeneratedfield or (lambda x: x))(graph[field][1]())
