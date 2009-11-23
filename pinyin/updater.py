@@ -68,14 +68,3 @@ class FieldUpdaterFromExpression(FieldUpdater):
 
 def shouldupdatefield(theconfig):
     return lambda field: config.updatecontrolflags[field] is None or theconfig.settings[config.updatecontrolflags[field]]
-
-def partitionfact(fact):
-    known, needed = {}, set()
-    for field in fact:
-        value = fact[field]
-        if factproxy.isgeneratedfield(field, value):
-            needed.add(field)
-        else:
-            known[field] = value
-
-    return (known, needed)
