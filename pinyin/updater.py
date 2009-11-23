@@ -21,7 +21,7 @@ from logger import log
 
 
 # TODO:
-#  * Only update fields that could have been changed by the update
+#  * Only update fields that could have been changed by the update (quite important for audio!)
 #  * (Perhaps) record hash in generated tag, so we can avoid recomputing more generally
 #  * Make updating itself faster: e.g. prefer audio that already exists in the Anki deck
 
