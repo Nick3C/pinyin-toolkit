@@ -12,14 +12,14 @@ import pinyin.utils
 from pinyin.mocks import *
 
 
-class GeneralGraphTest(unittest.TestCase):
+class TestUpdaterGraphGeneralFunctionality(object):
     def testDoesntUpdateNonGeneratedFields(self):
         updaters = [
             ("output", lambda _: "modified output", ["input"])
           ]
         
         graph = filledgraphforupdaters(updaters, { "input" : "hello", "output" : "original output" }, { "input" : "goodbye" })
-        self.assertEquals(graph["output"][1](), "original output")
+        assert_equal(graph["output"][1](), "original output")
     
     def testDoesntUpdateGeneratedFieldsIfInputsClean(self):
         updaters = [
@@ -28,7 +28,7 @@ class GeneralGraphTest(unittest.TestCase):
           ]
         
         graph = filledgraphforupdaters(updaters, { "input" : "hello", "intermediate" : markgeneratedfield("constant"), "output" : markgeneratedfield("original output") }, { "input" : "goodbye" })
-        self.assertEquals(graph["output"][1](), "original output")
+        assert_equal(graph["output"][1](), "original output")
 
     def testUpdatesBlankFieldsDependentOnNonDirtyInputs(self):
         updaters = [
@@ -37,9 +37,28 @@ class GeneralGraphTest(unittest.TestCase):
           ]
         
         graph = filledgraphforupdaters(updaters, { "input" : "hello", "intermediate" : markgeneratedfield("constant"), "output" : "" }, { "input" : "goodbye" })
-        self.assertEquals(graph["output"][1](), "modified output")
+        assert_equal(graph["output"][1](), "modified output")
+    
+    def testPreferUpdatersWhichUseChangedField(self):
+        short_chain_updaters = [
+            ("output", lambda _: "from input one", ["input one"]),
+            ("output", lambda _: "from input two", ["input two"])
+          ]
+        
+        long_chain_updaters = [
+            ("output", lambda _: "from input one", ["input one"]),
+            ("intermediate", lambda x: x, ["input two"]),
+            ("output", lambda _: "from input two", ["intermediate"])
+          ]
+        
+        for updaters in [short_chain_updaters, long_chain_updaters]:
+            graph = filledgraphforupdaters(updaters, { "input one" : "", "input two" : "", "output" : "" }, { "input one" : "go" })
+            yield assert_equal, graph["output"][1](), "from input one"
+        
+            graph = filledgraphforupdaters(updaters, { "input one" : "", "input two" : "", "output" : "" }, { "input two" : "go" })
+            yield assert_equal, graph["output"][1](), "from input two"
 
-class UpdaterGraphTest(unittest.TestCase):
+class TestUpdaterGraphUpdaters(unittest.TestCase):
     def testEverythingEnglish(self):
         config = dict(prefersimptrad = "simp", forceexpressiontobesimptrad = False, tonedisplay = "tonified", hanzimasking = False,
                         emphasisemainmeaning = False, meaningnumbering = "circledChinese", colormeaningnumbers = False, meaningseperator = "lines",
@@ -161,8 +180,8 @@ class UpdaterGraphTest(unittest.TestCase):
         config = dict(colorizedpinyingeneration = False, detectmeasurewords = False, tonedisplay = "numeric")
         
         def nassert(notifier):
-            self.assertEquals(len(notifier.infos), 1)
-            self.assertTrue("cannot" in notifier.infos[0])
+            assert_equal(len(notifier.infos), 1)
+            assert_true("cannot" in notifier.infos[0])
         
         self.assertProduces({ "expression" : u"三月", "mwfieldinfact" : False }, config, {
             "reading" : u'san1 yue4', "audio" : None
@@ -180,7 +199,7 @@ class UpdaterGraphTest(unittest.TestCase):
                       "X", "guan4", "pi2", "X",
                       "X", "tong3", "pi2", "X",
                       "X", "gang1", "pi2", "X"]
-            self.assertEquals(sanitizequantitydigits(mwaudio), "".join([u"[sound:" + os.path.join("MWAudio", sound + ".mp3") + "]" for sound in sounds]))
+            assert_equal(sanitizequantitydigits(mwaudio), "".join([u"[sound:" + os.path.join("MWAudio", sound + ".mp3") + "]" for sound in sounds]))
 
         # NB: turning off meaninggeneration here triggers a bug that happened in 0.6 where
         # we wouldn't set up the dictmeasurewords for the mwaudio
@@ -221,7 +240,7 @@ class UpdaterGraphTest(unittest.TestCase):
                                                     "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
         
         if notifierassertion == None:
-            notifierassertion = lambda notifier: self.assertEquals(len(notifier.infos), 0)
+            notifierassertion = lambda notifier: assert_equal(len(notifier.infos), 0)
         
         notifier = MockNotifier()
         gbu = GraphBasedUpdater(notifier, MockMediaManager(mediapacks), pinyin.config.Config(pinyin.utils.updated({ "dictlanguage" : "en" }, configdict)))

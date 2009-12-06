@@ -18,18 +18,18 @@ def assertUpdatesTo(updater, expression, theconfig, incomingfact, expectedfact, 
     updater(MockNotifier(), MockMediaManager(mediapacks), config.Config(utils.updated({ "dictlanguage" : "en" }, theconfig))).updatefact(actualfact, expression, **kwargs)
     assert_dict_equal(actualfact, expectedfact, values_as_assertions=True)
 
-class FieldUpdaterFromAudioTest(unittest.TestCase):
+class TestFieldUpdaterFromAudio(object):
     def testDoesntReformatWhenDisabled(self):
-        self.assertUpdatesTo(u"hen3 hao3", dict(forcepinyininaudiotosoundtags = False), { "audio" : "", "expression" : "junk" }, { "audio" : "hen3 hao3", "expression" : "junk" })
+        self.assertUpdatesTo(u"hen3 hao3", dict(forcepinyininaudiotosoundtags = False), { "audio" : u"", "expression" : u"junk" }, { "audio" : u"hen3 hao3", "expression" : u"junk" })
     
     def testLeavesOtherFieldsAlone(self):
-        self.assertUpdatesTo(u"", dict(forcepinyininaudiotosoundtags = True), { "audio" : "[sound:fake.mp3]", "expression" : "junk" }, { "audio" : u"", "expression" : "junk" })
+        self.assertUpdatesTo(u"", dict(forcepinyininaudiotosoundtags = True), { "audio" : u"[sound:fake.mp3]", "expression" : u"junk" }, { "audio" : u"", "expression" : u"junk" })
 
     def testReusesOldValueIfNoDelta(self):
-        self.assertUpdatesTo(None, dict(forcepinyininaudiotosoundtags = True), { "audio" : "[sound:fake.mp3]" }, { "audio" : u"[sound:fake.mp3]" })
+        self.assertUpdatesTo(None, dict(forcepinyininaudiotosoundtags = True), { "audio" : u"[sound:fake.mp3]" }, { "audio" : u"[sound:fake.mp3]" })
 
     def testUpdatingGeneratedVersion(self):
-        self.assertUpdatesTo(None, dict(forcepinyininaudiotosoundtags = True), { "audio" : markgeneratedfield("[sound:fake.mp3]") }, { "audio" : markgeneratedfield(u"[sound:fake.mp3]") })
+        self.assertUpdatesTo(None, dict(forcepinyininaudiotosoundtags = True), { "audio" : markgeneratedfield(u"[sound:fake.mp3]") }, { "audio" : markgeneratedfield(u"[sound:fake.mp3]") })
 
     def testReformatsAccordingToConfig(self):
         henhaoaudio = u"[sound:" + os.path.join("Test", "hen3.mp3") + "][sound:" + os.path.join("Test", "hao3.mp3") + "]"
@@ -49,7 +49,7 @@ class FieldUpdaterFromAudioTest(unittest.TestCase):
                                                 "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
         assertUpdatesTo(partial(FieldUpdater, "audio"), *args, mediapacks=mediapacks)
 
-class FieldUpdaterFromMeaningTest(unittest.TestCase):
+class TestFieldUpdaterFromMeaning(object):
     def testDoesntReformatWhenDisabled(self):
         config = dict(forcemeaningnumberstobeformatted = False)
         self.assertUpdatesTo(u"(1) yes (2) no", config, { "meaning" : "", "expression" : "junk" }, { "meaning" : "(1) yes (2) no", "expression" : "junk" })
@@ -71,7 +71,7 @@ class FieldUpdaterFromMeaningTest(unittest.TestCase):
     def assertUpdatesTo(self, *args):
         assertUpdatesTo(partial(FieldUpdater, "meaning"), *args)
 
-class FieldUpdaterFromReadingTest(unittest.TestCase):
+class TestFieldUpdaterFromReading(object):
     def testDoesntReformatWhenDisabled(self):
         config = dict(forcereadingtobeformatted = False)
         self.assertUpdatesTo(u"hen3 hǎo", config, { "reading" : "", "expression" : "junk" }, { "reading" : u"hen3 hǎo", "expression" : "junk" })
@@ -117,11 +117,11 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
     def assertUpdatesTo(self, *args, **kwargs):
         assertUpdatesTo(partial(FieldUpdater, "reading"), *args, **kwargs)
 
-class FieldUpdaterFromExpressionTest(object):
+class TestFieldUpdaterFromExpression(object):
     def testReusesOldValueIfNoDelta(self):
-        self.assertUpdatesTo(None, dict(tonedisplay = "tonified", readinggeneration = True),
-            { "expression" : "书", "reading" : "" },
-            { "expression" : "书", "reading" : "shu1" })
+        self.assertUpdatesTo(None, dict(colorizedpinyingeneration = False, tonedisplay = "numeric", readinggeneration = True),
+            { "expression" : u"书", "reading" : "" },
+            { "expression" : u"书", "reading" : markgeneratedfield("shu1") })
     
     def testUpdatingGeneratedVerison(self):
         self.assertUpdatesTo(None, {}, { "expression" : markgeneratedfield("书") }, { "expression" : markgeneratedfield("书") })
@@ -156,12 +156,12 @@ class FieldUpdaterFromExpressionTest(object):
                 "meaning" : markgeneratedfield(u'㊀ book<br />㊁ letter<br />㊂ see also <span style="color:#ff0000">\u4e66</span><span style="color:#ff0000">\u7ecf</span> Book of History'),
                 "mw" : markgeneratedfield(u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>'),
                 "audio" : markgeneratedfield(u"[sound:" + os.path.join("Test", "shu1.mp3") + "]"),
-                "mwaudio" : lambda mwaudio: assert_equal(sanitizequantitydigits(mwaudio), markgeneratedfield((u"[sound:" + os.path.join("Test", "X.mp3") + u"][sound:" + os.path.join("Test", "shu1.mp3") + "]") * 4)),
+                "mwaudio" : lambda mwaudio: assert_equal(sanitizequantitydigits(mwaudio), markgeneratedfield((u"[sound:" + os.path.join("Test", "X.mp3") + u"][sound:" + os.path.join("Test", "shu1.mp3") + "]") * 3)),
                 "color" : markgeneratedfield(u'<span style="color:#ff0000">书</span>'),
                 "trad" : markgeneratedfield(u"書"),
                 "simp" : markgeneratedfield(u"书")
               }
-            yield self.assertUpdatesTo, u"书", config, { "reading" : default, "meaning" : default, "mw" : default, "audio" : default, "mwaudio" : default, "color" : default, "trad" : default, "simp" : default }, expected
+            yield self.assertUpdatesTo, u"书", config, { "expression" : u"书", "reading" : default, "meaning" : default, "mw" : default, "audio" : default, "mwaudio" : default, "color" : default, "trad" : default, "simp" : default }, expected
     
     def testDontOverwriteNonGeneratedFields(self):
         config = dict(colorizedpinyingeneration = True, colorizedcharactergeneration = True, meaninggeneration = True, detectmeasurewords = True,
