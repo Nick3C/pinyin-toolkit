@@ -15,7 +15,7 @@ from pinyin.mocks import *
 class TestUpdaterGraphGeneralFunctionality(object):
     def testDoesntUpdateNonGeneratedFields(self):
         updaters = [
-            ("output", lambda _: "modified output", ["input"])
+            ("output", lambda _: "modified output", ("input",))
           ]
         
         graph = filledgraphforupdaters(updaters, { "input" : "hello", "output" : "original output" }, { "input" : "goodbye" })
@@ -23,8 +23,8 @@ class TestUpdaterGraphGeneralFunctionality(object):
     
     def testDoesntUpdateGeneratedFieldsIfInputsClean(self):
         updaters = [
-            ("intermediate", lambda _: "constant", ["input"]),
-            ("output", lambda _: "modified output", ["intermediate"])
+            ("intermediate", lambda _: "constant", ("input",)),
+            ("output", lambda _: "modified output", ("intermediate",))
           ]
         
         graph = filledgraphforupdaters(updaters, { "input" : "hello", "intermediate" : markgeneratedfield("constant"), "output" : markgeneratedfield("original output") }, { "input" : "goodbye" })
@@ -32,8 +32,8 @@ class TestUpdaterGraphGeneralFunctionality(object):
 
     def testUpdatesBlankFieldsDependentOnNonDirtyInputs(self):
         updaters = [
-            ("intermediate", lambda _: "constant", ["input"]),
-            ("output", lambda _: "modified output", ["intermediate"])
+            ("intermediate", lambda _: "constant", ("input",)),
+            ("output", lambda _: "modified output", ("intermediate",))
           ]
         
         graph = filledgraphforupdaters(updaters, { "input" : "hello", "intermediate" : markgeneratedfield("constant"), "output" : "" }, { "input" : "goodbye" })
@@ -41,14 +41,14 @@ class TestUpdaterGraphGeneralFunctionality(object):
     
     def testPreferUpdatersWhichUseChangedField(self):
         short_chain_updaters = [
-            ("output", lambda _: "from input one", ["input one"]),
-            ("output", lambda _: "from input two", ["input two"])
+            ("output", lambda _: "from input one", ("input one",)),
+            ("output", lambda _: "from input two", ("input two",))
           ]
         
         long_chain_updaters = [
-            ("output", lambda _: "from input one", ["input one"]),
-            ("intermediate", lambda x: x, ["input two"]),
-            ("output", lambda _: "from input two", ["intermediate"])
+            ("output", lambda _: "from input one", ("input one",)),
+            ("intermediate", lambda x: x, ("input two",)),
+            ("output", lambda _: "from input two", ("intermediate",))
           ]
         
         for updaters in [short_chain_updaters, long_chain_updaters]:

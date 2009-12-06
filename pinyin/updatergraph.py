@@ -106,34 +106,34 @@ class GraphBasedUpdater(object):
         self.dictionaries = dictionary.PinyinDictionary.loadall()
         
         self.updaters = [
-                ("simptrad", self.expression2simptrad, ["expression"]),
-                ("trad", lambda x: x["simp"] != x["trad"] and x["trad"] or "", ["simptrad"]),
-                ("simp", lambda x: x["simp"] != x["trad"] and x["simp"] or "", ["simptrad"]),
+                ("simptrad", self.expression2simptrad, ("expression",)),
+                ("trad", lambda x: x["simp"] != x["trad"] and x["trad"] or "", ("simptrad",)),
+                ("simp", lambda x: x["simp"] != x["trad"] and x["simp"] or "", ("simptrad",)),
                 ("expression", lambda x: x, ["simp"]),
                 ("expression", lambda x: x, ["trad"]),
         
-                ("dictmeaningsmwssource", self.expression2dictmeaningsmwssource, ["expression"]),
-                ("dictmeaningsmws", lambda x: x[0], ["dictmeaningsmwssource"]),
-                ("dictmeaningssource", lambda x: x[1], ["dictmeaningsmwssource"]),
-                ("mergeddictmeaningsmws", self.dictmeaningsmws2mergeddictmeaningsmws, ["dictmeaningsmws", "mwfieldinfact"]),
-                ("mergeddictmeanings", lambda x: x[0], ["mergeddictmeaningsmws"]),
-                ("mergeddictmws", lambda x: x[1], ["mergeddictmeaningsmws"]),
-                ("meaning", self.dictmeaningsmws2meaning, ["expression", "mergeddictmeanings", "dictmeaningssource"]), # Need expression for Hanzi masking
+                ("dictmeaningsmwssource", self.expression2dictmeaningsmwssource, ("expression",)),
+                ("dictmeaningsmws", fst, ("dictmeaningsmwssource",)),
+                ("dictmeaningssource", snd, ("dictmeaningsmwssource",)),
+                ("mergeddictmeaningsmws", self.dictmeaningsmws2mergeddictmeaningsmws, ("dictmeaningsmws", "mwfieldinfact")),
+                ("mergeddictmeanings", fst, ("mergeddictmeaningsmws",)),
+                ("mergeddictmws", snd, ("mergeddictmeaningsmws",)),
+                ("meaning", self.dictmeaningsmws2meaning, ("expression", "mergeddictmeanings", "dictmeaningssource",)), # Need expression for Hanzi masking
         
                 #("mergeddictmeaningsmws", self.meaning2mergeddictmeaningsmws, ["meaning"]),
         
-                ("dictmws", lambda x: x[1], ["dictmeaningsmws"]),
+                ("dictmws", lambda x: x[1], ("dictmeaningsmws",)),
                 #("dictmws", self.mw2dictmws, ["mw"]), # TODO: think carefully about this and mergeddictmws for the update story here
-                ("mw", self.mergeddictmws2mw, ["mergeddictmws"]),
-                ("mwaudio", self.mergeddictmwdictreading2mwaudio, ["dictmws", "dictreading"]), # Need dictreading for the noun
+                ("mw", self.mergeddictmws2mw, ("mergeddictmws",)),
+                ("mwaudio", self.mergeddictmwdictreading2mwaudio, ("dictmws", "dictreading")), # Need dictreading for the noun
         
-                ("dictreading", self.expression2dictreading, ["expression"]),
-                ("reading", self.dictreading2reading, ["dictreading"]),
-                ("dictreading", self.reading2dictreading, ["reading"]),
-                ("color", self.expressiondictreading2color, ["expression", "dictreading"]),
-                ("audio", self.dictreading2audio, ["dictreading"]),
+                ("dictreading", self.expression2dictreading, ("expression",)),
+                ("reading", self.dictreading2reading, ("dictreading",)),
+                ("dictreading", self.reading2dictreading, ("reading",)),
+                ("color", self.expressiondictreading2color, ("expression", "dictreading")),
+                ("audio", self.dictreading2audio, ("dictreading",)),
                 
-                ("weblinks", self.expression2weblinks, ["expression"])
+                ("weblinks", self.expression2weblinks, ("expression",))
             ]
 
     updateablefields = property(lambda self: set([field for field, _, _ in self.updaters]))
@@ -282,11 +282,38 @@ class GraphBasedUpdater(object):
     def filledgraph(self, fact, delta):
         return filledgraphforupdaters(self.updaters, fact, delta)
 
-def filledgraphforupdaters(updaters, fact, delta):
+def filledgraphforupdaters(all_updaters, fact, delta):
     graph = {}
     dirty = {}
     
     finddirties = lambda usings: [using for using in usings if dirty[using]]
+    blank = lambda x: len(x.strip()) == 0
+    
+    # The initial shell contains just the stuff that is non-generated or being set in this round.
+    # Everything else will be generated based off of these values
+    initiallyfilledfields = set([field for field in fact if not isgeneratedfield(field, fact[field]) and not blank(fact[field])]).union(set(delta.keys()))
+    for field in initiallyfilledfields:
+        dirty[field] = field in delta
+        graph[field] = (False, Thunk(lambda field=field: cond(field in delta, lambda: delta[field], lambda: fact[field])))
+    
+    # Remove useless updaters, and updaters that might confound a delta by updating a field from an
+    # old field. For example, if we change the reading we want to regenerate the color field -- but this is no
+    # good if we just use the updater that gets the reading from the expression!
+    all_updaters = [updater for updater in all_updaters if updater[0] not in initiallyfilledfields]
+    delta_updaters = maydependon(all_updaters, delta.keys())
+    
+    # A complication is the presence of non-generated blank fields. We want to try and update these even if the
+    # delta is empty (for example). To this end we need to make sure that the cut doesn't exclude updaters that
+    # might potentially be depended on by an updater for a blank field.
+    #
+    # We also exclude updaters for any field that is going to get filled out by any delta_updater, because those
+    # updaters should take priority.
+    all_updaters = [updater for updater in all_updaters if all([updater[0] not in delta_field for delta_field, _, _ in delta_updaters])]
+    blank_updaters = dependedonby(all_updaters, [field for field in fact if blank(fact[field])])
+    
+    # Yes, this really works! This is because Python has reference comparison semantics on functions.
+    # However, this is the reason we need to use tuples of fields we depend on, rather than lists
+    updaters = set(delta_updaters + blank_updaters)
     
     def shell(alreadyfilled):
         # Gather all the fields we are newly able to fill given the most recent changes
@@ -309,9 +336,9 @@ def filledgraphforupdaters(updaters, fact, delta):
         for field, possiblefillers in cannowfill.items():
             def fillme(field=field, possiblefillers=possiblefillers):
                 # For preference, use a filler that will certainly return clean information (i.e. sort by the number of dirty inputs and prefer the first)
-                for fillerfunction, dirtyinputs, anyinputsdirty in sorted([(x, y(), len(y()) > 0) for x, y in possiblefillers], using(lambda x: x[2])):
-                    if field not in fact or anyinputsdirty or fact[field].strip() == "":
-                        # Don't know what the last value was or it may have changed: recompute
+                for fillerfunction, dirtyinputs, anyinputsdirty in sorted([(f, dirties(), len(dirties()) > 0) for f, dirties in possiblefillers], using(lambda x: x[2])):
+                    if field not in fact or blank(fact[field]) or anyinputsdirty:
+                        # Don't know what the last value was or it may have changed: recompute.
                         #
                         # We also recompute if the incoming field is blank: this can happen if we have
                         # deleted the contents of a field, and then come back to update the fact by tabbing
@@ -338,13 +365,33 @@ def filledgraphforupdaters(updaters, fact, delta):
         
         shell(alreadyfilled.union(set(cannowfill.keys())))
     
-    # The initial shell contains just the stuff that is non-generated or being set in this round.
-    # Everything else will be generated based off of these values
-    initiallyfilledfields = set([field for field in fact if not isgeneratedfield(field, fact[field])]).union(set(delta.keys()))
-    for field in initiallyfilledfields:
-        dirty[field] = field in delta
-        graph[field] = (False, Thunk(lambda field=field: cond(field in delta, lambda: delta[field], lambda: fact[field])))
-    
     shell(initiallyfilledfields)
     
     return graph
+
+
+# Given a list of updaters and the fields that have changed, removes any updaters that could not possibly compute a
+# new value (by analysis of the transitive closure of their dependencies)
+def maydependon(updaters, deltafields):
+    maytrigger, deltafields = [], set(deltafields)
+    
+    while True:
+        extramaytrigger, updaters = partition(lambda updater: any([dependent in deltafields for dependent in updater[2]]), updaters)
+        if len(extramaytrigger) == 0:
+            return maytrigger
+        
+        maytrigger.extend(extramaytrigger)
+        deltafields.update(map(fst, maytrigger))
+
+# Given a list of updaters and the fields that we need to produce, remove any updaters that can't contribute to
+# filling out those fields
+def dependedonby(updaters, requiredoutputs):
+    depended, requiredoutputs = [], set(requiredoutputs)
+    
+    while True:
+        extradepended, updaters = partition(lambda updater: updater[0] in requiredoutputs, updaters)
+        if len(extradepended) == 0:
+            return depended
+        
+        depended.extend(extradepended)
+        requiredoutputs.update(concatmap(lambda x: list(x[2]), extradepended))
