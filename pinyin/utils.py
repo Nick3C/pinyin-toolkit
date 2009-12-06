@@ -309,18 +309,6 @@ def using(proj, how=cmp):
     return lambda x, y: how(proj(x), proj(y))
 
 """
-Sorting combinator: sort by first element
-"""
-def byFirst(x, y):
-    return cmp(x[0], y[0])
-
-"""
-Sorting combinator: sort by second element
-"""
-def bySecond(x, y):
-    return cmp(x[1], y[1])
-
-"""
 Sorting combinator: reverse order:
 """
 def inReverse(how=cmp):
@@ -389,6 +377,10 @@ def inplacefilter(pred, list):
         if not pred(list[i - 1]):
             del list[i - 1]
 
+fst = lambda x: x[0]
+snd = lambda x: x[1]
+thd = lambda x: x[2]
+
 def first(f):
     def go(xy):
         x, y = xy
@@ -408,6 +400,12 @@ def cond(test, tb, fb):
         return tb()
     else:
         return fb()
+
+def concatmap(f, xs):
+    return concat(map(f, xs))
+
+def partition(p, xs):
+    return (filter(p, xs), filter(lambda x: not p(x), xs))
 
 def intersperse(what, things):
     first = True

@@ -43,12 +43,8 @@ class SortingTest(unittest.TestCase):
         items = { "hello" : 1, "wide" : 2, "world" : 4 }
         self.assertEquals(sorted(["wide", "hello", "world"], using(items.get, inReverse())), ["world", "wide", "hello"])
         self.assertEquals(sorted(["wide", "hello", "world"], using(items.get)), ["hello", "wide", "world"])
-    
-    def testSortedByFirst(self):
-        self.assertEquals(sorted([(5, "1"), (2, "4"), (3, "2"), (1, "5"), (4, "3")], byFirst), [(1, "5"), (2, "4"), (3, "2"), (4, "3"), (5, "1")])
-    
-    def testSortedBySecond(self):
-        self.assertEquals(sorted([(5, "1"), (2, "4"), (3, "2"), (1, "5"), (4, "3")], bySecond), [(5, "1"), (3, "2"), (4, "3"), (2, "4"), (1, "5")])
+        self.assertEquals(sorted([(5, "1"), (2, "4"), (3, "2"), (1, "5"), (4, "3")], using(fst)), [(1, "5"), (2, "4"), (3, "2"), (4, "3"), (5, "1")])
+        self.assertEquals(sorted([(5, "1"), (2, "4"), (3, "2"), (1, "5"), (4, "3")], using(snd)), [(5, "1"), (3, "2"), (4, "3"), (2, "4"), (1, "5")])
 
     def testSortedInReverse(self):
         self.assertEquals(sorted([5, 2, 3, 1, 4], inReverse()), [5, 4, 3, 2, 1])

@@ -70,7 +70,7 @@ class PreferencesController(object):
             keyedfieldnames.append((key, fieldname, wantcheckbox))
         
         # Build the fields in order of the label we assign to them: better than hash order!
-        checkwidgets = self.view.setupFields(sorted(keyedfieldnames, pinyin.utils.bySecond))
+        checkwidgets = self.view.setupFields(sorted(keyedfieldnames, pinyin.utils.using(pinyin.utils.snd)))
         
         # Set up all the checkboxes to map to the corresponding control flags
         for key, checkwidget in checkwidgets.items():
