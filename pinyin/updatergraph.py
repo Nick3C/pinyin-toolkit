@@ -286,7 +286,7 @@ def filledgraphforupdaters(updaters, fact, delta):
     graph = {}
     dirty = {}
     
-    anyusingsdirty = lambda usings: any([dirty[using] for using in usings])
+    finddirties = lambda usings: [using for using in usings if dirty[using]]
     
     def shell(alreadyfilled):
         # Gather all the fields we are newly able to fill given the most recent changes
@@ -298,7 +298,7 @@ def filledgraphforupdaters(updaters, fact, delta):
                 # the actual thunk for this particular field, hence all the thunking and lambdas here
                 inputs = Thunk(lambda updateusings=updateusings: [graph[updateusing][1]() for updateusing in updateusings])
                 cannowfill[updatewhat].append((lambda inputs=inputs, updatefunction=updatefunction: updatefunction(*(inputs())),
-                                               lambda inputs=inputs, updateusings=updateusings: seq(inputs(), lambda: anyusingsdirty(updateusings))))
+                                               lambda inputs=inputs, updateusings=updateusings: seq(inputs(), lambda: finddirties(updateusings))))
         
         # Check for quiescence
         if len(cannowfill) == 0:
@@ -308,9 +308,9 @@ def filledgraphforupdaters(updaters, fact, delta):
         # Set up each fillable graph field with a thunk computing the value
         for field, possiblefillers in cannowfill.items():
             def fillme(field=field, possiblefillers=possiblefillers):
-                # For preference, use a filler that will certainly return clean information
-                for fillerfunction, inputsdirty in sorted([(x, y()) for x, y in possiblefillers], bySecond):
-                    if field not in fact or inputsdirty or fact[field].strip() == "":
+                # For preference, use a filler that will certainly return clean information (i.e. sort by )
+                for fillerfunction, dirtyinputs, anyinputsdirty in sorted([(x, y(), len(y()) > 0) for x, y in possiblefillers], using(lambda x: x[2])):
+                    if field not in fact or anyinputsdirty or fact[field].strip() == "":
                         # Don't know what the last value was or it may have changed: recompute
                         #
                         # We also recompute if the incoming field is blank: this can happen if we have
@@ -320,15 +320,17 @@ def filledgraphforupdaters(updaters, fact, delta):
                         #
                         # Note that if the field was *generated* as blank one then it will have a marker
                         # in it, and so we won't pointlessly recompute its blankness.
+                        log.info("Attempting to fill %s field -- dirty inputs are %s", field, dirtyinputs)
                         result = fillerfunction()
                         if result is None:
+                            log.info("Filling %s failed -- falling back on another method", field)
                             continue
                         
-                        dirty[field] = cond(field in fact, lambda: result != unmarkgeneratedfield(fact[field]), lambda: inputsdirty)
+                        dirty[field] = cond(field in fact, lambda: result != unmarkgeneratedfield(fact[field]), lambda: anyinputsdirty)
                         return result
                     else:
                         # Last value must not have changed: retain it
-                        assert (field in fact and not inputsdirty)
+                        assert (field in fact and not anyinputsdirty)
                         dirty[field] = False
                         return unmarkgeneratedfield(fact[field])
             
