@@ -50,10 +50,12 @@ class BuildDBController(object):
         # Create and run a thread that just constructs the database
         class Worker(QThread):
             def run(self):
+                # NB: do not use suppressexceptions because throwing an exception at this point
+                # can cause segfaults in PyQt4 -- we better suppress the exception for developers too!
                 try:
                     dbbuilder.build()
                     self.emit(SIGNAL("buildsuccess()"))
-                except Exception, e:
+                except:
                     log.exception("Suppressed exception in database build process")
                     self.emit(SIGNAL("buildfailure(PyQt_PyObject)"), sys.exc_info())
         

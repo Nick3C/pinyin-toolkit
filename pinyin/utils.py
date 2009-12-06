@@ -36,13 +36,16 @@ def suppressexceptions(action):
     if debugmode():
         # Don't suppress exceptions for the developers!
         action()
+        return True
     else:
         try:
             action()
+            return True
         except:
             # NB: have to delay the import of logger because it depends on utils
             from logger import log
             log.exception("Had to suppress an exception")
+            return False
 
 """
 Utility function that reports whether a string consists only of punctuation character
@@ -181,18 +184,22 @@ class Thunk(object):
         self.__called = False
         self.__result = None
         self.__function = function
+        
+        # For error messages only:
+        import traceback
+        self.__thunk_stack = traceback.format_stack()
     
     def __call__(self):
         if self.__called:
             return self.__result
         elif self.__called is None:
-            raise ValueError("A thunked computation entered a black hole")
+            raise ValueError("A thunked computation entered a black hole! Created at:\n" +  "".join(self.__thunk_stack))
         
         try:
             self.__called = None # Indicates that this thunk has become a black hole
             self.__result = self.__function()
             self.__called = True
-        except Exception, e:
+        except:
             from pinyin.logger import log
             # Thunked actions raising an exception is a massively bad idea, because there
             # is no way to know whose exception handler will be on the stack at the time we
