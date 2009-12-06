@@ -381,8 +381,8 @@ def splitat(what, n):
         raise ValueError("You cannot splitat at a point later than the end of the string")
     return what[0:n], what[n:]
 
-def seq(x, y):
-    return y()
+def seq(*args):
+    return args[-1]()
 
 def inplacefilter(pred, list):
     for i in range(len(list), 0, -1):
