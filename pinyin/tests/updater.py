@@ -23,7 +23,13 @@ class FieldUpdaterFromAudioTest(unittest.TestCase):
         self.assertUpdatesTo(u"hen3 hao3", dict(forcepinyininaudiotosoundtags = False), { "audio" : "", "expression" : "junk" }, { "audio" : "hen3 hao3", "expression" : "junk" })
     
     def testLeavesOtherFieldsAlone(self):
-        self.assertUpdatesTo(u"", dict(forcepinyininaudiotosoundtags = True), { "audio" : "junk", "expression" : "junk" }, { "audio" : u"", "expression" : "junk" })
+        self.assertUpdatesTo(u"", dict(forcepinyininaudiotosoundtags = True), { "audio" : "[sound:fake.mp3]", "expression" : "junk" }, { "audio" : u"", "expression" : "junk" })
+
+    def testReusesOldValueIfNoDelta(self):
+        self.assertUpdatesTo(None, dict(forcepinyininaudiotosoundtags = True), { "audio" : "[sound:fake.mp3]" }, { "audio" : u"[sound:fake.mp3]" })
+
+    def testUpdatingGeneratedVersion(self):
+        self.assertUpdatesTo(None, dict(forcepinyininaudiotosoundtags = True), { "audio" : markgeneratedfield("[sound:fake.mp3]") }, { "audio" : markgeneratedfield(u"[sound:fake.mp3]") })
 
     def testReformatsAccordingToConfig(self):
         henhaoaudio = u"[sound:" + os.path.join("Test", "hen3.mp3") + "][sound:" + os.path.join("Test", "hao3.mp3") + "]"
@@ -49,8 +55,13 @@ class FieldUpdaterFromMeaningTest(unittest.TestCase):
         self.assertUpdatesTo(u"(1) yes (2) no", config, { "meaning" : "", "expression" : "junk" }, { "meaning" : "(1) yes (2) no", "expression" : "junk" })
     
     def testLeavesOtherFieldsAlone(self):
-        config = dict(forcemeaningnumberstobeformatted = True)
-        self.assertUpdatesTo(u"", config, { "meaning" : "junk", "expression" : "junk" }, { "meaning" : u"", "expression" : "junk" })
+        self.assertUpdatesTo(u"", dict(forcemeaningnumberstobeformatted = True), { "meaning" : "junk", "expression" : "junk" }, { "meaning" : u"", "expression" : "junk" })
+
+    def testReusesOldValueIfNoDelta(self):
+        self.assertUpdatesTo(None, dict(forcemeaningnumberstobeformatted = True), { "meaning" : "hen3" }, { "meaning" : u"hen3" })
+
+    def testUpdatingGeneratedVersion(self):
+        self.assertUpdatesTo(None, dict(forcemeaningnumberstobeformatted = True), { "meaning" : markgeneratedfield(u"hen3") }, { "meaning" : markgeneratedfield(u"hen3") })
 
     def testReformatsAccordingToConfig(self):
         self.assertUpdatesTo(u"(1) yes (2) no", dict(forcemeaningnumberstobeformatted = True, meaningnumbering = "circledArabic", colormeaningnumbers = False), { "meaning" : "junky" }, { "meaning" : u"① yes ② no" })
@@ -71,10 +82,22 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
             { "reading" : lambda reading: len(reading) > 0 and reading != "also junk", "expression" : "junk" }, alwaysreformat=True)
     
     def testLeavesOtherFieldsAlone(self):
-        config = dict(forcereadingtobeformatted = True)
-        self.assertUpdatesTo(u"", config,
+        self.assertUpdatesTo(u"", dict(forcereadingtobeformatted = True),
             { "reading" : "junk", "expression" : "junk" },
             { "reading" : u"", "expression" : "junk" })
+
+    def testReusesOldValueIfNoDelta(self):
+        config = dict(forcereadingtobeformatted = True, tonedisplay = "numeric",
+                      colorizedpinyingeneration = False, colorizedcharactergeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"])
+        self.assertUpdatesTo(None, config,
+            { "reading" : u"hen3", "expression" : u"很", "color" : u"" },
+            { "reading" : u"hen3", "expression" : u"很", "color" : markgeneratedfield(u'<span style="color:#333333">很</span>') })
+
+    def testUpdatingGeneratedVersion(self):
+        config = dict(forcereadingtobeformatted = True, tonedisplay = "numeric")
+        self.assertUpdatesTo(None, config,
+            { "reading" : markgeneratedfield(u"hen3") },
+            { "reading" : markgeneratedfield(u"hen3") })
 
     def testReformatsAccordingToConfig(self):
         config = dict(forcereadingtobeformatted = True, tonedisplay = "tonified",
@@ -95,6 +118,14 @@ class FieldUpdaterFromReadingTest(unittest.TestCase):
         assertUpdatesTo(partial(FieldUpdater, "reading"), *args, **kwargs)
 
 class FieldUpdaterFromExpressionTest(object):
+    def testReusesOldValueIfNoDelta(self):
+        self.assertUpdatesTo(None, dict(tonedisplay = "tonified", readinggeneration = True),
+            { "expression" : "书", "reading" : "" },
+            { "expression" : "书", "reading" : "shu1" })
+    
+    def testUpdatingGeneratedVerison(self):
+        self.assertUpdatesTo(None, {}, { "expression" : markgeneratedfield("书") }, { "expression" : markgeneratedfield("书") })
+
     def testAutoBlankingGenerated(self):
         self.assertUpdatesTo(u"", {}, {
               "reading" : markgeneratedfield("blather"),

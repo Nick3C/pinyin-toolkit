@@ -6,10 +6,38 @@ from testutils import *
 
 import pinyin.config
 from pinyin.db import database
+from pinyin.factproxy import markgeneratedfield
 from pinyin.updatergraph import *
 import pinyin.utils
 from pinyin.mocks import *
 
+
+class GeneralGraphTest(unittest.TestCase):
+    def testDoesntUpdateNonGeneratedFields(self):
+        updaters = [
+            ("output", lambda _: "modified output", ["input"])
+          ]
+        
+        graph = filledgraphforupdaters(updaters, { "input" : "hello", "output" : "original output" }, { "input" : "goodbye" })
+        self.assertEquals(graph["output"][1](), "original output")
+    
+    def testDoesntUpdateGeneratedFieldsIfInputsClean(self):
+        updaters = [
+            ("intermediate", lambda _: "constant", ["input"]),
+            ("output", lambda _: "modified output", ["intermediate"])
+          ]
+        
+        graph = filledgraphforupdaters(updaters, { "input" : "hello", "intermediate" : markgeneratedfield("constant"), "output" : markgeneratedfield("original output") }, { "input" : "goodbye" })
+        self.assertEquals(graph["output"][1](), "original output")
+
+    def testUpdatesBlankFieldsDependentOnNonDirtyInputs(self):
+        updaters = [
+            ("intermediate", lambda _: "constant", ["input"]),
+            ("output", lambda _: "modified output", ["intermediate"])
+          ]
+        
+        graph = filledgraphforupdaters(updaters, { "input" : "hello", "intermediate" : markgeneratedfield("constant"), "output" : "" }, { "input" : "goodbye" })
+        self.assertEquals(graph["output"][1](), "modified output")
 
 class UpdaterGraphTest(unittest.TestCase):
     def testEverythingEnglish(self):

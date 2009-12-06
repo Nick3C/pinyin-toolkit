@@ -280,58 +280,69 @@ class GraphBasedUpdater(object):
 
 
     def filledgraph(self, fact, delta):
-        graph = {}
-        dirty = {}
+        return filledgraphforupdaters(self.updaters, fact, delta)
+
+def filledgraphforupdaters(updaters, fact, delta):
+    graph = {}
+    dirty = {}
+    
+    anyusingsdirty = lambda usings: any([dirty[using] for using in usings])
+    
+    def shell(alreadyfilled):
+        # Gather all the fields we are newly able to fill given the most recent changes
+        # to the list of already filled things
+        cannowfill = FactoryDict(lambda _: [])
+        for updatewhat, updatefunction, updateusings in updaters:
+            if updatewhat not in alreadyfilled and all([updateusing in alreadyfilled for updateusing in updateusings]):
+                # We have to delay the computation of whether something is dirty or not until we are inside
+                # the actual thunk for this particular field, hence all the thunking and lambdas here
+                inputs = Thunk(lambda updateusings=updateusings: [graph[updateusing][1]() for updateusing in updateusings])
+                cannowfill[updatewhat].append((lambda inputs=inputs, updatefunction=updatefunction: updatefunction(*(inputs())),
+                                               lambda inputs=inputs, updateusings=updateusings: seq(inputs(), lambda: anyusingsdirty(updateusings))))
         
-        anyusingsdirty = lambda usings: any([dirty[using] for using in usings])
+        # Check for quiescence
+        if len(cannowfill) == 0:
+            # NB: could do something with the unfilled set (self.updateablefields.difference(alreadyfilled)) here
+            return
         
-        def shell(alreadyfilled):
-            # Gather all the fields we are newly able to fill given the most recent changes
-            # to the list of already filled things
-            cannowfill = FactoryDict(lambda _: [])
-            for updatewhat, updatefunction, updateusings in self.updaters:
-                if updatewhat not in alreadyfilled and all([updateusing in alreadyfilled for updateusing in updateusings]):
-                    # We have to delay the computation of whether something is dirty or not until we are inside
-                    # the actual thunk for this particular field, hence all the thunking and lambdas here
-                    inputs = Thunk(lambda updateusings=updateusings: [graph[updateusing][1]() for updateusing in updateusings])
-                    cannowfill[updatewhat].append((lambda inputs=inputs, updatefunction=updatefunction: updatefunction(*(inputs())),
-                                                   lambda inputs=inputs, updateusings=updateusings: seq(inputs(), lambda: anyusingsdirty(updateusings))))
+        # Set up each fillable graph field with a thunk computing the value
+        for field, possiblefillers in cannowfill.items():
+            def fillme(field=field, possiblefillers=possiblefillers):
+                # For preference, use a filler that will certainly return clean information
+                for fillerfunction, inputsdirty in sorted([(x, y()) for x, y in possiblefillers], bySecond):
+                    if field not in fact or inputsdirty or fact[field].strip() == "":
+                        # Don't know what the last value was or it may have changed: recompute
+                        #
+                        # We also recompute if the incoming field is blank: this can happen if we have
+                        # deleted the contents of a field, and then come back to update the fact by tabbing
+                        # away from a filled field. Now we have enough information to fill it, and musn't
+                        # just reuse the old version, which will be blank.
+                        #
+                        # Note that if the field was *generated* as blank one then it will have a marker
+                        # in it, and so we won't pointlessly recompute its blankness.
+                        result = fillerfunction()
+                        if result is None:
+                            continue
+                        
+                        dirty[field] = cond(field in fact, lambda: result != unmarkgeneratedfield(fact[field]), lambda: inputsdirty)
+                        return result
+                    else:
+                        # Last value must not have changed: retain it
+                        assert (field in fact and not inputsdirty)
+                        dirty[field] = False
+                        return unmarkgeneratedfield(fact[field])
             
-            # Check for quiescence
-            if len(cannowfill) == 0:
-                # NB: could do something with the unfilled set (self.updateablefields.difference(alreadyfilled)) here
-                return
-            
-            # Set up each fillable graph field with a thunk computing the value
-            for field, possiblefillers in cannowfill.items():
-                def fillme(field=field, possiblefillers=possiblefillers):
-                    # For preference, use a filler that will certainly return clean information
-                    for fillerfunction, inputsdirty in sorted([(x, y()) for x, y in possiblefillers], bySecond):
-                        if field not in fact or inputsdirty:
-                            # Don't know what the last value was or it may have changed: recompute
-                            result = fillerfunction()
-                            if result is None:
-                                continue
-                            
-                            dirty[field] = cond(field in fact, lambda: result != unmarkgeneratedfield(fact[field]), lambda: inputsdirty)
-                            return result
-                        else:
-                            # Last value must not have changed: retain it
-                            assert (field in fact and not inputsdirty)
-                            dirty[field] = False
-                            return unmarkgeneratedfield(fact[field])
-                
-                graph[field] = (True, Thunk(fillme))
-            
-            shell(alreadyfilled.union(set(cannowfill.keys())))
+            graph[field] = (True, Thunk(fillme))
         
-        # The initial shell contains just the stuff that is non-generated or being set in this round.
-        # Everything else will be generated based off of these values
-        initiallyfilledfields = set([field for field in fact if not isgeneratedfield(field, fact[field])]).union(set(delta.keys()))
-        for field in initiallyfilledfields:
-            dirty[field] = field in delta
-            graph[field] = (False, Thunk(lambda field=field: cond(field in delta, lambda: delta[field], lambda: fact[field])))
-        
-        shell(initiallyfilledfields)
-        
-        return graph
+        shell(alreadyfilled.union(set(cannowfill.keys())))
+    
+    # The initial shell contains just the stuff that is non-generated or being set in this round.
+    # Everything else will be generated based off of these values
+    initiallyfilledfields = set([field for field in fact if not isgeneratedfield(field, fact[field])]).union(set(delta.keys()))
+    for field in initiallyfilledfields:
+        dirty[field] = field in delta
+        graph[field] = (False, Thunk(lambda field=field: cond(field in delta, lambda: delta[field], lambda: fact[field])))
+    
+    shell(initiallyfilledfields)
+    
+    return graph
