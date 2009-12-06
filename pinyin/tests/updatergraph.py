@@ -61,7 +61,7 @@ class TestUpdaterGraphGeneralFunctionality(object):
                 graph = filledgraphforupdaters(updaters, { field : "", other_field : "present!", "output" : "" }, { field : "go" })
                 yield assert_equal, graph["output"][1](), "from " + field
 
-class TestUpdaterGraphUpdaters(unittest.TestCase):
+class TestUpdaterGraphUpdaters(object):
     def testEverythingEnglish(self):
         config = dict(prefersimptrad = "simp", forceexpressiontobesimptrad = False, tonedisplay = "tonified", hanzimasking = False,
                         emphasisemainmeaning = False, meaningnumbering = "circledChinese", colormeaningnumbers = False, meaningseperator = "lines",
@@ -235,6 +235,15 @@ class TestUpdaterGraphUpdaters(unittest.TestCase):
 
     def testUpdateSimplifiedTraditionalDoesNothingIfSimpTradIdentical(self):
         self.assertProduces({ "expression" : u"鼠" }, {}, { "simp"  : u"", "trad" : u"" })
+
+    def testUpdateColoredCharactersFromReading(self):
+        config = dict(colorizedcharactergeneration = True, tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"])
+        
+        for reading in [u"chi1 fan1", u"chī fān", u'<span style="color:#ff0000">chī</span> <span style="color:#ff0000">fān</span>']:
+            yield (lambda reading: self.assertProduces({ "reading" : reading, "expression" : u"吃饭" }, config, {
+                "reading" : reading,
+                "color" : u'<span style="color:#ff0000">吃</span><span style="color:#ff0000">饭</span>'
+              }), reading)
 
     def assertProduces(self, known, configdict, expected, mediapacks=None, notifierassertion=None):
         if mediapacks == None:

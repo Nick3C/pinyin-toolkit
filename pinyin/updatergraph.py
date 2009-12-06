@@ -25,6 +25,9 @@ def preparetokens(config, tokens):
 
     return model.flatten(tokens, tonify=config.shouldtonify)
 
+def unpreparetokens(flat):
+    return [model.Word(*model.tokenize(striphtml(flat)))]
+
 def generateaudio(notifier, mediamanager, config, dictreading):
     mediapacks = mediamanager.discovermediapacks()
     if len(mediapacks) == 0:
@@ -109,8 +112,8 @@ class GraphBasedUpdater(object):
                 ("simptrad", self.expression2simptrad, ("expression",)),
                 ("trad", lambda x: x["simp"] != x["trad"] and x["trad"] or "", ("simptrad",)),
                 ("simp", lambda x: x["simp"] != x["trad"] and x["simp"] or "", ("simptrad",)),
-                ("expression", lambda x: x, ["simp"]),
-                ("expression", lambda x: x, ["trad"]),
+                ("expression", lambda x: x, ("simp",)),
+                ("expression", lambda x: x, ("trad",)),
         
                 ("dictmeaningsmwssource", self.expression2dictmeaningsmwssource, ("expression",)),
                 ("dictmeaningsmws", fst, ("dictmeaningsmwssource",)),
@@ -266,7 +269,7 @@ class GraphBasedUpdater(object):
         return preparetokens(self.config, model.formatreadingfordisplay(dictreading)).lower()
 
     def reading2dictreading(self, reading):
-        return [model.Word(*model.tokenize(reading))]
+        return model.unformatreadingfordisplay(unpreparetokens(reading))
 
     def expressiondictreading2color(self, expression, dictreading):
         return model.flatten(transformations.colorize(self.config.tonecolors, model.tonedcharactersfromreading(expression, dictreading)))

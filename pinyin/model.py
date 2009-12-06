@@ -558,7 +558,26 @@ class FormatReadingForDisplayVisitor(TokenVisitor):
     
     def visitTonedCharacter(self, tonedcharacter):
         # Treat characters like normal text
-        self.visitText(tonedcharacter)
+        return self.visitText(tonedcharacter)
+
+"""
+Attempts to invert formatreadingfordisplay. For use when recovering
+a clean set of tokens from user input.
+"""
+def unformatreadingfordisplay(words):
+    visitor = UnformatReadingForDisplayVisitor()
+    return [word.concatmap(visitor) for word in words]
+
+class UnformatReadingForDisplayVisitor(TokenVisitor):
+    def visitText(self, text):
+        stripped = text.strip()
+        return len(stripped) > 0 and [Text(stripped)] or []
+    
+    def visitPinyin(self, pinyin):
+        return [pinyin]
+    
+    def visitTonedCharacter(self, tonedcharacter):
+        return [tonedcharacter]
 
 """
 Makes some tokens that faithfully represent the given characters

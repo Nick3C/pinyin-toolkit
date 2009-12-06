@@ -355,6 +355,9 @@ class FormatReadingForDisplayTest(unittest.TestCase):
     def testSimpleErhua(self):
         self.assertEquals(self.format([Word(Pinyin.parse(u"hen3"), Pinyin.parse(u"ma5"), Pinyin.parse("r5"))]), u"hen3 mar")
 
+    def testSimpleTonedCharacter(self):
+        self.assertEquals(self.format([Word(TonedCharacter(u"塊", 1))]), u"塊")
+
     def testErhuaNextToText(self):
         self.assertEquals(self.format([Word(Text("not pinyin"), Pinyin.parse(u"r5"))]), u"not pinyin r")
 
@@ -367,6 +370,17 @@ class FormatReadingForDisplayTest(unittest.TestCase):
     
     def reading(self, what):
         return self.format(englishdict.reading(what))
+
+class UnformatReadingForDisplayTest(unittest.TestCase):
+    def testNoUnformatting(self):
+        self.assertEquals(self.unformat([Word(Text("not pinyin"), Pinyin.parse(u"ni3"), TonedCharacter(u"一", 1))]), u"not pinyinni3一")
+    
+    def testUnformatting(self):
+        self.assertEquals(self.unformat([Word(Pinyin.parse(u"ni3"), Text(" "), Pinyin.parse(u"hao3"), Text("\ttons more junk!! "), )]), u"ni3hao3tons more junk!!")
+    
+    # Test helpers
+    def unformat(self, what):
+        return flatten(unformatreadingfordisplay(what))
 
 class PinyinTonifierTest(unittest.TestCase):
     def testEasy(self):
