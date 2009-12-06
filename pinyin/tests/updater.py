@@ -87,11 +87,15 @@ class TestFieldUpdaterFromReading(object):
             { "reading" : u"", "expression" : "junk" })
 
     def testReusesOldValueIfNoDelta(self):
-        config = dict(forcereadingtobeformatted = True, tonedisplay = "numeric",
-                      colorizedpinyingeneration = False, colorizedcharactergeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"])
-        self.assertUpdatesTo(None, config,
-            { "reading" : u"hen3", "expression" : u"很", "color" : u"" },
-            { "reading" : u"hen3", "expression" : u"很", "color" : markgeneratedfield(u'<span style="color:#333333">很</span>') })
+        config = dict(forcereadingtobeformatted = True, tonedisplay = "tonified", colorizedpinyingeneration = False)
+        self.assertUpdatesTo(None, config, { "reading" : u"hen3" }, { "reading" : u"hěn" })
+    
+    def testUpdateColor(self):
+        config = dict(forcereadingtobeformatted = False, colorizedpinyingeneration = False, colorizedcharactergeneration = True, tonecolors = [u"#111111", u"#222222", u"#333333", u"#444444", u"#555555"])
+        for updatewith, old, new in [(u"hen3", u"", u"hen3"), (u"hěn", u"", u"hěn"), (None, markgeneratedfield(u"hěn"), markgeneratedfield(u"hěn"))]:
+            yield (self.assertUpdatesTo, updatewith, config,
+                { "reading" : old, "expression" : u"很", "color" : u"" },
+                { "reading" : new, "expression" : u"很", "color" : markgeneratedfield(u'<span style="color:#333333">很</span>') })
 
     def testUpdatingGeneratedVersion(self):
         config = dict(forcereadingtobeformatted = True, tonedisplay = "numeric")

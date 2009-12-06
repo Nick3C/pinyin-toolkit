@@ -6,7 +6,7 @@ import config
 from db import database
 import dictionary
 import dictionaryonline
-from factproxy import isgeneratedfield, unmarkgeneratedfield
+from factproxy import isblankfield, isgeneratedfield, unmarkgeneratedfield
 import media
 import meanings
 import numbers
@@ -287,11 +287,10 @@ def filledgraphforupdaters(all_updaters, fact, delta):
     dirty = {}
     
     finddirties = lambda usings: [using for using in usings if dirty[using]]
-    blank = lambda x: len(x.strip()) == 0
     
     # The initial shell contains just the stuff that is non-generated or being set in this round.
     # Everything else will be generated based off of these values
-    initiallyfilledfields = set([field for field in fact if not isgeneratedfield(field, fact[field]) and not blank(fact[field])]).union(set(delta.keys()))
+    initiallyfilledfields = set([field for field in fact if not isgeneratedfield(field, fact[field]) and not isblankfield(fact[field])]).union(set(delta.keys()))
     for field in initiallyfilledfields:
         dirty[field] = field in delta
         graph[field] = (False, Thunk(lambda field=field: cond(field in delta, lambda: delta[field], lambda: fact[field])))
@@ -309,7 +308,7 @@ def filledgraphforupdaters(all_updaters, fact, delta):
     # We also exclude updaters for any field that is going to get filled out by any delta_updater, because those
     # updaters should take priority.
     all_updaters = [updater for updater in all_updaters if all([updater[0] not in delta_field for delta_field, _, _ in delta_updaters])]
-    blank_updaters = dependedonby(all_updaters, [field for field in fact if blank(fact[field])])
+    blank_updaters = dependedonby(all_updaters, [field for field in fact if isblankfield(fact[field])])
     
     # Yes, this really works! This is because Python has reference comparison semantics on functions.
     # However, this is the reason we need to use tuples of fields we depend on, rather than lists
@@ -337,7 +336,7 @@ def filledgraphforupdaters(all_updaters, fact, delta):
             def fillme(field=field, possiblefillers=possiblefillers):
                 # For preference, use a filler that will certainly return clean information (i.e. sort by the number of dirty inputs and prefer the first)
                 for fillerfunction, dirtyinputs, anyinputsdirty in sorted([(f, dirties(), len(dirties()) > 0) for f, dirties in possiblefillers], using(lambda x: x[2])):
-                    if field not in fact or blank(fact[field]) or anyinputsdirty:
+                    if field not in fact or isblankfield(fact[field]) or anyinputsdirty:
                         # Don't know what the last value was or it may have changed: recompute.
                         #
                         # We also recompute if the incoming field is blank: this can happen if we have

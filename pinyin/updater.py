@@ -33,6 +33,7 @@ class FieldUpdater(object):
 
     def updatefact(self, fact, value, alwaysreformat=False):
         assert self.field in fact
+        assert value is None or not(factproxy.isgeneratedfield(self.field, value))
         
         # HACK ALERT: can't think of a nicer way to do mwfieldinfact
         # NB: this is not quite right. The user might have changed whether there is a mw field independently of whether the
@@ -43,7 +44,10 @@ class FieldUpdater(object):
         # For the same reason that fields may be missing from the graph but present in the fact,
         # even the field we are updating can be missing. For example, this happens when tabbing
         # away from a generated field.
-        if self.field in graph:
+        #
+        # We should also avoid doing this if the field is considered generated, because in that
+        # case reformatting leads to changing the field to be spuriously marked as original.
+        if self.field in graph and  not(factproxy.isgeneratedfield(self.field, value or fact[self.field])):
             # EAGERLY reformat to produce the new value, which we plop back into the graph again so
             # other computations can see it. Note that this is potentially unsafe because we might now actually
             # need to recompute other thunks in the graph that depended on this one. Thankfully, right now

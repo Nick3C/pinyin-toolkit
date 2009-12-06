@@ -91,6 +91,7 @@ class FocusHook(Hook):
         
         # Check old field contents against remembered value to determine changed status..
         self.knownfieldcontents[field.name], fieldchanged = None, self.knownfieldcontents[field.name] != field.value
+        
         # Changed fields have their "generated" tag stripped. NB: ALWAYS update the fact (even if the
         # field hasn't changed) because we might have changed ANOTHER field to e.g. blank it, and now
         # by moving focus from the expression field we indicate that we want to fill it out.

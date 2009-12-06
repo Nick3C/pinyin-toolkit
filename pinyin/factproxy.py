@@ -47,8 +47,11 @@ def chooseField(candidateFieldNames, targetkeys):
 # as well as invisible to the user under ordinary conditions. Change this at your PERIL:
 generatedmarker = '<a name="pinyin-toolkit"></a>'
 
+def isblankfield(value):
+    return len(value.strip()) == 0
+
 def isgeneratedfield(key, value):
-    return len(value.strip()) == 0 or key == "weblinks" or value.startswith(generatedmarker)
+    return key == "weblinks" or value.startswith(generatedmarker)
 
 def unmarkgeneratedfield(value):
     if value.startswith(generatedmarker):
