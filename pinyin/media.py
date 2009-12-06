@@ -144,9 +144,9 @@ class MediaPack(object):
     def frompath(cls, packpath):
         media = {}
         for filename in os.listdir(packpath):
-            log.info("Discovered media %s in %s", filename, packpath)
             media[filename] = os.path.join(packpath, filename)
         
+        log.info("Discovered %d media files in the pack at %s", len(media), packpath)
         return MediaPack(packpath, media)
 
 # Use to discover files in the media directory that are not referenced in the media
