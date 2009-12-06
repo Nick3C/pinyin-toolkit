@@ -52,11 +52,14 @@ class TestUpdaterGraphGeneralFunctionality(object):
           ]
         
         for updaters in [short_chain_updaters, long_chain_updaters]:
-            graph = filledgraphforupdaters(updaters, { "input one" : "", "input two" : "", "output" : "" }, { "input one" : "go" })
-            yield assert_equal, graph["output"][1](), "from input one"
-        
-            graph = filledgraphforupdaters(updaters, { "input one" : "", "input two" : "", "output" : "" }, { "input two" : "go" })
-            yield assert_equal, graph["output"][1](), "from input two"
+            for field, other_field in [("input one", "input two"), ("input two", "input one")]:
+                # Easy: other input is missing anyway
+                graph = filledgraphforupdaters(updaters, { field : "", other_field : "", "output" : "" }, { field : "go" })
+                yield assert_equal, graph["output"][1](), "from " + field
+            
+                # Hard: other input is present
+                graph = filledgraphforupdaters(updaters, { field : "", other_field : "present!", "output" : "" }, { field : "go" })
+                yield assert_equal, graph["output"][1](), "from " + field
 
 class TestUpdaterGraphUpdaters(unittest.TestCase):
     def testEverythingEnglish(self):
