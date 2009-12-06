@@ -308,7 +308,7 @@ def filledgraphforupdaters(updaters, fact, delta):
         # Set up each fillable graph field with a thunk computing the value
         for field, possiblefillers in cannowfill.items():
             def fillme(field=field, possiblefillers=possiblefillers):
-                # For preference, use a filler that will certainly return clean information (i.e. sort by )
+                # For preference, use a filler that will certainly return clean information (i.e. sort by the number of dirty inputs and prefer the first)
                 for fillerfunction, dirtyinputs, anyinputsdirty in sorted([(x, y(), len(y()) > 0) for x, y in possiblefillers], using(lambda x: x[2])):
                     if field not in fact or anyinputsdirty or fact[field].strip() == "":
                         # Don't know what the last value was or it may have changed: recompute
