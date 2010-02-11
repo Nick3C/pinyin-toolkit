@@ -308,8 +308,7 @@ class TokenizeTest(unittest.TestCase):
                           tokenize(u'<span style="color:#123456">tou2</span> <span style="color:#123456">er4</span>'))
     
     def testTokenizeUnrecognisedHTML(self):
-        # TODO: enable this test and make it pass somehow... SGMLParser doesn't support self-closing tags :-(
-        #self.assertEquals([Text(u'<b />')], tokenize(u'<b />'))
+        self.assertEquals([Text(u'<b>'), Text(u'</b>')], tokenize(u'<b />'))
         self.assertEquals([Text(u'<span style="mehhhh!">'), Text("</span>")], tokenize(u'<span style="mehhhh!"></span>'))
 
     def testTokenizeWeirdyRomanCharacters(self):

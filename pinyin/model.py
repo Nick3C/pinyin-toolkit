@@ -319,8 +319,6 @@ def tokenizetext(text, forcenumeric):
         else:
             tokens.append(Text(match))
     
-    # TODO: for robustness, we should explicitly parse around HTML tags
-    
     # TODO: could be much smarter about segmentation here. For example, we could use the
     # pinyin regex to split up run on groups of pinyin-like characters.
     return tokens
