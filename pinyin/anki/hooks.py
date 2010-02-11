@@ -87,10 +87,20 @@ class FocusHook(Hook):
         if not self.sessionExistsFor(field):
             return
         
+        # This is necessary because the QT controls screw with the HTML. If we don't normalise
+        # away the changes before the comparison, we might report changes where none took place.
+        def normaliseHtml(html):
+            if html == None:
+                return None
+            
+            te = QtGui.QTextEdit()
+            te.setHtml(html)
+            return te.toHtml()
+        
         log.info("User moved focus from the field %s", field.name)
         
         # Check old field contents against remembered value to determine changed status..
-        self.knownfieldcontents[field.name], fieldchanged = None, self.knownfieldcontents[field.name] != field.value
+        self.knownfieldcontents[field.name], fieldchanged = None, normaliseHtml(self.knownfieldcontents[field.name]) != normaliseHtml(field.value)
         
         # Changed fields have their "generated" tag stripped. NB: ALWAYS update the fact (even if the
         # field hasn't changed) because we might have changed ANOTHER field to e.g. blank it, and now
