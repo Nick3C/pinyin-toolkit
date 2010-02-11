@@ -3,7 +3,6 @@
 
 import htmlentitydefs
 import re
-from BeautifulSoup import BeautifulSoup, Tag
 import sqlalchemy
 import unicodedata
 
@@ -332,6 +331,14 @@ to seperate pinyin out from normal text, but no guarantees!
 """
 
 def tokenize(html, forcenumeric=False):
+    try:
+        from BeautifulSoup import BeautifulSoup, Tag
+    except ImportError, e:
+        if utils.islinux():
+            raise ImportError("Could not import the Beautiful Soup library! Since you are running on Linux, you may have to install it manually. Try running 'sudo apt-get install python-beautifulsoup' using the terminal.")
+        else:
+            raise e
+    
     def extract_attr_maybe(attrs, attr, into, extractor):
         if attr not in attrs:
             return {}
