@@ -95,7 +95,10 @@ class FocusHook(Hook):
         # Changed fields have their "generated" tag stripped. NB: ALWAYS update the fact (even if the
         # field hasn't changed) because we might have changed ANOTHER field to e.g. blank it, and now
         # by moving focus from the expression field we indicate that we want to fill it out.
-        self.updatefact(fact, field.name, fieldchanged and pinyin.factproxy.unmarkgeneratedfield(field.value) or None)
+        #
+        # NB: be careful with this ternary statement! It's perfectly OK for field.value to be "", and if
+        # that happens we CAN'T let fieldvalue in updatefact be None, or autoblanking gets broken.
+        self.updatefact(fact, field.name, (fieldchanged and [pinyin.factproxy.unmarkgeneratedfield(field.value)] or [None])[0])
     
     def updatefact(self, fact, fieldname, fieldvalue):
         # Are we not in a Mandarin model?
