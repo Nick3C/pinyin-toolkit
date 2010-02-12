@@ -201,16 +201,6 @@ class PinyinAudioReadings(object):
         possibilities = sorted(possibilities, using(lambda (_mediapack, output, missingmediacount): (missingmediacount, count(output))))
         return possibilities and list(itertools.takewhile(lambda (_mediapack, _output, missingmediacount): missingmediacount == possibilities[0][2], possibilities)) or []
 
-    # TODO: do I actually use this method?
-    def audioreading(self, tokens):
-        # Choose a random reading from the available possibilities, if any possibility exists
-        possibilities = self.audioreadings(tokens)
-        if possibilities:
-            bestmediapack, bestoutput, bestmissingmediacount = random.choice(possibilities)
-            return bestmediapack, bestoutput, (bestmissingmediacount != 0)
-        else:
-            return None, [], True
-
 # Simple wrapper around the PinyinAudioReadingsVisitor
 def audioreadingforpack(mediapack, audioextensions, words):
     visitor = PinyinAudioReadingsVisitor(mediapack, audioextensions)

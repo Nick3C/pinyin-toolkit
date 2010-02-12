@@ -201,6 +201,25 @@ class TestUpdaterGraphUpdaters(object):
                                                 u"[sound:" + os.path.join("Existing", "yue4.mp3") + "]"
           }, mediapacks=mediapacks, alreadyimported=[os.path.join("Existing", "san1.mp3"), os.path.join("Existing", "yue4.mp3")])
 
+    def testRandomizeBestPackOnTie(self):
+        configdict = dict(colorizedpinyingeneration = False, detectmeasurewords = False, tonedisplay = "numeric", dictlanguage = "en")
+        
+        mediapacks = [media.MediaPack("Foo", {"ni3.mp3" : "PACK1.mp3"}),
+                      media.MediaPack("Bar", {"ni3.mp3" : "PACK2.mp3"})]
+        
+        gotpack1, gotpack2 = False, False
+        for n in range(1, 10):
+            graph = GraphBasedUpdater(MockNotifier(), MockMediaManager(mediapacks), pinyin.config.Config(configdict)).filledgraph({}, {
+                "expression" : u"你", "mwfieldinfact" : False
+              })
+            
+            gotpack1 = gotpack1 or "PACK1" in graph["audio"][1]()
+            gotpack2 = gotpack2 or "PACK2" in graph["audio"][1]()
+        
+        # This test will nondeterministically fail (1/2)^10 = 0.01% of the time
+        assert_true(gotpack1)
+        assert_true(gotpack2)
+
     def testUpdateMeasureWordAudio(self):
         config = dict(audioextensions = [".mp3", ".ogg"])
         

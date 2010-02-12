@@ -135,19 +135,6 @@ class PinyinAudioReadingsTest(unittest.TestCase):
                  MediaPack("Bar", {"ma3.mp3" : "ma3.mp3", "ci2.mp3" : "ci2.mp3", "dian3.mp3" : "dian3.mp3"})]
         self.assertHasPartialReading(u"小马词典", ["ma3.mp3", "ci2.mp3", "dian3.mp3"], bestpackshouldbe=packs[1], mediapacks=packs)
 
-    def testRandomizeBestPackOnTie(self):
-        pack1 = MediaPack("Foo", {"ni3.mp3" : "PACK1.mp3"})
-        pack2 = MediaPack("Bar", {"ni3.mp3" : "PACK2.mp3"})
-
-        gotpacks = []
-        for n in range(1, 10):
-            gotpack, _, _ = PinyinAudioReadings([pack1, pack2], [".mp3", ".ogg"]).audioreading(englishdict.reading(u"你"))
-            gotpacks.append(gotpack)
-        
-        # This test will nondeterministically fail (1/2)^10 = 0.01% of the time
-        self.assertTrue(pack1 in gotpacks)
-        self.assertTrue(pack2 in gotpacks)
-
     def testUseSpokenToneRatherThanWrittenOne(self):
         mediapacks = [MediaPack("Foo", { "ma2.mp3" : "ma2.mp3", "ma3.mp3" : "ma3.mp3" })]
         mediapack, output, mediamissingcount = PinyinAudioReadings(mediapacks, [".mp3"]).audioreadings([Word(Pinyin("ma", ToneInfo(written=2, spoken=3)))])[0]
