@@ -1,5 +1,7 @@
 import os
 
+import anki.media
+
 from pinyin.logger import log
 import pinyin.media
 import pinyin.utils
@@ -35,3 +37,6 @@ class AnkiMediaManager(object):
     
     def importtocurrentdeck(self, file):
         return self.mw.deck.addMedia(file)
+
+    def alreadyimported(self, file):
+        return os.path.exists(os.path.join(self.mw.deck.mediaDir(create=False), anki.media.mediaFilename(file)))

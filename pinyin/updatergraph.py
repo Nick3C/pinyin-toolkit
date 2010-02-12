@@ -38,16 +38,24 @@ def generateaudio(notifier, mediamanager, config, dictreading):
         # There is no way we can generate an audio reading with no packs - give up
         return None
     
-    # Get the best media pack to generate the audio, along with the string of files from that pack we need to take
-    mediapack, output, _mediamissing = transformations.PinyinAudioReadings(mediapacks, config.audioextensions).audioreading(dictreading)
+    # Get the best media packs to generate the audio, along with the string of files from that pack we need to take.
+    # Mix up the possible audio packs while we are at it, to make things a bit more interesting...
+    possibilities = transformations.PinyinAudioReadings(mediapacks, config.audioextensions).audioreadings(dictreading)
+    random.shuffle(possibilities)
     
-    # Construct the string of audio tags from the optimal choice of sounds
-    output_tags = u""
-    for outputfile in output:
-        # Install required media in the deck as we go, getting the canonical string to insert into the sound field upon installation
-        output_tags += u"[sound:%s]" % mediamanager.importtocurrentdeck(os.path.join(mediapack.packpath, outputfile))
+    if not possibilities:
+        return u""
+    else:
+        # Minimize the number of new sounds we have to import, to reduce the bloat in the audio count
+        mediapack, output, _mediamissingcount = maximumby(using(lambda (mediapack, output, _): count(output, lambda outputfile: mediamanager.alreadyimported(os.path.join(mediapack.packpath, outputfile)))), possibilities)
     
-    return output_tags
+        # Construct the string of audio tags from the optimal choice of sounds
+        output_tags = u""
+        for outputfile in output:
+            # Install required media in the deck as we go, getting the canonical string to insert into the sound field upon installation
+            output_tags += u"[sound:%s]" % mediamanager.importtocurrentdeck(os.path.join(mediapack.packpath, outputfile))
+    
+        return output_tags
 
 class Reformatter(object):
     def __init__(self, notifier, mediamanager, config):

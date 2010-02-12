@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import itertools
 import os
 import re
 import sys
@@ -424,6 +425,17 @@ def intersperse(what, things):
         first = False
     
     return result
+
+def maximumby(how, xs):
+    best = xs[0]
+    for x in xs:
+        if how(best, x) < 0:
+            best = x
+    
+    return best
+
+def count(xs, pred=bool):
+    return sum(itertools.imap(pred, xs))
 
 def substrings(text):
     for length in range(len(text), -1, -1):

@@ -190,6 +190,17 @@ class TestUpdaterGraphUpdaters(object):
             "reading" : u'san1 yue4', "audio" : None
           }, mediapacks=[], notifierassertion=nassert)
 
+    def testAudioUsesExistingSoundsIfPossible(self):
+        config = dict(colorizedpinyingeneration = False, detectmeasurewords = False, tonedisplay = "numeric")
+        
+        mediapacks = [media.MediaPack("Existing", { "san1.mp3" : "san1.mp3", "yue4.mp3" : "yue4.mp3" }),
+                      media.MediaPack("NotExisting", { "san1.mp3" : "san1.mp3", "yue4.mp3" : "yue4.mp3" })]
+        
+        self.assertProduces({ "expression" : u"三月", "mwfieldinfact" : False }, config, {
+            "reading" : u'san1 yue4', "audio" : u"[sound:" + os.path.join("Existing", "san1.mp3") + "]" +
+                                                u"[sound:" + os.path.join("Existing", "yue4.mp3") + "]"
+          }, mediapacks=mediapacks, alreadyimported=[os.path.join("Existing", "san1.mp3"), os.path.join("Existing", "yue4.mp3")])
+
     def testUpdateMeasureWordAudio(self):
         config = dict(audioextensions = [".mp3", ".ogg"])
         
@@ -245,7 +256,7 @@ class TestUpdaterGraphUpdaters(object):
                 "color" : u'<span style="color:#ff0000">吃</span><span style="color:#ff0000">饭</span>'
               }), reading)
 
-    def assertProduces(self, known, configdict, expected, mediapacks=None, notifierassertion=None):
+    def assertProduces(self, known, configdict, expected, mediapacks=None, alreadyimported=[], notifierassertion=None):
         if mediapacks == None:
             mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
                                                     "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
@@ -255,7 +266,7 @@ class TestUpdaterGraphUpdaters(object):
             notifierassertion = lambda notifier: assert_equal(len(notifier.infos), 0)
         
         notifier = MockNotifier()
-        gbu = GraphBasedUpdater(notifier, MockMediaManager(mediapacks), pinyin.config.Config(pinyin.utils.updated({ "dictlanguage" : "en" }, configdict)))
+        gbu = GraphBasedUpdater(notifier, MockMediaManager(mediapacks, alreadyimported=alreadyimported), pinyin.config.Config(pinyin.utils.updated({ "dictlanguage" : "en" }, configdict)))
         graph = gbu.filledgraph({}, known)
         
         assert_dict_equal(dict([(key, graph[key][1]()) for key in expected.keys()]), expected, values_as_assertions=True)

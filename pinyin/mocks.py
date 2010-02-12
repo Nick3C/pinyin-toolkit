@@ -33,15 +33,19 @@ class NullNotifier(object):
 A media manager used in tests and the live preview functionality.
 """
 class MockMediaManager(object):
-    def __init__(self, mediapacks, themediadir="dummy_dir"):
-        self.themediadir = themediadir
-        self.mediapacks = mediapacks
+    def __init__(self, mediapacks, mediadir="dummy_dir", alreadyimported=[]):
+        self._mediadir = mediadir
+        self._mediapacks = mediapacks
+        self._alreadyimported = alreadyimported
     
     def mediadir(self):
-        return self.themediadir
+        return self._mediadir
     
     def discovermediapacks(self):
-        return self.mediapacks
+        return self._mediapacks
     
     def importtocurrentdeck(self, filename):
         return filename
+    
+    def alreadyimported(self, path):
+        return path in self._alreadyimported

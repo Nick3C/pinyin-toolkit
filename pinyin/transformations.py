@@ -5,6 +5,7 @@ import copy
 import cStringIO
 import random
 import re
+import itertools
 
 from logger import log
 from model import *
@@ -189,29 +190,24 @@ class PinyinAudioReadings(object):
         self.mediapacks = mediapacks
         self.audioextensions = audioextensions
     
-    def audioreading(self, tokens):
+    def audioreadings(self, tokens):
         log.info("Requested audio reading for %d tokens", len(tokens))
         
         # Try possible packs to format the tokens. Basically, we
         # don't want to use a mix of sounds from different packs
-        bestmediapacksoutputs, bestmediamissingcount = [], len(tokens) + 1
-        for mediapack in self.mediapacks:
-            log.info("Checking for reading in pack %s", mediapack.name)
-            output, mediamissingcount = audioreadingforpack(mediapack, self.audioextensions, trimerhua(tokens))
-            
-            # We will end up choosing one of the packs that minimizes the number of errors:
-            if mediamissingcount == bestmediamissingcount:
-                # Just as good as a previous pack, so this is an alternative
-                bestmediapacksoutputs.append((mediapack, output))
-            elif mediamissingcount < bestmediamissingcount:
-                # Strictly better than the previous ones, so this is the new best option
-                bestmediapacksoutputs = [(mediapack, output)]
-                bestmediamissingcount = mediamissingcount
+        possibilities = [(mediapack,) + audioreadingforpack(mediapack, self.audioextensions, trimerhua(tokens)) for mediapack in self.mediapacks]
         
-        # Did we get any result at all?
-        if len(bestmediapacksoutputs) != 0:
-            bestmediapack, bestoutput = random.choice(bestmediapacksoutputs)
-            return bestmediapack, bestoutput, (bestmediamissingcount != 0)
+        # Let the caller choose from only those packs that minimise the number of errors
+        possibilities = sorted(possibilities, using(lambda (_mediapack, output, missingmediacount): (missingmediacount, count(output))))
+        return possibilities and list(itertools.takewhile(lambda (_mediapack, _output, missingmediacount): missingmediacount == possibilities[0][2], possibilities)) or []
+
+    # TODO: do I actually use this method?
+    def audioreading(self, tokens):
+        # Choose a random reading from the available possibilities, if any possibility exists
+        possibilities = self.audioreadings(tokens)
+        if possibilities:
+            bestmediapack, bestoutput, bestmissingmediacount = random.choice(possibilities)
+            return bestmediapack, bestoutput, (bestmissingmediacount != 0)
         else:
             return None, [], True
 

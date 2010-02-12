@@ -150,32 +150,32 @@ class PinyinAudioReadingsTest(unittest.TestCase):
 
     def testUseSpokenToneRatherThanWrittenOne(self):
         mediapacks = [MediaPack("Foo", { "ma2.mp3" : "ma2.mp3", "ma3.mp3" : "ma3.mp3" })]
-        mediapack, output, mediamissing = PinyinAudioReadings(mediapacks, [".mp3"]).audioreading([Word(Pinyin("ma", ToneInfo(written=2, spoken=3)))])
+        mediapack, output, mediamissingcount = PinyinAudioReadings(mediapacks, [".mp3"]).audioreadings([Word(Pinyin("ma", ToneInfo(written=2, spoken=3)))])[0]
         self.assertEquals(mediapack, mediapacks[0])
-        self.assertFalse(mediamissing)
+        self.assertEquals(mediamissingcount, 0)
         self.assertEquals(output, ["ma3.mp3"])
 
     # Test helpers
     def assertHasReading(self, what, shouldbe, **kwargs):
-        bestpackshouldbe, mediapack, output, mediamissing = self.audioreading(what, **kwargs)
+        bestpackshouldbe, mediapack, output, mediamissingcount = self.audioreading(what, **kwargs)
         self.assertEquals(bestpackshouldbe, mediapack)
         self.assertEquals(output, shouldbe)
-        self.assertFalse(mediamissing)
+        self.assertEquals(mediamissingcount, 0)
     
     def assertHasPartialReading(self, what, shouldbe, **kwargs):
-        bestpackshouldbe, mediapack, output, mediamissing = self.audioreading(what, **kwargs)
+        bestpackshouldbe, mediapack, output, mediamissingcount = self.audioreading(what, **kwargs)
         self.assertEquals(bestpackshouldbe, mediapack)
         self.assertEquals(output, shouldbe)
-        self.assertTrue(mediamissing)
+        self.assertTrue(mediamissingcount > 0)
         
     def assertMediaMissing(self, what, **kwargs):
-        bestpackshouldbe, mediapack, output, mediamissing = self.audioreading(what, **kwargs)
-        self.assertTrue(mediamissing)
+        bestpackshouldbe, mediapack, output, mediamissingcount = self.audioreading(what, **kwargs)
+        self.assertTrue(mediamissingcount > 0)
     
     def audioreading(self, what, **kwargs):
         bestpackshouldbe, mediapacks = self.expandmediapacks(**kwargs)
-        mediapack, output, mediamissing = PinyinAudioReadings(mediapacks, [".mp3", ".ogg"]).audioreading(englishdict.reading(what))
-        return bestpackshouldbe, mediapack, output, mediamissing
+        mediapack, output, mediamissingcount = PinyinAudioReadings(mediapacks, [".mp3", ".ogg"]).audioreadings(englishdict.reading(what))[0]
+        return bestpackshouldbe, mediapack, output, mediamissingcount
     
     def expandmediapacks(self, mediapacks=None, available_media=None, raw_available_media=default_raw_available_media, bestpackshouldbe=None):
         if mediapacks:
