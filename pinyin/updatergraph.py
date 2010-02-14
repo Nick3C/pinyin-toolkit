@@ -370,6 +370,9 @@ def filledgraphforupdaters(all_updaters, fact, delta):
                         assert (field in fact and not anyinputsdirty)
                         dirty[field] = False
                         return unmarkgeneratedfield(fact[field])
+                
+                # What if all of the possible updaters failed? Ideally we would not be in the graph at all, but it's too late for that.
+                # All we can do is return None, and deal with this possibility later on.
             
             graph[field] = (True, Thunk(fillme))
         

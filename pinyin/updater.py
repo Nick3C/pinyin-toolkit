@@ -23,7 +23,6 @@ from logger import log
 # TODO:
 #  * Only update fields that could have been changed by the update (quite important for audio!)
 #  * (Perhaps) record hash in generated tag, so we can avoid recomputing more generally
-#  * Make updating itself faster: e.g. prefer audio that already exists in the Anki deck
 
 class FieldUpdater(object):
     def __init__(self, field, *args):
@@ -62,7 +61,11 @@ class FieldUpdater(object):
             # Fields can be missing from the graph if they are generated fields in the input fact that
             # the graph failed to find a way to update. This really does happen!
             if shouldupdatefield(self.graphbasedupdater.config)(field) and field in graph:
-                fact[field] = (graph[field][0] and factproxy.markgeneratedfield or (lambda x: x))(graph[field][1]())
+                value = graph[field][1]()
+                # The value can be None if we tried to update the field but just couldn't find any information.
+                # This can happen e.g. with the "meaning" field if there is no definition in the dictionary.
+                if value is not None:
+                    fact[field] = (graph[field][0] and factproxy.markgeneratedfield or (lambda x: x))(value)
 
 class FieldUpdaterFromExpression(FieldUpdater):
     def __init__(self, *args):
