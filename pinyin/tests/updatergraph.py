@@ -99,7 +99,14 @@ class TestUpdaterGraphUpdaters(object):
             "audio" : u"[sound:" + os.path.join("Test", "shu1.ogg") + "]",
             "color" : u'<span style="color:#ff0000">书</span>',
             "trad" : u"書", "simp" : u"书"
-              })
+          })
+
+    def testFrenchMeaningFallbackOnGoogleEvenIfWeHaveMWs(self):
+        config = dict(fallbackongoogletranslate = True, dictlanguage = "fr")
+        self.assertProduces({ "expression" : u"书", "mwfieldinfact" : True }, config, {
+            "meaning" : "Livre",
+            "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>'
+          })
 
     def testPreservesWhitespace(self):
         config = dict(forceexpressiontobesimptrad = False, tonedisplay = "tonified", colorizedpinyingeneration = False)
