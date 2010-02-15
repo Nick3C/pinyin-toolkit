@@ -375,11 +375,8 @@ def tokenize(html, forcenumeric=False):
 
         return (intelligible, unintelligible)
 
-        return dict([(pair.split(":")[0].strip(), pair.split(":")[1].strip()) for pair in style.split(";")])
-
-    def unparse_style(parsed_style):
-        intelligible, unintelligible = parsed_style
-        return "; ".join([k + " : " + v for k, v in intelligible] + unintelligible)
+    def unparse_style(intelligible, unintelligible):
+        return "; ".join([k + " : " + v for k, v in intelligible.items()] + unintelligible)
 
     # For now, we only worry about the color attribute in the span tag's style
     def take_style_val(key):
@@ -392,7 +389,7 @@ def tokenize(html, forcenumeric=False):
             else:
                 value = None
 
-            return (value, unparse_style((intelligible, unintelligible)))
+            return (value, unparse_style(intelligible, unintelligible))
 
         return go
         
