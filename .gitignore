@@ -26,7 +26,8 @@ pinyin/media/downloads/*
 
 # Ignore Media files (except system files)
 *.mp3
-!pinyin/system-media/*
+!pinyin/system-media/*.mp3
+!pinyin/media/Ya Li Cheng (Gradint) MP3/*.mp3
 *.mp4
 *.wav
 *.ogg
