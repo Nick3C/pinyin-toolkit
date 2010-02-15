@@ -123,17 +123,18 @@ class GraphBasedUpdater(object):
                 ("expression", lambda x: x, ("simp",)),
                 ("expression", lambda x: x, ("trad",)),
         
-                ("dictmeaningsmwssource", self.expression2dictmeaningsmwssource, ("expression",)),
-                ("dictmeaningsmws", fst, ("dictmeaningsmwssource",)),
-                ("dictmeaningssource", snd, ("dictmeaningsmwssource",)),
-                ("mergeddictmeaningsmws", self.dictmeaningsmws2mergeddictmeaningsmws, ("dictmeaningsmws", "mwfieldinfact")),
+                ("dictmeaningsandsource", self.expression2dictmeaningssource, ("expression",)),
+                ("dictmeanings", fst, ("dictmeaningsandsource",)),
+                ("dictmeaningssource", snd, ("dictmeaningsandsource",)),
+                ("dictmws", self.expression2dictmws, ("expression",)),
+                
+                ("mergeddictmeaningsmws", self.dictmeaningsmws2mergeddictmeaningsmws, ("dictmeanings", "dictmws", "mwfieldinfact")),
                 ("mergeddictmeanings", fst, ("mergeddictmeaningsmws",)),
                 ("mergeddictmws", snd, ("mergeddictmeaningsmws",)),
                 ("meaning", self.dictmeaningsmws2meaning, ("expression", "mergeddictmeanings", "dictmeaningssource",)), # Need expression for Hanzi masking
         
                 #("mergeddictmeaningsmws", self.meaning2mergeddictmeaningsmws, ["meaning"]),
         
-                ("dictmws", lambda x: x[1], ("dictmeaningsmws",)),
                 #("dictmws", self.mw2dictmws, ["mw"]), # TODO: think carefully about this and mergeddictmws for the update story here
                 ("mw", self.mergeddictmws2mw, ("mergeddictmws",)),
                 ("mwaudio", self.mergeddictmwdictreading2mwaudio, ("dictmws", "dictreading")), # Need dictreading for the noun
@@ -166,36 +167,39 @@ class GraphBasedUpdater(object):
         
         return result
 
-    def expression2dictmeaningsmwssource(self, expression):
+    def expression2dictmeaningssource(self, expression):
         dictmeaningssources = [
                 # Use CEDICT to get meanings
                 (u"",
-                 lambda: self.dictionary.meanings(expression, self.config.prefersimptrad)),
+                 lambda: self.dictionary.meanings(expression, self.config.prefersimptrad)[0]),
                 # Interpret Hanzi as numbers. NB: only consult after CEDICT so that we
                 # handle curious numbers such as 'liang' using the dictionary
                 (u"",
-                 lambda: (numbers.meaningfromnumberlike(expression, self.dictionary), None))
+                 lambda: numbers.meaningfromnumberlike(expression, self.dictionary))
             ] + (self.config.shouldusegoogletranslate and [
                 # If the dictionary can't answer our question, ask Google Translate.
                 # If there is a long word followed by another word then this will be treated as a phrase.
                 # Phrases are also queried using googletranslate rather than the local dictionary.
                 # This helps deal with small dictionaries (for example French)
                 (u'<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
-                 lambda: (dictionaryonline.gTrans(expression, self.config.dictlanguage), None))
+                 lambda: dictionaryonline.gTrans(expression, self.config.dictlanguage))
             ] or [])
         
         # Find the first source that returns a sensible meaning
         for dictmeaningssource, lookup in dictmeaningssources:
-            dictmeanings, dictmws = lookup()
-            if dictmeanings != None or dictmws != None:
-                return (dictmeanings or [], dictmws or []), dictmeaningssource
+            dictmeanings = lookup()
+            if dictmeanings != None:
+                return dictmeanings, dictmeaningssource
         
         # No information available
         return None
 
-    def dictmeaningsmws2mergeddictmeaningsmws(self, dictmeaningsmws, mwfieldinfact):
-        dictmeanings, dictmws = dictmeaningsmws
-        
+    def expression2dictmws(self, expression):
+        # Currently, we only use CEDICT to discover the measure words. Note that we *always*
+        # use the English dictionary, because it has the most comprehensive coverage of MWs.
+        return self.dictionaries('en').meanings(expression, self.config.prefersimptrad)[1]
+
+    def dictmeaningsmws2mergeddictmeaningsmws(self, dictmeanings, dictmws, mwfieldinfact):
         # If the user wants the measure words to be folded into the definition or there
         # is no MW field for us to split them out into, fold them in there
         if not(self.config.detectmeasurewords) or not mwfieldinfact:
@@ -373,6 +377,8 @@ def filledgraphforupdaters(all_updaters, fact, delta):
                 
                 # What if all of the possible updaters failed? Ideally we would not be in the graph at all, but it's too late for that.
                 # All we can do is return None, and deal with this possibility later on.
+                dirty[field] = False
+                return None
             
             graph[field] = (True, Thunk(fillme))
         

@@ -82,7 +82,7 @@ class TestUpdaterGraphUpdaters(object):
         self.assertProduces({ "expression" : u"书", "mwfieldinfact" : True }, config, {
             "reading" : u'<span style="color:#ff0000">shū</span>',
             "meaning" : u'Buch, Geschriebenes (S)',
-            "mw" : u'',
+            "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>',
             "audio" : u"[sound:" + os.path.join("Test", "shu1.ogg") + "]",
             "color" : u'<span style="color:#ff0000">书</span>',
             "trad" : u"書", "simp" : u"书"
@@ -91,21 +91,14 @@ class TestUpdaterGraphUpdaters(object):
     def testEverythingFrench(self):
         config = dict(forceexpressiontobesimptrad = False, tonedisplay = "tonified",
                        dictlanguage = "fr", detectmeasurewords = True,
-                       audioextensions = [".ogg"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"])
-        self.assertProduces({ "expression" : u"书", "mwfieldinfact" : True }, config, {
-            "reading" : u'<span style="color:#ff0000">shū</span>',
-            "meaning" : None,
-            "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>',
-            "audio" : u"[sound:" + os.path.join("Test", "shu1.ogg") + "]",
-            "color" : u'<span style="color:#ff0000">书</span>',
-            "trad" : u"書", "simp" : u"书"
-          })
-
-    def testFrenchMeaningFallbackOnGoogleEvenIfWeHaveMWs(self):
-        config = dict(fallbackongoogletranslate = True, dictlanguage = "fr")
-        self.assertProduces({ "expression" : u"书", "mwfieldinfact" : True }, config, {
-            "meaning" : "Livre",
-            "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>'
+                       audioextensions = [".mp3"], tonecolors = [u"#ff0000", u"#ffaa00", u"#00aa00", u"#0000ff", u"#545454"])
+        self.assertProduces({ "expression" : u"水", "mwfieldinfact" : True }, config, {
+            "reading" : u'<span style="color:#00aa00">shuǐ</span>',
+            "meaning" : u'eau (n.v.) (n)',
+            "mw" : u'<span style="color:#ff0000">杯</span> - <span style="color:#ff0000">bēi</span>, <span style="color:#00aa00">筒</span> - <span style="color:#00aa00">tǒng</span>, <span style="color:#ffaa00">瓶</span> - <span style="color:#ffaa00">píng</span>',
+            "audio" : u"[sound:" + os.path.join("Test", "shui3.mp3") + "]",
+            "color" : u'<span style="color:#00aa00">水</span>',
+            "trad" : u'', "simp" : u''
           })
 
     def testPreservesWhitespace(self):
@@ -266,6 +259,13 @@ class TestUpdaterGraphUpdaters(object):
             "meaning" : u'Hello, you are my friend do<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>'
           })
 
+    def testMeaningFallbackOnGoogleEvenIfWeHaveMWs(self):
+        config = dict(fallbackongoogletranslate = True, dictlanguage = "fr")
+        self.assertProduces({ "expression" : u"书", "mwfieldinfact" : True }, config, {
+            "meaning" : u'Livre<br /><span style="color:gray"><small>[Google Translate]</small></span><span> </span>',
+            "mw" : u'<span style="color:#00aa00">本</span> - <span style="color:#00aa00">běn</span>, <span style="color:#0000ff">册</span> - <span style="color:#0000ff">cè</span>, <span style="color:#0000ff">部</span> - <span style="color:#0000ff">bù</span>'
+          })
+
     def testUpdateSimplifiedTraditional(self):
         config = dict(simpgeneration = True, tradgeneration = True)
         self.assertProduces({ "expression" : u"个個" }, config, {
@@ -297,7 +297,7 @@ class TestUpdaterGraphUpdaters(object):
 
     def assertProduces(self, known, configdict, expected, mediapacks=None, alreadyimported=[], notifierassertion=None):
         if mediapacks == None:
-            mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg",
+            mediapacks = [media.MediaPack("Test", { "shu1.mp3" : "shu1.mp3", "shu1.ogg" : "shu1.ogg", "shui3.mp3" : "shui3.mp3",
                                                     "san1.mp3" : "san1.mp3", "qi1.ogg" : "qi1.ogg", "Kai1.mp3" : "location/Kai1.mp3",
                                                     "hen3.mp3" : "hen3.mp3", "hen2.mp3" : "hen2.mp3", "hao3.mp3" : "hao3.mp3" })]
         
