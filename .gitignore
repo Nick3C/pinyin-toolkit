@@ -44,6 +44,7 @@ pinyin/dictionaries/cfdict-*/*
 
 # Generated database
 pinyin/db/*.db
+cjklib.db
 
 # Generated UI stuff
 # NB: DON'T UNCOMMENT THIS LINE.
