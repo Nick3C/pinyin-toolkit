@@ -20,6 +20,7 @@ import notifier
 import utils
 
 import statsandgraphs
+import hanzistats
 
 hookbuilders = hooks.hookbuilders + [
     statsandgraphs.HanziGraphHook
