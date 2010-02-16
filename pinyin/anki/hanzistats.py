@@ -46,8 +46,8 @@ def isKanji(unichar):
 #  Add Hanzi statisticts choice to the Tool menu.                  #
 ####################################################################
 def init_hook():
-  mw.mainWin.HanziStats = QtGui.QAction('Hanzi Statistics (PyTK)', mw)
-  mw.mainWin.HanziStats.setStatusTip('Hanzi Statistics (PyTK)')
+  mw.mainWin.HanziStats = QtGui.QAction('Hanzi Statistics by PyTK', mw)
+  mw.mainWin.HanziStats.setStatusTip('Hanzi Statistics by PyTK')
   mw.mainWin.HanziStats.setEnabled(True)
   mw.mainWin.HanziStats.setIcon(QtGui.QIcon("../icons/hanzi.png"))
   # the following line can be changed to customise your default view with the first zero after run representing simp/trad and the second seen/deck
@@ -157,7 +157,7 @@ def get_freqstats(SimpTrad,DeckSeen):
 
   #  Create the HTML formatted output.
   stats = """
-		Character frequency data:<br>
+		<h4>Character frequency data</h4>
     <table cellpadding=3>
     <tr><td><b>Freq chars</b></td><td><b>Seen</b></td><td><b>Seen %%</b></td></tr>
     <tr><td>1 - 500</td><td><a href=py:have500>%(lvl1_s)s</a> of <a href=py:missing500>%(lvl1_t)s</a></a></td><td>%(lvl1_p)s%%</td></tr>
@@ -210,7 +210,7 @@ def get_hskstats(SimpTrad,DeckSeen):
 
   #  Create the HTML formatted output.
   stats = """
-    HSK statistics (characters, not words):
+    <h4>HSK character statistics</h4>
     <table cellpadding=3>
     <tr><td><b>HSK Level</b></td><td><b>Seen</b></td><td><b>Seen %%</b></td></tr>
     <tr><td>Basic (甲)</td><td><a href=py:haveB>%(lvl1_s)s</a> of <a href=py:missingB>%(lvl1_t)s</a></td><td>%(lvl1_p)s%%</td></tr>
@@ -218,6 +218,8 @@ def get_hskstats(SimpTrad,DeckSeen):
     <tr><td>Intermediate (丙)</td><td><a href=py:haveI>%(lvl3_s)s</a> of <a href=py:missingI>%(lvl3_t)s</a></td><td>%(lvl3_p)s%%</td></tr>
     <tr><td>Advanced (丁)</td><td><a href=py:haveA>%(lvl4_s)s</a> of <a href=py:missingA>%(lvl4_t)s</a></td><td>%(lvl4_p)s%%</td></tr>
     </table>
+    <p><i>Note: This is not the same as HSK vocabulary.</i></p>
+
   """.decode("utf-8") % sub_map
 
   return stats
@@ -265,7 +267,7 @@ def get_twstats(SimpTrad,DeckSeen):
   desc = """Taiwan's Ministry of Education List <br> 常用國字標準字體表"""
 
   stats = """
-    TW Ministry of Education List Statistics (characters):
+    <h4>TW Ministry of Education List Statistics</h4>
     <table cellpadding=3>
     <tr><td><b>Grade</b></td><td><b>%(seen_or_deck)s</b></td><td><b>%(seen_or_deck)s %%</b></td></tr>
     <tr><td>第一級</td><td><a href=py:have_tw1>%(lvl1_s)s</a> of <a href=py:missing_tw1>%(lvl1_t)s</a></td><td>%(lvl1_p)s%%</td></tr>
@@ -319,38 +321,39 @@ def slot_sync(SimpTrad=0,DeckSeen=0):
   # Set the prompt for new cards verus whole deck search
   if DeckSeen == 1:
     if SimpTrad == 0:
-        seentype = "<b>Data Set</b>: <a href=py:run00>whole deck</a>"
+        seentype = "Data Set: <a href=py:run00>whole deck</a>"
     if SimpTrad == 1:
-        seentype = "<b>Data Set</b>: <a href=py:run10>whole deck</a>"    
+        seentype = "Data Set: <a href=py:run10>whole deck</a>"    
   else:
     if SimpTrad == 0:
-        seentype = "<b>Data Set</b>: <a href=py:run01>seen cards only</a></small>"
+        seentype = "Data Set: <a href=py:run01>seen cards only</a></small>"
     if SimpTrad == 1:
-        seentype = "<b>Data Set</b>: <a href=py:run11>seen cards only</a></small>"
+        seentype = "Data Set: <a href=py:run11>seen cards only</a></small>"
         
   #  Set the description for the search
   ctype = ""
   if SimpTrad ==0:
     if DeckSeen == 0:
-      ctype = "<b>Character Set</b>: <a href=py:run10>Simplified</a>"
+      ctype = "Character Set: <a href=py:run10>Simplified</a>"
     else:
-      ctype = "<b>Character Set</b>: <a href=py:run11>Simplified</a>"
+      ctype = "Character Set: <a href=py:run11>Simplified</a>"
   if SimpTrad == 1:
       if DeckSeen == 0:
-        ctype = "<b>Character Set</b>: <a href=py:run00>Traditional</a>"
+        ctype = "Character Set: <a href=py:run00>Traditional</a>"
       else:
-        ctype = "<b>Character Set</b>: <a href=py:run01>Traditional</a>"
+        ctype = "Character Set: <a href=py:run01>Traditional</a>"
 
     
   specificstats = get_specificstats(SimpTrad,DeckSeen)
 
   # Put the  html together from the above settings
   outText = """
-      <h1>Hanzi Statistics (PyTK)</h1>
+      <h1>Hanzi Statistics</h1>
+      <h4>General</h4>
       <br>""" + ctype + """      
       <br>""" + seentype + """      
-      <br>There are <b><u>""" + str(len(get_deckHanzi(SimpTrad,DeckSeen))) + """</b></u>
-      unique Hanzi.<br><br> """ + specificstats + """ <br><br> """ + get_freqstats(SimpTrad,DeckSeen)
+      <p>Unique Hanzi: <b><u>""" + str(len(get_deckHanzi(SimpTrad,DeckSeen))) + """</></b></p>
+      """ + get_freqstats(SimpTrad,DeckSeen) + """ <br><br> """ + specificstats
 
   mw.help.showText(outText, py={"missingB": onMhskB, 
                                                   "missingE": onMhskE, 
